@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(rtk ls *)",
+      "Bash(rtk read *)",
+      "Bash(rtk grep *)",
+      "Bash(rtk find *)",
+      "Bash(rtk git status)",
+      "Bash(rtk git log*)",
+      "Bash(rtk git diff*)",
+      "Bash(rtk git show*)",
+      "Bash(rtk git branch*)",
+      "Bash(rtk git add*)",
+      "Bash(rtk git commit*)",
+      "Bash(git status)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(python -m pytest*)",
+      "Bash(rtk test python -m pytest*)",
+      "Bash(ruff *)",
+      "Bash(powershell*scripts/deploy.ps1)",
+      "Bash(powershell*scripts/deploy.ps1 -Restart)",
+      "Bash(powershell*scripts/deploy.ps1 -Logs)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(rtk git push*)",
+      "Bash(powershell*deploy.ps1*Prod*)"
+    ]
+  }
+}

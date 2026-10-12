@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Test / Lint
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local deploy config (hosts, tokens) - never commit
+scripts/deploy.config.ps1
+.env
+.env.*
+!.env.example
+
+# Claude Code: local overrides stay local; settings.json + project skills are committed
+.claude/settings.local.json
+
+# Local-only raw material (V1 learnings, private notes) - never goes public
+local input/
+local_input/
+local/
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
