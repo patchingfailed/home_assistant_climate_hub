@@ -1,6 +1,7 @@
 # Logic specification
 
-Status: **draft for review**, 2026-10-13. Covers the pure modules in `custom_components/climate_hub/logic/`
+Status: **draft**, 2026-10-13. First review done: D1–D12 and D14 approved, D13 replaced by D16; D15 and D16
+pending. Covers the pure modules in `custom_components/climate_hub/logic/`
 (rule 6: no Home Assistant imports, `now` is a parameter, table tests). Requirement IDs refer to
 `docs/requirements.md`, ADRs to `docs/architecture.md`, screens to `docs/ui_mockups.md`.
 
@@ -11,7 +12,7 @@ parametrised pytest case in `tests/logic/`.
 ## 0. Review first: decisions this spec makes
 
 The requirements leave these points open or state them in a way the logic cannot implement literally. Each one has a
-proposal. Approved proposals that change requirement wording are folded into `docs/requirements.md` afterwards.
+proposal. Approved proposals that change requirement wording are folded into `docs/requirements.md`.
 
 | # | Topic | Proposal | Requirement impact |
 |---|---|---|---|
@@ -25,10 +26,12 @@ proposal. Approved proposals that change requirement wording are folded into `do
 | D8 | Humidity guard (new) | No thermal ventilation when the humidity after ventilating (R13) would reach the humidity threshold (60 %). Protects cellars and cool rooms from humid summer air. | New rule under A6 |
 | D9 | Unknown contacts | Opening contacts (leaves, pass-through openings) are strict: the state is never `closed` by assumption. Refining contacts (tilt discriminator, handle) are ignored when unknown. A discriminator reporting open proves open. | W8: interpretation |
 | D10 | "Open since" | Means **ventilating** since (from the minimum level, default tilted). An ajar window has no "open since". Persisted across restarts. | W7/W10: clarifies |
-| D11 | Humidity after ventilating (R13) | Has no entity in mockups §6. Proposal: attribute `humidity_after_ventilating` on "Feuchtedifferenz außen". Alternative: own sensor (needs a mockup change). | §6 / R13 |
+| D11 | Humidity after ventilating (R13) | Attribute `humidity_after_ventilating` on "Feuchtedifferenz außen" (approved). | §6 / R13 |
 | D12 | Warnings | Both warnings (A4) allow the burst duration as grace and never fire while the recommendation says `keep_open`. | A4: clarifies |
-| D13 | Shading at night | Shading recommendation is `none` with reason `night` while the sun is below the horizon. By day without sun on the window it says `open_cover` (reason `no_sun`). | SH1: clarifies |
+| ~~D13~~ | ~~Shading at night~~ | Replaced by D16 (review 2026-10-13: a closed cover is also a cold and heat barrier). | – |
 | D14 | Constants | Margins and hysteresis are constants (§13), not hub options. Approved S9 has no hysteresis field; H6 mentions one. Weather maximum age is a constant (2 h). Comfort defaults 20 / 24 / 2 °C. | H6 wording, O5 |
+| D15 | Local weather bias (idea from the review) | Two learned corrections, no settings. **Forecast bias:** once a day, compare the forecast maximum and minimum with what the house's own outdoor sensors measured; the strategy uses the forecast plus the learned bias (A1). **Weather offset per side:** while a region's sensors work, learn how far the weather entity's current values deviate from them; when the weather stands in (O3), it is corrected by that offset, so a street that runs 2 °C warmer stays 2 °C warmer and pressure does not jump by the sea-level difference. | New A14; O5 |
+| D16 | Cover as a thermal barrier | The per-window shading output becomes a **cover recommendation** with the states of the window recommendation (`close`, `keep_closed`, `open`, `keep_open`, `none`) and a reason: sun protection (`sun_heat`), heat barrier by day on hot days even without sun (`heat_barrier`), cold barrier at night on cool-down days (`insulate`), solar gain welcome (`solar_gain`). Never `close` while the window is fully open (lock-out at doors). Automations filter by reason, so no setting is needed. | SH1, SH2; mockups §6 (entity name and states) |
 
 ## 1. Conventions
 
@@ -56,13 +59,13 @@ own; an error in one object is caught by the adapter and leaves the others intac
 ```
 snapshot (adapter: readings converted, contacts, climate activity, weather, forecast, sun, covers, comfort numbers)
   1. sources       per room and region metric      → Resolution          (offset state persisted)
-  2. outdoor       per direction                   → OutdoorValues        (+ house outdoor)
+  2. outdoor       per direction                   → OutdoorValues        (+ house outdoor; weather offsets persisted)
   3. comfort       per room: derived values, comfort position, outside relation, trend   (trend persisted)
-  4. strategy      hub                             → Strategy             (previous strategy)
+  4. strategy      hub                             → Strategy             (previous strategy; forecast bias persisted)
   5. window        per window, then per room       → WindowState          (open-since persisted)
   6. recommendation per room: recommendation, warnings, open while conditioning          (goal state persisted)
-  7. shading       per window                      → ShadingResult        (hold state persisted)
-  8. house         indoor average, any-room flags, any-window-shaded, source outages (H5) (outage state persisted)
+  7. cover         per window                      → CoverResult          (hold state persisted)
+  8. house         indoor average, any-room flags, any cover to close, source outages (H5) (outage state persisted)
 ```
 
 `prefill` (§11) is not part of the evaluation. Flows call it when sources are suggested, and the R14 listener calls
@@ -254,9 +257,16 @@ class OutdoorValues:                 # what a direction (and every room facing i
     absolute_humidity: OutdoorValue  # pair chain (D3)
     dew_point: OutdoorValue          # pair chain (D3)
 
+@dataclass(frozen=True)
+class WeatherOffsets:                # persisted: per (direction, metric) an Offset (§4) of weather − own value
+    offsets: dict[tuple[Direction, Metric], Offset]
+
 def fallback_chain(direction: Direction, configured: set[Direction]) -> list[tuple[Stage, tuple[Direction, ...]]]
-def resolve_direction(direction, regions: Mapping[Direction, RegionOwn], weather: WeatherReading | None) -> OutdoorValues
-def house_outdoor(regions, weather) -> HouseOutdoor   # O7
+def learn_weather_offsets(regions, weather: WeatherReadings | None, state: WeatherOffsets | None,
+                          now: datetime) -> WeatherOffsets
+def resolve_direction(direction, regions: Mapping[Direction, RegionOwn], weather: WeatherReadings | None,
+                      offsets: WeatherOffsets) -> OutdoorValues
+def house_outdoor(regions, weather, offsets) -> HouseOutdoor   # O7
 ```
 
 Rules:
@@ -270,12 +280,20 @@ Rules:
 5. **Pair chain (D3, O6).** Absolute humidity and dew point walk the same chain, but a region qualifies only if both
    its temperature and humidity are valid from its own sources. Each region computes AH and DP from its own pair; at a
    multi-region stage the outputs are the means of the regions' AH and DP. At the weather stage they come from the
-   weather's temperature and humidity. If no stage has a pair, both are `None` with reason `no_pair`.
+   weather's corrected temperature and humidity (rule 9). If no stage has a pair, both are `None` with reason
+   `no_pair`.
 6. Own pair stage: `fallback` if temperature or humidity came from a fallback source, else `primary`.
 7. A room without a main side gets all outdoor values `None` with reason `no_side`.
 8. **House outdoor (O7):** mean temperature of all regions with own valid values, with min, max and per-region values.
-   Without any such region: the weather value (stage `weather`). Display and automations only; recommendations
-   always use the room's own direction.
+   Without any such region: the corrected weather value (stage `weather`, rule 9). Display and automations only;
+   recommendations always use the room's own direction.
+9. **Weather offsets (D15).** While a region's own value of a metric and the weather's value are both valid, the
+   region learns `d = weather − own` with the offset learner of §4 (rules 4 and 5, no glide, no re-base). At the
+   weather stage the value is `weather − offset`: the direction's own offset if it has a region, else the mean of all
+   regions' learned offsets of that metric, else the raw weather value. Humidity is clamped to 0–100 % after the
+   correction. Offsets of removed regions are dropped. Attributes show the applied offset (E6).
+
+Inter-region offsets (O8) stay out of scope: neighbour and opposite stages use the regions' values unchanged.
 
 Chain cases:
 
@@ -288,7 +306,8 @@ Chain cases:
 | N | N | own N → weather (scenario 4) |
 | none | S | weather |
 
-Value cases (N 13.0 °C / 71 %, S 12.5 °C / 76 %, W 14.5 °C / 65 %, weather 11.0 °C / 80 %; configured N, W, S):
+Value cases (N 13.0 °C / 71 %, S 12.5 °C / 76 %, W 14.5 °C / 65 %, weather 11.0 °C / 80 %; configured N, W, S;
+no weather offsets learned yet):
 
 | Direction | Failing own sources | Temperature | Stage | AH g/m³ | AH stage |
 |---|---|---|---|---|---|
@@ -303,6 +322,20 @@ Value cases (N 13.0 °C / 71 %, S 12.5 °C / 76 %, W 14.5 °C / 65 %, weather 11
 
 Dew point at stage E/neighbour: 8.12 (mean of 7.86 and 8.38). House outdoor with all three regions: 13.33 (min 12.5,
 max 14.5).
+
+Weather offset cases (same values; learned temperature offsets weather − own: N −2.0, S −1.5, W −3.5; N humidity
++9, N pressure +18 hPa from a sea-level weather pressure of 1021 hPa against a station pressure of 1003 hPa). All
+regions' own sources fail:
+
+| Direction / output | Temperature | Humidity | Pressure | AH g/m³ |
+|---|---|---|---|---|
+| N | 13.0 (11.0 + 2.0) | 71 (80 − 9) | 1003 | 8.04 |
+| E (no region, mean offset −2.33) | 13.33 | – | – | – |
+| House outdoor (mean offset) | 13.33 | – | – | – |
+| N without learned offsets | 11.0 | 80 | 1021 | 7.99 |
+
+Learning gate: N learns only while N's own value and the weather are both valid; a stale weather entity teaches
+nothing.
 
 ## 6. Module `comfort` (R10)
 
@@ -372,7 +405,7 @@ Trend cases (samples every 10 min over 60 min):
 | 22.0 → 20.8 in steps of −0.2 | −1.20 | steady | falling |
 | 3 samples over 20 min | – | any | None |
 
-## 7. Module `strategy` (A1, D4)
+## 7. Module `strategy` (A1, A14, D4, D15)
 
 ```python
 class Strategy(StrEnum): PREVENT_HEAT_UP, PREVENT_COOL_DOWN, NEUTRAL
@@ -383,8 +416,23 @@ class ForecastPoint:
     temperature: float          # hourly: temperature; daily: high
     temp_low: float | None      # daily only
 
-def daily_strategy(points: Sequence[ForecastPoint] | None, hourly: bool, now: datetime,
-                   c_min: float, c_max: float, threshold: float, prev: Strategy | None) -> Strategy | None
+@dataclass(frozen=True)
+class ForecastBias:              # persisted
+    bias_max: float | None       # learned observed − forecast, daily maximum
+    bias_min: float | None       # learned observed − forecast, daily minimum
+    samples: int
+    day: date | None             # local date the snapshot and observations belong to
+    day_f_max: float | None      # forecast for that day, taken at its first evaluation
+    day_f_min: float | None
+    obs_max: float | None        # observed house outdoor maximum / minimum of that day (own sensors only)
+    obs_min: float | None
+    covered: timedelta           # time with a valid own-sensor house outdoor value that day
+
+def update_forecast_bias(state: ForecastBias | None, points, hourly: bool, house_outdoor: OutdoorValue,
+                         now: datetime) -> ForecastBias
+def daily_strategy(points: Sequence[ForecastPoint] | None, hourly: bool, now: datetime, c_min: float,
+                   c_max: float, threshold: float, bias: ForecastBias | None,
+                   prev: Strategy | None) -> StrategyResult   # strategy + raw and corrected f_max / f_min
 ```
 
 Rules:
@@ -395,6 +443,16 @@ Rules:
 3. `prevent_cool_down` when `f_min < c_min − threshold`, kept while `f_min < c_min − threshold + 0.5`.
 4. Both true: `prevent_heat_up` (D4). The cool-down risk is covered by the pre-cooling bound (D6).
 5. No forecast: `None`. The recommendation then follows the neutral rules and the strategy entity is unknown.
+6. **Forecast bias (D15, A14).** Rules 2 and 3 use `f_max + bias_max` and `f_min + bias_min` once at least 3 daily
+   samples exist; before that the raw forecast. The strategy entity shows raw and corrected values and both biases.
+7. **Learning the bias.** At the first evaluation of a local date, the forecast for that date is stored (hourly:
+   maximum and minimum of the points starting within the date, at least 18 points; daily: that date's entry).
+   During the day the house outdoor temperature (§5 rule 8) is tracked, but only while it comes from the regions'
+   own sensors, never from the weather stage. Coverage adds the time between evaluations with such a value, each step
+   capped at 10 min. At the first evaluation of the next date, if a forecast was stored and coverage is at least
+   18 h, the samples are `observed − forecast` for maximum and minimum. The first sample initialises a bias; later
+   ones move it by a quarter of the difference (`bias += 0.25 · (sample − bias)`, about a week of memory). Biases
+   are clamped to ±5 °C. A day without stored forecast or with too little coverage gives no sample.
 
 Cases (comfort 20–24, threshold 2):
 
@@ -411,6 +469,20 @@ Cases (comfort 20–24, threshold 2):
 | no forecast | | any | None |
 | hourly: 24 within the next 24 h, 31 at now + 25 h | 19 | neutral | neutral |
 | hourly: only 8 points in the horizon | | any | None |
+| 25.0, bias +2.2 (3 samples) | 19 | neutral | prevent_heat_up (corrected 27.2) |
+| 25.0, bias +2.2 (2 samples) | 19 | neutral | neutral (bias not applied yet) |
+| 22, bias_min −1.5 (3 samples) | 19.0 | neutral | prevent_cool_down (corrected 17.5) |
+
+Bias learning cases (daily maximum; the minimum works the same way):
+
+| Day | Forecast max | Observed max | Coverage | Sample | Bias after | Samples |
+|---|---|---|---|---|---|---|
+| 1 | 28.0 | 30.5 | 23 h | +2.5 | 2.5 | 1 |
+| 2 | 26.0 | 27.5 | 24 h | +1.5 | 2.25 | 2 |
+| 3 | 30.0 | 32.0 | 24 h | +2.0 | 2.1875 | 3 |
+| 4 | 25.0 | 29.0 | 17 h | – | 2.1875 | 3 |
+| 5 | no forecast stored (restart at noon) | 27.0 | 24 h | – | 2.1875 | 3 |
+| 1 (new) | 20.0 | 29.0 | 24 h | +9.0 | 5.0 (clamped) | 1 |
 
 ## 8. Module `window` (W2–W12, scenarios 5–8)
 
@@ -690,54 +762,103 @@ exists only with windows and devices.
 | unavailable, other device idle | 12 min | off |
 | action cooling | ventilating None | None |
 
-## 10. Module `shading` (SH1, SH2, SH4, D13)
+## 10. Module `cover` (SH1, SH2, SH4, D16)
+
+Recommends what to do with a window's cover: protect against sun and heat by day, keep warmth in at night, let the
+sun in when its warmth is welcome. It never moves a cover. Automations act on it and filter by reason, for example
+"sun protection only", so there is no setting for it (P4).
 
 ```python
-class Shading(StrEnum): SHADE, KEEP_SHADED, OPEN_COVER, KEEP_OPEN, NONE
+class CoverAdvice(StrEnum): CLOSE, KEEP_CLOSED, OPEN, KEEP_OPEN, NONE
 
-def shading(inp: ShadingInput, prev: ShadingState | None, now: datetime) -> tuple[ShadingResult, ShadingState]
+@dataclass(frozen=True)
+class CoverState:                # persisted per window
+    wanted: Literal["closed", "open"] | None
+    reason: str | None
+    since: datetime | None
+    relation: Relation | None    # window's outside temperature vs room (§6 rule 2)
+    heat_risk: bool
+
+def cover(inp: CoverInput, prev: CoverState | None, now: datetime) -> tuple[CoverResult, CoverState]
 ```
 
-`ShadingInput`: sun azimuth and elevation (`sun.sun`), cloud coverage (weather attribute, optional), facing azimuth
+`CoverInput`: sun azimuth and elevation (`sun.sun`), cloud coverage (weather attribute, optional), facing azimuth
 (from the window's direction N 0°, E 90°, S 180°, W 270°, or the exact degrees, SH4), room temperature, comfort
-range, position, outside temperature of the window's direction, strategy, and the cover state (shaded / not shaded /
-unknown / no cover).
+range, position, outside temperature of the window's direction (§5), strategy, the window's debounced level (§8),
+and the cover state (closed / not closed / unknown / no cover).
 
 Rules:
 1. No room: `none` / `no_room`. No sun position or no room temperature: `none` / `no_data`.
-2. Sun elevation below 0°: `none` / `night` (D13).
-3. **Sun on the window:** elevation ≥ 10°, angular difference between sun azimuth and facing ≤ 60° (with wrap-around),
-   and cloud coverage ≤ 70 % when known.
-4. **Heat risk:** strategy *prevent heat-up*, or room temperature ≥ `c_max − 0.5` (kept while ≥ `c_max − 1.0`).
-5. **Gain welcome:** position `below`, or outside temperature below `c_min`. Then never shade (SH1).
-6. Wanted: sun on window and gain welcome → open (`solar_gain`); sun on window and heat risk → shade (`sun_heat`);
-   sun on window, neither → open (`no_heat_risk`); no sun on window → open (`no_sun`).
+2. **Relation:** the window's outside temperature against the room temperature, with the hysteresis of §6 rule 2
+   (a window can face another direction than its room, W1).
+3. **Gain welcome:** position `below`, or outside temperature below `c_min`. Then the cover is never closed by day
+   (SH1).
+4. **Night** (sun elevation below 0°): wanted closed, reason `insulate`, when the relation is `colder` and (strategy
+   *prevent cool-down* or position `below`). Otherwise `none` / `night`.
+5. **Day**, the first matching rule decides:
+   - *Sun on the window:* elevation ≥ 10°, angular difference between sun azimuth and facing ≤ 60° (with
+     wrap-around), cloud coverage ≤ 70 % when known.
+   - *Heat risk:* strategy *prevent heat-up*, or room temperature ≥ `c_max − 0.5` (kept while ≥ `c_max − 1.0`).
+
+   | # | Condition | Wanted | Reason |
+   |---|---|---|---|
+   | a | sun on the window and gain welcome | open | `solar_gain` |
+   | b | sun on the window and heat risk | closed | `sun_heat` |
+   | c | strategy *prevent heat-up*, relation `warmer`, gain not welcome | closed | `heat_barrier` |
+   | d | sun on the window | open | `no_heat_risk` |
+   | e | otherwise | open | `no_sun` |
+6. **Open window guard:** wanted closed while the window's level is `open` gives `none` / `window_open` (a closing
+   cover could lock someone out at a door). Tilted, ajar and unknown levels do not block.
 7. **Hold:** the wanted state changes only after the previous one was held for 15 min; a held state keeps its reason.
    Changes to and from `none` are immediate.
-8. **Cover (SH2):** shaded when `current_position ≤ 50`, or state `closed` without a position; `opening` /
-   `closing` / unavailable: unknown. Wanted shade: shaded → `keep_shaded`, else `shade`. Wanted open: not shaded →
-   `keep_open`, else `open_cover`. No cover or unknown state: `shade` or `open_cover` only.
-9. House-level "any window should be shaded": `True` if any window wants shade, else `False`.
+8. **Cover state (SH2):** closed when `current_position ≤ 50`, or state `closed` without a position; `opening`,
+   `closing` and unavailable are unknown. Wanted closed: closed → `keep_closed`, else `close`. Wanted open: not
+   closed → `keep_open`, else `open`. No cover or unknown state: `close` or `open` only.
+9. **House level:** "any cover to close" is `True` if any window wants its cover closed (any reason; the attribute
+   lists windows and reasons), else `False`.
 
-Cases (window facing south 180°, comfort 20–24, outside 25 °C, held long enough, no cover unless stated):
+Reasons (attribute `reason`, translated; German draft):
 
-| Azimuth | Elevation | Clouds | Strategy | T room | Cover | Shading | Reason |
-|---|---|---|---|---|---|---|---|
-| 180 | 40 | 20 | heat-up | 22.0 | – | shade | sun_heat |
-| 180 | 40 | 20 | heat-up | 22.0 | shaded | keep_shaded | sun_heat |
-| 245 | 30 | 20 | heat-up | 22.0 | open | keep_open | no_sun (65° off) |
-| 180 | 8 | 0 | heat-up | 22.0 | – | open_cover | no_sun |
-| 180 | 40 | 90 | heat-up | 22.0 | – | open_cover | no_sun |
-| 180 | −3 | – | heat-up | 22.0 | – | none | night |
-| 180 | 40 | 20 | neutral | 22.0 | – | open_cover | no_heat_risk |
-| 180 | 40 | 20 | neutral | 23.6 | – | shade | sun_heat |
-| 180 | 40 | 20 | heat-up | 19.5 | – | open_cover | solar_gain |
-| 180 | 40 | 20 | neutral, outside 15 °C | 23.6 | – | open_cover | solar_gain |
-| 180 | 40 | 20 | heat-up | 22.0 | opening | shade | sun_heat |
-| 350, window facing north | 15 | 0 | heat-up | 22.0 | – | shade | sun_heat (wrap-around) |
-| sun gone at 10:10, shade since 10:00 | | | | | – | shade | sun_heat (held) |
-| sun gone at 10:15, shade since 10:00 | | | | | – | open_cover | no_sun |
-| no sun entity | | | | | – | none | no_data |
+| Reason | German draft |
+|---|---|
+| `sun_heat` | Sonne auf dem Fenster, Hitze draußen halten |
+| `heat_barrier` | Draußen heißer, Hitze draußen halten |
+| `insulate` | Nachts kalt, Wärme drinnen halten |
+| `solar_gain` | Sonnenwärme ist willkommen |
+| `no_heat_risk` | Sonne, aber keine Überhitzung |
+| `no_sun` | Keine Sonne auf dem Fenster |
+| `night` | Nacht, kein Grund zum Schließen |
+| `window_open` | Fenster ist offen |
+| `no_data` | Werte fehlen |
+| `no_room` | Fenster ohne Raum |
+
+Cases (window facing south 180°, comfort 20–24, held long enough, window closed and no cover unless stated):
+
+| Azimuth | Elevation | Clouds | Strategy | T room | T out | Window / cover | Advice | Reason |
+|---|---|---|---|---|---|---|---|---|
+| 180 | 40 | 20 | heat-up | 22.0 | 25 | – | close | sun_heat |
+| 180 | 40 | 20 | heat-up | 22.0 | 25 | cover closed | keep_closed | sun_heat |
+| 180 | 40 | 20 | heat-up | 22.0 | 25 | cover opening | close | sun_heat |
+| 180 | 40 | 20 | heat-up | 22.0 | 25 | window tilted | close | sun_heat |
+| 180 | 40 | 20 | heat-up | 22.0 | 25 | window open (door) | none | window_open |
+| 90 | 40 | 0 | heat-up | 22.0 | 25 | – | close | heat_barrier |
+| 90 | 40 | 0 | heat-up | 22.0 | 20 | – | open | no_sun |
+| 245 | 30 | 20 | neutral | 22.0 | 25 | cover open | keep_open | no_sun (65° off) |
+| 180 | 8 | 0 | neutral | 22.0 | 25 | – | open | no_sun |
+| 180 | 40 | 90 | neutral | 22.0 | 25 | – | open | no_sun |
+| 180 | 40 | 20 | neutral | 22.0 | 25 | – | open | no_heat_risk |
+| 180 | 40 | 20 | neutral | 23.6 | 25 | – | close | sun_heat |
+| 180 | 40 | 20 | heat-up | 19.5 | 25 | – | open | solar_gain |
+| 180 | 40 | 20 | neutral | 23.6 | 15 | – | open | solar_gain |
+| 350, window facing north | 15 | 0 | heat-up | 22.0 | 25 | – | close | sun_heat (wrap-around) |
+| – | −10 | – | cool-down | 21.0 | 5 | – | close | insulate |
+| – | −10 | – | cool-down | 21.0 | 5 | cover closed | keep_closed | insulate |
+| – | −10 | – | neutral | 19.5 | 10 | – | close | insulate (room below) |
+| – | −10 | – | neutral | 22.0 | 15 | – | none | night |
+| – | −10 | – | heat-up | 25.0 | 18 | – | none | night |
+| sun leaves at 10:10, closed since 10:00 | | | neutral | 23.6 | 25 | – | close | sun_heat (held) |
+| sun leaves at 10:15, closed since 10:00 | | | neutral | 23.6 | 25 | – | open | no_sun |
+| no sun entity | | | | | | – | none | no_data |
 
 ## 11. Module `prefill` (R3, R6, R14, R15, S2)
 
@@ -902,10 +1023,14 @@ Rules:
 | Offset learned after | 1 h paired | no | R7 |
 | Offset glide | 60 min | no | D1 |
 | Contact debounce | 5 s | no | W10 |
+| Weather offsets | same learner as source offsets (8 h / 30 min) | no | O5, D15 |
+| Forecast bias: memory / samples before use / clamp | 0.25 per day / 3 / ±5 °C | no | A14, D15 |
+| Forecast bias: day coverage / hourly points per day / coverage step cap | 18 h / 18 / 10 min | no | A14, D15 |
 | Sun on window | elevation ≥ 10°, ±60°, clouds ≤ 70 % | no | SH1 |
+| Night (cover) | sun elevation below 0° | no | SH1, D16 |
 | Heat risk near comfort maximum enter / exit | 0.5 / 1.0 °C below | no | SH1 |
-| Shading hold | 15 min | no | SH1 |
-| Cover counts as shaded | position ≤ 50 % | no | SH2 |
+| Cover hold | 15 min | no | SH1 |
+| Cover counts as closed | position ≤ 50 % | no | SH2 |
 | Plausible values at setup | room 8–40 °C, region −40–60 °C, 0–100 %, 800–1100 hPa | no | R6 |
 | Comfort range defaults | 20 / 24 °C, threshold 2 °C | number entities | H2, D14 |
 
@@ -923,6 +1048,6 @@ change, `Store` persistence, area sync (R11), repair issues (R14, H5, W11).
 ## 15. Build order
 
 One Sonnet implementer per module, each with its tests, in this order (later modules use earlier ones):
-`const` + `psychro` → `sources` → `outdoor` → `comfort` → `strategy` → `window` → `recommendation` → `shading` →
+`const` + `psychro` → `sources` → `outdoor` → `comfort` → `strategy` → `window` → `recommendation` → `cover` →
 `prefill` → `house`. Each module is done when its table cases pass, `ruff check` is clean, and it imports nothing from
 `homeassistant`.

@@ -636,7 +636,7 @@ carry no area (ADR-005, ADR-007). The device column shows the device name and, i
 | | Außentemperatur | sensor, °C (room's side) | |
 | | Außenfeuchte | sensor, % | |
 | | Temperaturdifferenz außen | sensor, °C (outside − inside) | |
-| | Feuchtedifferenz außen | sensor, g/m³ | |
+| | Feuchtedifferenz außen | sensor, g/m³ (+ humidity after ventilating attribute, R13; added 2026-10-13) | |
 | | Außen | enum: wärmer / kälter / gleich | |
 | | Wunschbereich | enum: darunter / im Bereich / darüber | |
 | | Trend | enum: steigend / stabil / fallend | |

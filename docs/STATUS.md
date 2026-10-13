@@ -6,8 +6,9 @@ Updated 2026-10-13. The only place for project status.
 
 UI mockups are approved (2026-10-13). The native-UI spike ran on DEV (branch `spike/native-ui`, never merged):
 results in `docs/ui_mockups.md` §7. Its code stays deployed on DEV, without a hub entry, for Felix's click review.
-No product code exists yet. The logic spec `docs/logic.md` is drafted and waits for Felix's review (decisions D1–D14
-in its §0).
+No product code exists yet. The logic spec `docs/logic.md` had its first review: D1–D12 and D14 are approved and
+folded into `docs/requirements.md` (R7, R13, O5, O6, W7, W8, W10, A1–A4, new A13, H2, H6). D15 (local weather bias)
+and D16 (cover as a thermal barrier, replaces D13) wait for approval.
 
 ## Next
 
@@ -19,9 +20,9 @@ in its §0).
    ventilating), source resolution with offset learning, region fallback, window state (incl. the W12 table),
    recommendation (A1–A6, A12), shading (SH1), pre-fill (R3, R6). The pre-fill rules need unit tests: DEV's mirrored
    entities have no devices.
-   How: `docs/logic.md` is drafted (rules, interfaces, table cases per module; requirement IDs). Next: Felix reviews
-   §0 (D1–D14), approved decisions go into `docs/requirements.md` (A1, A2, A3/A6, A4, O6, R7, W7/W8/W10, H6, SH1,
-   §6 for R13), then Sonnet implementers build `custom_components/climate_hub/logic/` + `tests/logic/` module by module
+   How: `docs/logic.md` (rules, interfaces, table cases per module; requirement IDs). Next: Felix approves D15 and
+   D16; then A14 (forecast bias), O5 (weather offset), SH1/SH2 and mockups §6 (cover entity name and states) are
+   updated, and Sonnet implementers build `custom_components/climate_hub/logic/` + `tests/logic/` module by module
    (rule 6: no HA imports, `now` as a parameter). Branch off `planning/kickoff`. The spike branch `spike/native-ui`
    shows working flow/subentry/repair idioms for the later UI build (reference only, never merge).
 4. **CI**: pytest, ruff, hassfest, HACS validation.
@@ -29,10 +30,13 @@ in its §0).
 
 ## Open decisions
 
-- Logic spec decisions D1–D14 (`docs/logic.md` §0), each with a proposal.
+- D15 local weather bias and D16 cover as a thermal barrier (`docs/logic.md` §0), each with a proposal.
 
 ## Recently done
 
+- 2026-10-13: first review of the logic spec. D1–D12 and D14 approved and folded into the requirements; R13 becomes an
+  attribute (mockups §6). From the review: D15 (forecast bias and weather offset per side) and D16 (cover
+  recommendation with heat and cold barrier) added to the spec. Verified on DEV: no (spec only).
 - 2026-10-13: logic spec drafted (`docs/logic.md`): ten pure modules with interfaces and table cases, reference
   values computed (psychrometrics, offset learning, fallback means). Proposes D1–D14, among them a glide for offsets at
   the fallback switch, a binary recommendation with goals, a humidity guard against humid summer air, and a 24 h
