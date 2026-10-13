@@ -19,15 +19,12 @@ reference and is never merged.
    text), 10 (area per picker row). Item 2 (phone) is skipped by choice. DEV has a few mirrored entities assigned to
    areas as test fixtures (list and undo in the private local notes).
 2. **Minimum HA version** as an ADR (at least 2025.10 for menu option descriptions; the spike ran on 2026.10.1).
-3. **GitHub default branch** (Felix, one click): Settings → General → Default branch from `planning/kickoff` to
-   `main`. Then delete the remote `planning/kickoff` (`git push origin --delete planning/kickoff`; all its commits
-   are in `main`).
-4. **Adapter and integration build plan**: manifest, hub entry with subentries, coordinator (snapshot, 60 s tick,
+3. **Adapter and integration build plan**: manifest, hub entry with subentries, coordinator (snapshot, 60 s tick,
    debounced listeners), `Store` persistence of the logic states, entities, flows per the mockups, repairs. The
    adapter contract is in `docs/logic.md` §14. The spike branch `spike/native-ui` shows working
    flow/subentry/repair idioms (reference only, never merge). Needs the minimum HA version (item 2) first.
-5. **CI**: pytest, ruff, hassfest, HACS validation.
-6. After the review: remove the spike from DEV.
+4. **CI**: pytest, ruff, hassfest, HACS validation.
+5. After the review: remove the spike from DEV.
 
 ## Open decisions
 
@@ -36,8 +33,8 @@ reference and is never merged.
 
 ## Recently done
 
-- 2026-10-13: branches folded into `main` (fast-forward, nothing lost) and `main` pushed; the local
-  `planning/kickoff` and `build/logic-modules` are deleted. Branch rule as CLAUDE.md rule 14 (Felix agreed).
+- 2026-10-13: branches folded into `main` (fast-forward, nothing lost) and `main` pushed; GitHub's default branch
+  is `main`, `planning/kickoff` and `build/logic-modules` are deleted locally and on GitHub. Branch rule as CLAUDE.md rule 14 (Felix agreed).
 
 - 2026-10-13: pure logic built (`docs/logic.md` §3–§12): `const`, `psychro`, `sources`, `outdoor`, `comfort`,
   `strategy`, `window`, `recommendation`, `cover`, `prefill`, `house`, every table case a pytest case (393 tests in
