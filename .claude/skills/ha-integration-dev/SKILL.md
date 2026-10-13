@@ -42,9 +42,9 @@ logger:
 - [ ] Add the integration (hub flow) and check the entry.
 - [ ] Per subentry type (room, outdoor region, window): create, reconfigure, delete.
 - [ ] Change options, verify the effect without a restart.
-- [ ] Entities: values, units, `device_class`, attributes (source, rank, stage).
+- [ ] Entities: values, units, `device_class`, attributes (source, stage, reason, offset).
 - [ ] Enum/attribute translations in the dashboard and the more-info dialog (de **and** en).
-- [ ] Download diagnostics and cross-check against `docs/diagnostics_guide.md`.
+- [ ] Download diagnostics and check the decision chain (sources, stages, learned offsets).
 - [ ] Log has no ERROR/WARNING from `climate_hub`.
 
 ## Entity state via REST (token from the config)
@@ -52,8 +52,8 @@ logger:
 ```powershell
 . .\scripts\deploy.config.ps1
 $h = @{ Authorization = "Bearer $DevToken" }
-Invoke-RestMethod "http://${DevHost}:8123/api/states/sensor.ch_arbeitszimmer_temperatur" -Headers $h
-(Invoke-RestMethod "http://${DevHost}:8123/api/states" -Headers $h) | Where-Object entity_id -like "*.ch_*"
+Invoke-RestMethod "http://${DevHost}:8123/api/states/sensor.arbeitszimmer_klima_temperatur" -Headers $h
+(Invoke-RestMethod "http://${DevHost}:8123/api/states" -Headers $h) | Where-Object entity_id -like "*_klima_*"
 ```
 
 ## Known pitfalls
@@ -66,7 +66,7 @@ Invoke-RestMethod "http://${DevHost}:8123/api/states/sensor.ch_arbeitszimmer_tem
 | Sensor treated as stale despite reporting | `last_updated` instead of `last_reported` | Use `last_reported` |
 | Min/max jumps to the setpoint | `climate.*` attribute `temperature` instead of `current_temperature` | Only `current_temperature` |
 | Dropdown field can't be cleared | `vol.Optional(default=...)` | Use `suggested_value` |
-| Raw state (`lueften_kuehlen`) in the dashboard | No enum sensor | `SensorDeviceClass.ENUM` + `translation_key` |
+| Raw state (`keep_open`) in the dashboard | No enum sensor | `SensorDeviceClass.ENUM` + `translation_key` |
 | New platform doesn't show up after reload | Platforms are only registered on start | Restart |
 | Entity history lost | `unique_id` changed | Never change it; the schema lives in `docs/architecture.md` |
 
@@ -77,7 +77,7 @@ Change made
 ├─ Tests/ruff green? ── no → fix first
 ├─ New file / manifest / platform / translations? → deploy -Restart
 ├─ Otherwise → deploy → Reload in the UI
-├─ Value wrong?        → attributes (source/rank/stage) → diagnostics → write a logic/ test that reproduces it
+├─ Value wrong?        → attributes (source/stage/reason) → diagnostics → write a logic/ test that reproduces it
 ├─ Flow crashes?        → deploy -Logs → traceback → flow-manager test that reproduces it
 └─ Done                 → smoke test → STATUS.md
 ```

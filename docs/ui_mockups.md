@@ -1,6 +1,7 @@
 # UI mockups
 
-Status: **draft for review**, 2026-10-12. Nothing here is built until it is approved (rule 8).
+Status: **draft for review**, v2 of 2026-10-13 (reworked for what native flows can render, §2.4). Nothing here is
+built until it is approved (rule 8).
 Screens show the German UI strings, because German is the primary language of the reference installation. The English
 strings use the same keys. Requirement IDs refer to `docs/requirements.md`, ADRs to `docs/architecture.md`.
 
@@ -12,7 +13,7 @@ Legend for screens: `[ … ▾ ]` dropdown, `[■]` toggle, `≡` drag handle of
 | Surface | Purpose | How the user gets there |
 |---|---|---|
 | First setup (config flow) | Weather, rooms, house plan, preview, create | Settings → Devices & services → Add integration → Climate Hub |
-| Subentries | Rooms, outdoor sides, windows: add, edit, delete one at a time | Integration page → "+ Raum hinzufügen" / "+ Außenseite hinzufügen" / "+ Fenster hinzufügen"; ⋮ on an item → Rekonfigurieren / Löschen |
+| Subentries | Rooms, outdoor sides, windows: add, edit, delete one at a time | Integration page → ⋮ on the hub entry → Raum hinzufügen / Außenseite hinzufügen / Fenster hinzufügen; ⋮ on an item → Rekonfigurieren / Löschen |
 | Hub reconfigure | House plan: which outdoor area and which rooms belong to each side | Integration page → ⋮ → Rekonfigurieren |
 | Hub options | Weather service, area sync, expert defaults | Integration page → Konfigurieren |
 | Hub device entities | Comfort range (numbers), house-level values | Device "Hausklima" |
@@ -33,24 +34,32 @@ flowchart LR
 ```
 
 Windows are an **add-on** (W0) and are not created during the first setup. They depend on hardware knowledge (leaves,
-tilt discriminator, handle, pass-through) that a guess would get wrong. After creation, the integration page offers
-"+ Fenster hinzufügen" for each window, at any time.
+tilt discriminator, handle, pass-through) that a guess would get wrong. "Fenster hinzufügen" sits in the hub entry's ⋮
+menu, which is easy to miss, so the success dialog after „Anlegen" says where to find it.
 
 ### 2.2 Room and outdoor side (add and edit use the same form)
 
 ```mermaid
 flowchart LR
-  F[Form] --> P{Preview}
+  A[Area step, add only] --> F[Form]
+  F -- area changed --> F
+  F --> P{Preview}
   P -- Speichern --> D[(Subentry)]
   P -- Anpassen --> F
 ```
+
+Adding starts with the area (outdoor side: area and direction), because the source list is filtered by that area and
+pre-filled from it. Editing opens the form directly. The form still contains the area. If the area differs from the
+one the sources were suggested for, the form opens once more with sources suggested for the new area and a hint.
 
 ### 2.3 Window
 
 ```mermaid
 flowchart LR
   T{Type} --> F[Form for that type]
+  F -- text sensor chosen --> M[State mapping]
   F --> P{Preview}
+  M --> P
   P -- Speichern --> D[(Subentry)]
   P -- Anpassen --> F
   P -- Typ ändern --> T
@@ -58,6 +67,21 @@ flowchart LR
 
 The preview is a menu step. Its text shows live values at the moment it opens. Its options lead back to the form, so the
 user can correct mistakes without starting over.
+
+### 2.4 What native flows can render (design rules)
+
+Checked against Home Assistant core and frontend source on 2026-10-13.
+
+- **Forms are not live.** No field can change another field's options, filter or default before the step is submitted.
+  Values that depend on a choice come from the previous step or appear in the preview.
+- **Select options are static labels** (`translation_key`). The set of offered values can be computed, but a label cannot
+  carry live data such as „Norden · Straße". Live data goes into the step description or the preview.
+- **Select options have no description line.** Menu options do (since 2025.10), so choices that need an explanation are
+  menu steps (S8).
+- **Previews are markdown** in a menu step description, assembled from translated fragments. Column alignment in the
+  screens below is illustrative only.
+- **Entity pickers cannot filter by area.** Context filters (U6) are precomputed entity lists (`include_entities`).
+- **„Hinzufügen" for subentries** sits in the entry's ⋮ menu, ordered as the integration lists the types.
 
 ## 3. Screens: first setup
 
@@ -144,18 +168,19 @@ user can correct mistakes without starting over.
 
 ```
 ┌─ Vorschau ─────────────────────────────────────────────────┐
-│ Räume                                                      │
-│  Wohnzimmer  21,4 °C · 48 %   aus Klimasensor Wohnzimmer   │
-│              Ersatz: Thermostat Wohnzimmer · Seite Norden  │
-│  Küche       20,7 °C · 57 %   aus Klimasensor Küche        │
-│              Nicht übernommen: Kühlschrank (6,9 °C)        │
-│  Bad         19,9 °C · 66 %   aus Klimasensor Bad          │
-│  …                                                         │
-│ Außenseiten                                                │
-│  Norden · Straße  13,0 °C · 71 %                           │
-│     fällt aus → Westen → Süden → Wetterdienst              │
-│  Süden · Garten   12,5 °C · 76 %                           │
-│  Westen · Hof     14,5 °C · 65 %                           │
+│ **Räume**                                                  │
+│ • **Wohnzimmer** 21,4 °C · 48 % aus Klimasensor Wohnzimmer │
+│   Ersatz: Thermostat Wohnzimmer. Seite: Norden.            │
+│ • **Küche** 20,7 °C · 57 % aus Klimasensor Küche           │
+│   Nicht übernommen: Kühlschrank (6,9 °C, kein Raumwert).   │
+│ • **Bad** 19,9 °C · 66 % aus Klimasensor Bad               │
+│ • …                                                        │
+│ **Außenseiten**                                            │
+│ • **Norden · Straße** 13,0 °C · 71 %                       │
+│   Fällt sie aus: Westen, dann Süden, dann Wetterdienst.    │
+│ • **Süden · Garten** 12,5 °C · 76 %                        │
+│ • **Westen · Hof** 14,5 °C · 65 %                          │
+│ • Osten: keine Außenseite, Wetterdienst springt ein.       │
 │                                                            │
 │  > Anlegen                                                 │
 │  > Räume ändern                                            │
@@ -165,7 +190,8 @@ user can correct mistakes without starting over.
 
 - Shows what was **not** taken and why (P1, R6).
 - Shows each side's computed fallback chain (ADR-003).
-- „Anlegen" creates the hub entry with all room and region subentries in one step.
+- „Anlegen" creates the hub entry with all room and region subentries in one step. The success dialog says:
+  „Fertig. Fenster fügst du jederzeit hinzu: ⋮ beim Eintrag Hausklima → Fenster hinzufügen."
 
 ## 4. Screens: objects
 
@@ -173,22 +199,51 @@ user can correct mistakes without starting over.
 
 ```
 Climate Hub
- ├ Hausklima                                   ⋮ Konfigurieren · Rekonfigurieren
- ├ Räume                                       [ + Raum hinzufügen ]
- │    Wohnzimmer ⋮   Küche ⋮   Bad ⋮   Schlafzimmer ⋮
- ├ Außenseiten                                 [ + Außenseite hinzufügen ]
- │    Norden · Straße ⋮   Süden · Garten ⋮   Westen · Hof ⋮
- └ Fenster                                     [ + Fenster hinzufügen ]
+ └ Hausklima                                   ⚙ Konfigurieren   ⋮
+   │   ⋮ > Raum hinzufügen
+   │     > Außenseite hinzufügen
+   │     > Fenster hinzufügen
+   │     > Rekonfigurieren (Hausplan)
+   │     > …                                   (HA's own items)
+   ├ Räume
+   │    Wohnzimmer ⋮   Küche ⋮   Bad ⋮   Schlafzimmer ⋮     ⋮ > Rekonfigurieren · Löschen
+   ├ Außenseiten
+   │    Norden · Straße ⋮   Süden · Garten ⋮   Westen · Hof ⋮
+   └ Fenster
+        Küchenfenster ⋮
 ```
 
-Layout is Home Assistant's. We control the type names, the titles and the order of types.
+Layout is Home Assistant's. We control the type names, the subentry titles and the order of the add items.
 
 ### S6 Raum
 
+**Step 1, add only: Bereich**
+
 ```
-┌─ Raum ─────────────────────────────────────────────────────┐
+┌─ Raum hinzufügen ──────────────────────────────────────────┐
+│ Welcher Bereich ist der Raum? Danach schlage ich die       │
+│ Quellen aus diesem Bereich vor.                            │
+│                                                            │
 │ Bereich         [ Wohnzimmer                           ▾ ] │
-│ Hauptseite      [ Norden · Straße                      ▾ ] │
+│   Gezeigt werden Bereiche mit Temperatursensor oder        │
+│   Thermostat.                                              │
+│                                              [ Weiter ]    │
+└────────────────────────────────────────────────────────────┘
+```
+
+- Area selector, same filter as S2.
+- Error: „{area} ist schon ein Raum." · „{area} ist eine Außenseite."
+
+**Step 2: form (add and edit)**
+
+```
+┌─ Raum: Wohnzimmer ─────────────────────────────────────────┐
+│ Vorgeschlagen aus Wohnzimmer. Prüfe die Reihenfolge.       │
+│ Außenseiten: Norden Straße · Süden Garten · Westen Hof ·   │
+│ Osten keine (dort hilft der Wetterdienst aus).             │
+│                                                            │
+│ Bereich         [ Wohnzimmer                           ▾ ] │
+│ Hauptseite      [ Norden                               ▾ ] │
 │   Von dieser Seite kommt die Außenluft, wenn du hier       │
 │   lüftest. Innenliegende Räume: Keine.                     │
 │                                                            │
@@ -206,26 +261,30 @@ Layout is Home Assistant's. We control the type names, the titles and the order 
 └────────────────────────────────────────────────────────────┘
 ```
 
-- Main side: select with options Norden, Osten, Süden, Westen, Keine. All four directions are always offered (ADR-003).
-  If a direction has no outdoor side yet, the description says the weather service is used until one exists.
-- Temperature sources: entity selector, `multiple` + `reorder`, filtered to temperature sensors and `climate` entities
-  of the room's area plus entities without an area (U6). Pre-filled when adding (R6).
+- Description: the first line only when sources were just suggested (add, or after an area change); the side
+  assignment always.
+- Main side: select with the static options Norden, Osten, Süden, Westen, Keine. All four directions are always offered
+  (ADR-003, agreed 2026-10-13). Which direction has an outdoor side is in the description, not in the labels (§2.4).
+- Temperature sources: entity selector, `multiple` + `reorder`, limited to temperature sensors and `climate` entities
+  of the room's area plus entities without an area (U6). Pre-filled when the sources were suggested (R6).
+- Area: changing it re-opens this form with sources suggested for the new area. Chosen sources without an area stay.
+  Hint in the description: „Bereich geändert: Ich habe die Quellen für {area} neu vorgeschlagen."
 - ▸ Feuchte und Luftdruck: „Feuchtequellen" and „Luftdruckquellen", sortable. Empty means "same devices as
   temperature" (R3), which the description says.
 - ▸ Erweitert: „Höchstalter einer Messung" (minutes; empty = hub default).
-- Errors: area already a room („{area} ist schon ein Raum."), no temperature source („Wähle mindestens eine Temperaturquelle.").
+- Errors: area already a room or an outdoor side (as in step 1), no temperature source („Wähle mindestens eine
+  Temperaturquelle.").
 
 **Preview**
 
 ```
 ┌─ Vorschau: Wohnzimmer ─────────────────────────────────────┐
-│ Jetzt: 21,4 °C aus Klimasensor Wohnzimmer (Quelle 1)       │
+│ Jetzt **21,4 °C** aus Klimasensor Wohnzimmer (Quelle 1).   │
 │ Ersatz bereit:                                             │
-│   2  Luftmesser Wohnzimmer    21,7 °C  Abweichung +0,3 °C  │
-│   3  Thermostat Wohnzimmer    22,6 °C  Abweichung wird     │
-│                                        gelernt             │
-│ Feuchte: 48 % · Luftdruck: 1012 hPa (wie Temperatur)       │
-│ Außen (Norden · Straße): 13,0 °C, 8,4 °C kälter            │
+│ 2. Luftmesser Wohnzimmer: 21,7 °C, Abweichung +0,3 °C      │
+│ 3. Thermostat Wohnzimmer: 22,6 °C, Abweichung wird gelernt │
+│ Feuchte 48 % · Luftdruck 1012 hPa, aus denselben Geräten.  │
+│ Außen (Norden, Straße): 13,0 °C, also 8,4 °C kälter.       │
 │                                                            │
 │  > Speichern                                               │
 │  > Anpassen                                                │
@@ -234,12 +293,26 @@ Layout is Home Assistant's. We control the type names, the titles and the order 
 
 ### S7 Außenseite
 
+**Step 1, add only**
+
 ```
-┌─ Außenseite ───────────────────────────────────────────────┐
-│ Himmelsrichtung   [ Norden                             ▾ ] │
-│ Außenbereich      [ Straße                             ▾ ] │
+┌─ Außenseite hinzufügen ────────────────────────────────────┐
+│ Himmelsrichtung   [ Osten                              ▾ ] │
+│   Nur Richtungen, die noch frei sind.                      │
+│ Außenbereich      [ Terrasse                           ▾ ] │
+│   Gezeigt werden Bereiche mit Temperatursensor.            │
+│                                              [ Weiter ]    │
+└────────────────────────────────────────────────────────────┘
+```
+
+**Step 2: form (add and edit)**
+
+```
+┌─ Außenseite: Osten ────────────────────────────────────────┐
+│ Himmelsrichtung   [ Osten                              ▾ ] │
+│ Außenbereich      [ Terrasse                           ▾ ] │
 │ Temperaturquellen, wichtigste oben                         │
-│   ≡ Klimasensor Straße Temperatur                   ✕      │
+│   ≡ Klimasensor Terrasse Temperatur                 ✕      │
 │   [ + Quelle ]                                             │
 │ ▸ Feuchte und Luftdruck                                    │
 │ ▸ Erweitert                                                │
@@ -247,15 +320,18 @@ Layout is Home Assistant's. We control the type names, the titles and the order 
 └────────────────────────────────────────────────────────────┘
 ```
 
-- Error: direction already used („Für Norden gibt es schon eine Außenseite: Straße.").
-- Preview names the computed fallback chain: „Fällt Norden aus, nehme ich Westen (Hof), dann Süden (Garten),
-  dann den Wetterdienst."
+- Direction: static labels, but only free directions are offered (when editing: the free ones plus its own). The error
+  stays as a safeguard: „Für Norden gibt es schon eine Außenseite: Straße."
+- Area: same re-open rule as S6.
+- Preview names the computed fallback chain: „Fällt Osten aus, nehme ich Norden (Straße) und Süden (Garten), dann
+  Westen (Hof), dann den Wetterdienst."
 
 ### S8 Fenster: Typ
 
 Adding a window starts with its type (variant B, agreed 2026-10-12). The type only decides which contact fields the
 next form shows; tilt discriminator, handle contact and cover are optional in every type, so mixed setups such as
-"double leaf with tilt discriminator" need no extra type.
+"double leaf with tilt discriminator" need no extra type. The explanation under each option needs menu option
+descriptions (Home Assistant 2025.10).
 
 ```
 ┌─ Fenster hinzufügen ───────────────────────────────────────┐
@@ -276,11 +352,10 @@ next form shows; tilt discriminator, handle contact and cover are optional in ev
 
 ```
 ┌─ Einfaches Fenster ────────────────────────────────────────┐
-│ Name            [ Küchenfenster                          ] │
 │ Raum            [ Küche                                ▾ ] │
 │ Kontakt         [ Fensterkontakt Küche                 ▾ ] │
-│   Gezeigt werden Kontakte aus dem Raum und Kontakte ohne   │
-│   Bereich.                                                 │
+│ Name            [                                        ] │
+│   Leer lassen: Ich nehme den Namen des Kontaktgeräts.      │
 │ ▸ Zusatzkontakte                                           │
 │ ▸ Rollladen                                                │
 │ ▸ Erweitert                                                │
@@ -292,10 +367,10 @@ next form shows; tilt discriminator, handle contact and cover are optional in ev
 
 ```
 ┌─ Doppelflügel ─────────────────────────────────────────────┐
-│ Name            [ Wohnzimmerfenster                      ] │
 │ Raum            [ Wohnzimmer                           ▾ ] │
 │ Linker Flügel   [ Fensterflügel links                  ▾ ] │
 │ Rechter Flügel  [ Fensterflügel rechts                 ▾ ] │
+│ Name            [ Wohnzimmerfenster                      ] │
 │ ▾ Zusatzkontakte                                           │
 │     Kipp-Erkennung   [ Drehkontakt Wohnzimmerfenster   ▾ ] │
 │       Ein Kontakt, der nur bei ganz aufgedrehtem Flügel    │
@@ -313,13 +388,13 @@ next form shows; tilt discriminator, handle contact and cover are optional in ev
 
 ```
 ┌─ Durchgang ────────────────────────────────────────────────┐
-│ Name            [ Durchgang Wintergarten                 ] │
 │ Raum            [ Arbeitszimmer                        ▾ ] │
 │ Innere Öffnung  [ Tür zum Wintergarten                 ▾ ] │
 │   Die Öffnung in diesem Raum.                              │
 │ Äußere Öffnung  [ Wintergartenfenster                  ▾ ] │
-│   Die Öffnung nach draußen. Ein Kontakt darf auch zu       │
-│   einem anderen Fenster gehören.                           │
+│   Die Öffnung nach draußen, oft in einem anderen Bereich.  │
+│   Ein Kontakt darf auch zu einem anderen Fenster gehören.  │
+│ Name            [ Durchgang Wintergarten                 ] │
 │ ▸ Rollladen                                                │
 │ ▸ Erweitert                                                │
 │                                              [ Weiter ]    │
@@ -331,31 +406,62 @@ Shared sections (all types):
 - **▸ Zusatzkontakte** (single and double leaf): tilt discriminator, handle contact (W4).
 - **▸ Rollladen**: „Rollladen" (cover entity, optional, SH2). Description: „Dann empfehle ich, wann du beschatten
   solltest. Bewegen tut ihn deine Automation."
-- **▸ Erweitert**: „Ausrichtung" (default „Wie der Raum (Süden)"), „Genaue Ausrichtung in Grad" (optional, SH4),
-  „Lüftet ab" (default gekippt, W3).
+- **▸ Erweitert**: „Ausrichtung" (static options „Wie der Raum", Norden, Osten, Süden, Westen; default „Wie der Raum";
+  the preview names the resulting direction), „Genaue Ausrichtung in Grad" (optional, SH4), „Lüftet ab" (default
+  gekippt, W3).
 
 Field rules:
 
-- Room: area selector. If the area is not a room yet, the preview says „Raum {area} wird mit angelegt" (U4).
-- Contacts: entity selectors for binary sensors with device class window, door, opening or garage door, plus text
-  sensors. Filter: room's area plus entities without an area (U6).
-- Name: pre-filled from the device name of the first contact.
+- Room: area selector, any indoor area. If the area is not a room yet, the preview says „Raum {area} wird mit
+  angelegt" and lists its suggested sources (U4, P1). Error: „{area} ist eine Außenseite."
+- Contacts: entity selectors limited by contact type only, not by area (agreed 2026-10-13, exception to U6): binary
+  sensors with device class window, door, opening or garage door, plus sensors with a text state. Reason:
+  pass-through openings lie in other areas (W5), the room is chosen in the same form (§2.4), and a house has few
+  contacts.
+- Name: optional. Empty means the device name of the first contact (its entity name if it has no device). The preview
+  shows the name that will be used.
+
+### S8d Zustände zuordnen (only for text sensors)
+
+```
+┌─ Zustände zuordnen ────────────────────────────────────────┐
+│ Fenstergriff Bad meldet Text. Ordne jedem Wert eine        │
+│ Stellung zu. Vorbelegt ist, was ich erkannt habe.          │
+│                                                            │
+│ closed          [ zu                                   ▾ ] │
+│ tilted          [ gekippt                              ▾ ] │
+│ open            [ offen                                ▾ ] │
+│                                              [ Weiter ]    │
+└────────────────────────────────────────────────────────────┘
+```
+
+- Added on 2026-10-13: W2 requires a configurable mapping for text sensors, and no screen offered one.
+- Appears after the form only if a chosen contact is a text sensor; one step per such sensor, in add and edit.
+- One select per raw value, options zu / angelehnt / gekippt / offen. Empty means unknown, which is ignored (W8).
+- Raw values come from the sensor's `options` attribute (enum sensors), otherwise from its current state. A value
+  that appears later and is not mapped counts as unknown.
+- The field labels are the raw values themselves (data, not UI text). Pre-filled from common names
+  (closed/geschlossen → zu, tilted/gekippt → gekippt, open/offen → offen).
 
 **Preview**
 
 ```
 ┌─ Vorschau: Wohnzimmerfenster ──────────────────────────────┐
-│ Gerade: gekippt (linker Flügel), seit 12 min               │
-│ Raum Wohnzimmer: geschlossen halten                        │
-│   draußen 8,4 °C kälter · Tagesstrategie: Auskühlen        │
-│   verhindern                                               │
-│ Rollladen: offen lassen (keine Sonne auf der Südseite)     │
+│ Ausrichtung: Norden, wie der Raum.                         │
+│ Gerade **gekippt** (linker Flügel), seit 12 min.           │
+│ Raum Wohnzimmer: **geschlossen lassen**. Draußen ist es    │
+│ 8,4 °C kälter, Tagesstrategie: Auskühlen verhindern.       │
+│ Rollladen: **offen lassen**, auf die Nordseite scheint     │
+│ keine Sonne.                                               │
 │                                                            │
 │  > Speichern                                               │
 │  > Anpassen                                                │
 │  > Typ ändern                                              │
 └────────────────────────────────────────────────────────────┘
 ```
+
+- Name left empty: the first line reads „Name: Küchenfenster, vom Kontaktgerät übernommen."
+- Room not yet a room: a line „Raum Küche wird mit angelegt, Quellen: Klimasensor Küche, Thermostat Küche."
 
 Editing an existing window opens its type form directly; „Typ ändern" in the preview goes back to the type menu.
 
@@ -427,19 +533,44 @@ German names on a German instance; entity IDs are generated once from them (ADR-
 
 Every measurement carries `source`, `stage`, `reason` and, for fallbacks, `offset` as attributes (E6).
 
+Entity IDs in this table assume Home Assistant builds them from device name plus entity name. Since 2026.6 Home
+Assistant may put the area in front of newly generated entity IDs (core PR #170560). A device „Küche Klima" in the
+area Küche could then become `sensor.kuche_kuche_klima_temperatur`. The spike (§7) checks this; if it happens, the
+device name drops `{area}` (ADR-005 is revisited then).
+
 ## 7. To verify on DEV before building (spike)
 
+Supported according to core and frontend source (2026-10-13), no spike needed: sections, menus and reconfigure in
+subentry flows; menu option descriptions (2025.10); `include_entities` on entity selectors; area temperature and
+humidity fields (2025.2); creating and updating other subentries from a flow. Not supported: live forms, select option
+descriptions, entity selectors filtered by area (§2.4).
+
+Still to see on DEV:
+
 1. Sortable entity selector (`multiple` + `reorder`) inside a subentry flow form and inside a section.
-2. Sections in subentry flows; four sections with two selectors each (S3) render well on a phone.
-3. Menu step with a multi-line markdown description as preview (S4, S6).
-4. Area selector filtered by entity device class.
-5. Creating the hub entry together with room and region subentries in one step.
-6. Device name translation with an `{area}` placeholder, and the entity IDs generated from it.
+2. Four sections with two area selectors each (S3) render well on a phone.
+3. Menu step description with a multi-line markdown placeholder (lists, bold, maybe tables) as preview (S4, S6, S8).
+4. Area selector with a list of entity filters (temperature sensor **or** `climate`): does the list combine as „or"?
+5. Hub entry created together with room and region subentries in one step, and the success dialog text after it.
+6. Device name translation with an `{area}` placeholder and the entity IDs generated from it, including the area
+   prefix from core PR #170560 (§6).
+7. Window flow creating a room subentry (U4): does the integration page show it without a reload?
+8. Order of the add items in the ⋮ menu follows the order of `async_get_supported_subentry_types`.
+9. Re-opening a form with replaced suggested values after an area change (S6).
+10. Entity picker shows each contact's area, so the unfiltered contact list (S8) stays usable.
+11. S8d: fields with data keys and no translation show the raw value as label.
+
+The minimum Home Assistant version is at least 2025.10 (menu option descriptions); the ADR follows the spike.
 
 ## 8. Open points for review
 
 1. ~~First setup without windows~~: agreed 2026-10-12, windows are an add-on (W0).
 2. ~~Window form vs. type menu~~: agreed 2026-10-12, type menu first (variant B, S8).
-3. Main side options always show all four directions (S6). Good, or only directions that have an outdoor side?
-4. Entity list (6): anything missing for your dashboard, or anything to create disabled by default?
+3. ~~Main side options~~: agreed 2026-10-13, all four directions plus „Keine", assignment in the description (S6).
+4. Entity list (§6): anything missing for your dashboard, or anything to create disabled by default? Review in the
+   prototype.
 5. ~~Shutters per window~~: agreed 2026-10-12, shading recommendation only, optional cover per window (SH1–SH4).
+6. Defaults (requirements Q5) as shown in S9: review in the prototype.
+7. New in this version: state mapping for text sensors (S8d).
+8. New in this version: „Hinzufügen" lives in the ⋮ menu (S5); the success dialog after the first setup points to it.
+   Enough, or does it need more?
