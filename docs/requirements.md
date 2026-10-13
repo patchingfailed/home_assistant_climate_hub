@@ -191,7 +191,7 @@ Climate Hub **recommends** shading. It never moves covers; automations act on th
 |---|---|---|
 | E1 | M | Entity names come from translations (`has_entity_name`). Measurements carry device class and state class, so they get long-term statistics. |
 | E2 | M | One device per room, region and window, placed in the matching area. The hub device is a service device. |
-| E3 | M | Entity IDs are predictable from the area, so one dashboard template serves all rooms (P7). Device names carry no product prefix: rooms and regions are named "{area} climate" (German: "{Bereich} Klima"), windows use their own name, the hub device is "Home climate" ("Hausklima"). Example: `sensor.kuche_klima_temperatur`. |
+| E3 | M | Entity IDs are predictable from the area, so one dashboard template serves all rooms (P7). Device names carry no product prefix: rooms and regions are named "{area} climate" (German: "{Bereich} Klima"), windows default to "{area} window" ("{Bereich} Fenster", numbered from the second window in a room; pass-through "{Bereich} Durchgang") and can be renamed, the hub device is "Home climate" ("Hausklima"). Example: `sensor.kuche_klima_temperatur`. |
 | E4 | M | Enumerations (recommendation, reason, strategy, window state, comfort position, trend) are enum sensors with translated states and stable raw states. |
 | E5 | M | Unique IDs are based on the subentry, never on display names. Renaming never breaks history. |
 | E6 | M | Each measurement exposes a small, stable attribute set (source, stage, reason, learned offset). Volatile details are excluded from the recorder. The full decision chain is in diagnostics. |

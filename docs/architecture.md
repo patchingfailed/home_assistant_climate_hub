@@ -58,8 +58,11 @@ Sorting inside a subentry flow must be verified on DEV before the room form is b
 ("CH Kitchen") is cryptic.
 
 **Decision.** Integration name "Climate Hub", domain `climate_hub`. Device names are translated with placeholders:
-rooms and regions "{area} climate" / "{Bereich} Klima", windows use their own name, the hub device is
-"Home climate" / "Hausklima". Entity names come from translation keys. Unique IDs derive from subentry IDs only.
+rooms and regions "{area} climate" / "{Bereich} Klima", the hub device is "Home climate" / "Hausklima". Windows use
+the name the user gives them; left empty, the name is "{area} window" / "{Bereich} Fenster" (numbered from the second
+window in a room), stored at creation (amended 2026-10-13: derived compounds such as "Küchenfenster" are not
+reliable, the room-based pattern keeps window entity IDs predictable). Entity names come from translation keys.
+Unique IDs derive from subentry IDs only.
 
 **Consequences.** Example entity ID on a German instance: `sensor.kuche_klima_temperatur`. Entity IDs are generated once
 in the instance language and never change on rename (rule 1). Fused values are distinguishable from raw sensors such as

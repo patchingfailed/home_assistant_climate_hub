@@ -201,7 +201,7 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
   value), „Nebenwert eines Kontakts" / „eines Bewegungsmelders", „Gerätetemperatur" (diagnostic), „abgeleiteter Wert"
   (helper platform), „mehrere Temperaturen am Gerät".
 - Shows each side's computed fallback chain (ADR-003).
-- **Fenster** lists the windows added so far („Küchenfenster (Küche): zu"); without any it says why they help.
+- **Fenster** lists the windows added so far („Küche Fenster: zu"); without any it says why they help.
 - „Fenster hinzufügen (optional)" runs S8 → S8d → window preview; „Speichern" there returns to this preview.
 - „Anlegen" creates the hub entry with all room, region and window subentries in one step. The success dialog says:
   „Fertig. Quellen änderst du pro Raum: ⋮ beim Raum → Rekonfigurieren. Weitere Fenster: ⋮ beim Eintrag Hausklima →
@@ -224,7 +224,7 @@ Climate Hub
    ├ Außenseiten
    │    Norden · Straße ⋮   Süden · Garten ⋮   Westen · Hof ⋮
    └ Fenster
-        Küchenfenster ⋮
+        Küche Fenster ⋮
 ```
 
 Layout is Home Assistant's. We control the type names, the subentry titles and the order of the add items.
@@ -379,7 +379,7 @@ descriptions (Home Assistant 2025.10).
 │ Raum            [ Küche                                ▾ ] │
 │ Kontakt         [ Fensterkontakt Küche                 ▾ ] │
 │ Name            [                                        ] │
-│   Leer lassen: Ich nehme den Namen des Kontaktgeräts.      │
+│   Leer lassen: Ich nenne es nach dem Raum: Küche Fenster.  │
 │ ▸ Zusatzkontakte                                           │
 │ ▸ Rollladen                                                │
 │ ▸ Erweitert                                                │
@@ -394,14 +394,14 @@ descriptions (Home Assistant 2025.10).
 │ Raum            [ Wohnzimmer                           ▾ ] │
 │ Linker Flügel   [ Fensterflügel links                  ▾ ] │
 │ Rechter Flügel  [ Fensterflügel rechts                 ▾ ] │
-│ Name            [ Wohnzimmerfenster                      ] │
-│ ▾ Zusatzkontakte                                           │
-│     Kipp-Erkennung   [ Drehkontakt Wohnzimmerfenster   ▾ ] │
-│       Ein Kontakt, der nur bei ganz aufgedrehtem Flügel    │
-│       „offen" meldet. Damit unterscheide ich gekippt und   │
-│       offen.                                               │
-│     Griffkontakt     [                                 ▾ ] │
-│       Griff gedreht, Flügel noch zu: angelehnt.            │
+│ Kontakt zwischen den Flügeln (optional)                    │
+│                 [ Kontakt unten Wohnzimmer             ▾ ] │
+│   Sitzt meist unten zwischen den Flügeln und meldet nur    │
+│   „offen", wenn ein Flügel ganz aufgedreht ist. Damit      │
+│   unterscheide ich gekippt und offen.                      │
+│ Name            [                                        ] │
+│   Leer lassen: Ich nenne es nach dem Raum.                 │
+│ ▸ Zusatzkontakte                                           │
 │ ▸ Rollladen                                                │
 │ ▸ Erweitert                                                │
 │                                              [ Weiter ]    │
@@ -427,7 +427,10 @@ descriptions (Home Assistant 2025.10).
 
 Shared sections (all types):
 
-- **▸ Zusatzkontakte** (single and double leaf): tilt discriminator, handle contact (W4).
+- **▸ Zusatzkontakte**: single leaf: tilt discriminator („Kipp-Erkennung", helper: „Zweiter Kontakt am Flügel, meist
+  unten. Er meldet nur „offen", wenn der Flügel ganz aufgedreht ist.") and handle contact (W4). Double leaf: handle
+  contact only, because its tilt discriminator is a main field („Kontakt zwischen den Flügeln", S8b, W12). Users
+  look for the contact by where it sits, not by its role (prototype review 2026-10-13).
 - **▸ Rollladen**: „Rollladen" (cover entity, optional, SH2). Description: „Dann empfehle ich, wann du beschatten
   solltest. Bewegen tut ihn deine Automation."
 - **▸ Erweitert**: „Ausrichtung" (static options „Wie der Raum", Norden, Osten, Süden, Westen; default „Wie der Raum";
@@ -442,8 +445,10 @@ Field rules:
   sensors with device class window, door, opening or garage door, plus sensors with a text state. Reason:
   pass-through openings lie in other areas (W5), the room is chosen in the same form (§2.4), and a house has few
   contacts.
-- Name: optional. Empty means the device name of the first contact (its entity name if it has no device). The preview
-  shows the name that will be used.
+- Name: optional. Empty means a name from the room: „{area} Fenster" (pass-through: „{area} Durchgang"), numbered
+  from the second one in the same room („Küche Fenster 2"). The preview shows it, and saving stores it, so it stays
+  stable and editable. Agreed 2026-10-13: room-based names give predictable entity IDs (P7,
+  `sensor.kuche_fenster_zustand`); compounds like „Küchenfenster" cannot be derived reliably.
 
 ### S8d Zustände zuordnen (only for text sensors)
 
@@ -470,7 +475,7 @@ Field rules:
 **Preview**
 
 ```
-┌─ Vorschau: Wohnzimmerfenster ──────────────────────────────┐
+┌─ Vorschau: Wohnzimmer Fenster ─────────────────────────────┐
 │ Ausrichtung: Norden, wie der Raum.                         │
 │ Gerade **gekippt** (linker Flügel), seit 12 min.           │
 │ Raum Wohnzimmer: **geschlossen lassen**. Draußen ist es    │
@@ -484,15 +489,15 @@ Field rules:
 └────────────────────────────────────────────────────────────┘
 ```
 
-- Name left empty: the first line reads „Name: Küchenfenster, vom Kontaktgerät übernommen."
+- Name left empty: the first line reads „Name: Küche Fenster, nach dem Raum benannt."
 - Room not yet a room: a line „Raum Küche wird mit angelegt, Quellen: Klimasensor Küche, Thermostat Küche."
 
 Editing an existing window opens its type form directly; „Typ ändern" in the preview goes back to the type menu.
 Started from the first-setup preview (S4), the room field offers the rooms of that setup, and „Speichern" returns to S4.
 
 Example for W12 (double leaf with a shared tilt discriminator at the bottom between the leaves): left and right
-leaf contact at the top of each leaf, the bottom contact as „Kipp-Erkennung". Left open at the top and bottom open
-means the left leaf is turned open; bottom closed means it is tilted.
+leaf contact at the top of each leaf, the bottom contact as „Kontakt zwischen den Flügeln". Left open at the top and
+bottom open means the left leaf is turned open; bottom closed means it is tilted.
 
 ## 5. Screens: hub
 
@@ -544,11 +549,11 @@ Only climate-grade sources (R6) raise it; contacts, motion sensors and helpers n
 
 ```
 Climate Hub: Fenster in der Küche haben keinen Raum mehr
-Der Raum Küche wurde gelöscht. Küchenfenster meldet weiter, ob es offen
+Der Raum Küche wurde gelöscht. Küche Fenster meldet weiter, ob es offen
 ist, aber ohne Raum gibt es keine Empfehlung.
                                                         [ Reparieren ]
   → Fix flow, menu:  > Raum Küche wieder anlegen
-                     > Fenster löschen (Küchenfenster)
+                     > Fenster löschen (Küche Fenster)
 ```
 
 „Raum wieder anlegen" shows the room preview with suggested sources (S6) before saving. Both options resolve the issue.
@@ -577,9 +582,9 @@ German names on a German instance; entity IDs are generated once from them (ADR-
 | | Offen bei Heizen/Kühlen | binary_sensor (only with windows and heating/cooling devices, A12) | |
 | | Fenster | enum: zu / angelehnt / gekippt / offen, most open window of the room (only with windows, W9) | `sensor.wohnzimmer_klima_fenster` |
 | | Fenster offen seit | sensor, timestamp, earliest open window (only with windows) | |
-| Wohnzimmerfenster | Zustand | enum: zu / angelehnt / gekippt / offen (+ open leaves attribute) | `sensor.wohnzimmerfenster_zustand` |
+| Wohnzimmer Fenster | Zustand | enum: zu / angelehnt / gekippt / offen (+ open leaves attribute) | `sensor.wohnzimmer_fenster_zustand` |
 | | Offen seit | sensor, timestamp | |
-| | Beschattung | enum: beschatten / beschattet lassen / öffnen / offen lassen / keine (+ reason); enabled by default only with a cover (SH1, SH2) | `sensor.wohnzimmerfenster_beschattung` |
+| | Beschattung | enum: beschatten / beschattet lassen / öffnen / offen lassen / keine (+ reason); enabled by default only with a cover (SH1, SH2) | `sensor.wohnzimmer_fenster_beschattung` |
 | Straße Klima | Temperatur, Luftfeuchtigkeit, Luftdruck, Absolute Feuchte, Taupunkt | sensors (+ stage attribute) | `sensor.strasse_klima_temperatur` |
 | Hausklima | Wunschtemperatur min / max, Schwelle | number | `number.hausklima_wunschtemperatur_max` |
 | | Tagesstrategie | enum: Aufheizen verhindern / Auskühlen verhindern / neutral | |
