@@ -178,7 +178,7 @@ Climate Hub **recommends** shading. It never moves covers; automations act on th
 | U3 | M | Every field from creation is editable later, including fields that were left empty. |
 | U4 | M | No creation-order dependencies (P3). Adding a window in an area that has no room yet creates the room with suggestions (after confirmation) instead of failing. |
 | U5 | M | Priorities are set by sorting a list. There are no rank dropdowns. |
-| U6 | M | Pickers are filtered by context: entities of the object's area plus entities without any area. Already selected entities always stay visible. If the filter finds nothing, it is lifted. Exception: window contacts are filtered by contact type only, because pass-through openings lie in other areas (W5). |
+| U6 | M | Pickers are filtered by context: entities of the object's area plus entities without any area. Already selected entities always stay visible. If the filter finds nothing, it is lifted. Window forms offer "show all contacts", which re-opens the form unfiltered; the outer opening of a pass-through always lists all contacts, because it usually lies in another area (W5). |
 | U7 | M | **Preview before saving** with live values: "Temperature 21.4 °C from source #1, humidity 48 %, outside (North) 12.1 °C, stage primary". |
 | U8 | M | All texts come from translations (English and German). Every field has a short description. Domain terms come with an example sentence. |
 | U9 | M | Expert values sit in collapsed sections with good defaults. A typical room needs zero expert values. |

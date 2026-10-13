@@ -63,7 +63,9 @@ one the sources were suggested for, the form opens once more with sources sugges
 
 ```mermaid
 flowchart LR
-  T{Type} --> F[Form for that type]
+  R[Room step, add only] --> T{Type}
+  T --> F[Form for that type]
+  F -- show all contacts / room changed --> F
   F -- text sensor chosen --> M[State mapping]
   F --> P{Preview}
   M --> P
@@ -71,6 +73,9 @@ flowchart LR
   P -- Anpassen --> F
   P -- Typ ändern --> T
 ```
+
+Adding starts with the room, so the contact pickers can list that room's contacts first (U6). „Alle Kontakte zeigen"
+in the form re-opens it with all contacts (not live, §2.4). Editing opens the form directly.
 
 The preview is a menu step. Its text shows live values at the moment it opens. Its options lead back to the form, so the
 user can correct mistakes without starting over.
@@ -88,6 +93,10 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 - **Previews are markdown** in a menu step description, assembled from translated fragments. Column alignment in the
   screens below is illustrative only.
 - **Entity pickers cannot filter by area.** Context filters (U6) are precomputed entity lists (`include_entities`).
+- **Entity pickers sort by themselves** (alphabetically, or by search score while typing); a given order is ignored.
+  Each row shows „area ▸ device" (the entity's own area first, else its device's), and typing an area name finds the
+  entities in that area. There is no built-in filter toggle or grouping.
+- **A select with `multiple` and `custom_value`** renders chips plus a field for free text (used in S8d).
 - **„Hinzufügen" for subentries** sits in the entry's ⋮ menu, ordered as the integration lists the types.
 
 ## 3. Screens: first setup
@@ -362,15 +371,25 @@ both cards, which is more confusing than helpful. Not planned.
 - Preview names the computed fallback chain: „Fällt Osten aus, springen Norden (Straße) und Süden (Garten) ein,
   dann Westen (Hof), dann der Wetterdienst."
 
-### S8 Fenster: Typ
+### S8 Fenster: Raum und Typ
 
-Adding a window starts with its type (variant B, agreed 2026-10-12). The type only decides which contact fields the
+Adding a window starts with its room (agreed 2026-10-13, second prototype review), then its type (variant B, agreed
+2026-10-12). The type only decides which contact fields the
 next form shows; tilt discriminator, handle contact and cover are optional in every type, so mixed setups such as
 "double leaf with tilt discriminator" need no extra type. The explanation under each option needs menu option
 descriptions (Home Assistant 2025.10).
 
 ```
 ┌─ Fenster hinzufügen ───────────────────────────────────────┐
+│ In welchem Raum ist das Fenster?                           │
+│                                                            │
+│ Raum            [ Küche                                ▾ ] │
+│                                              [ Weiter ]    │
+└────────────────────────────────────────────────────────────┘
+```
+
+```
+┌─ Fenster hinzufügen: Küche ────────────────────────────────┐
 │ Was für ein Fenster ist es?                                │
 │                                                            │
 │  > Einfaches Fenster oder Tür                              │
@@ -387,9 +406,11 @@ descriptions (Home Assistant 2025.10).
 ### S8a Einfaches Fenster oder Tür
 
 ```
-┌─ Einfaches Fenster ────────────────────────────────────────┐
+┌─ Einfaches Fenster: Küche ─────────────────────────────────┐
 │ Raum            [ Küche                                ▾ ] │
 │ Kontakt         [ Fensterkontakt Küche                 ▾ ] │
+│   Gezeigt: Bereich Küche und Kontakte ohne Bereich.        │
+│ Alle Kontakte zeigen                                [ ]    │
 │ Name            [                                        ] │
 │   Leer lassen: Name nach dem Raum, z. B. Küche Fenster.    │
 │ ▸ Zusatzkontakte                                           │
@@ -402,7 +423,7 @@ descriptions (Home Assistant 2025.10).
 ### S8b Doppelflügel
 
 ```
-┌─ Doppelflügel ─────────────────────────────────────────────┐
+┌─ Doppelflügel: Wohnzimmer ─────────────────────────────────┐
 │ Raum            [ Wohnzimmer                           ▾ ] │
 │ Linker Flügel   [ Fensterflügel links                  ▾ ] │
 │ Rechter Flügel  [ Fensterflügel rechts                 ▾ ] │
@@ -411,6 +432,7 @@ descriptions (Home Assistant 2025.10).
 │   Sitzt meist unten zwischen den Flügeln und meldet nur    │
 │   „offen", wenn ein Flügel ganz aufgedreht ist. So lassen  │
 │   sich gekippt und offen unterscheiden.                    │
+│ Alle Kontakte zeigen                                [ ]    │
 │ Name            [                                        ] │
 │   Leer lassen: Name nach dem Raum.                         │
 │ ▸ Zusatzkontakte                                           │
@@ -423,13 +445,15 @@ descriptions (Home Assistant 2025.10).
 ### S8c Durchgang
 
 ```
-┌─ Durchgang ────────────────────────────────────────────────┐
+┌─ Durchgang: Arbeitszimmer ─────────────────────────────────┐
 │ Raum            [ Arbeitszimmer                        ▾ ] │
 │ Innere Öffnung  [ Tür zum Wintergarten                 ▾ ] │
 │   Die Öffnung in diesem Raum.                              │
+│ Alle Kontakte zeigen                                [ ]    │
 │ Äußere Öffnung  [ Wintergartenfenster                  ▾ ] │
-│   Die Öffnung nach draußen, oft in einem anderen Bereich.  │
-│   Ein Kontakt darf auch zu einem anderen Fenster gehören.  │
+│   Die Öffnung nach draußen. Hier stehen alle Kontakte,     │
+│   denn sie liegt meist in einem anderen Bereich. Ein       │
+│   Kontakt darf auch zu einem anderen Fenster gehören.      │
 │ Name            [ Durchgang Wintergarten                 ] │
 │ ▸ Rollladen                                                │
 │ ▸ Erweitert                                                │
@@ -451,12 +475,14 @@ Shared sections (all types):
 
 Field rules:
 
-- Room: area selector, any indoor area. If the area is not a room yet, the preview says „Raum {area} wird mit
-  angelegt" and lists its suggested sources (U4, P1). Error: „{area} ist eine Außenseite."
-- Contacts: entity selectors limited by contact type only, not by area (agreed 2026-10-13, exception to U6): binary
-  sensors with device class window, door, opening or garage door, plus sensors with a text state. Reason:
-  pass-through openings lie in other areas (W5), the room is chosen in the same form (§2.4), and a house has few
-  contacts.
+- Room: area selector in the room step (add) and in the form (edit), any indoor area. If the area is not a room yet,
+  the preview says „Raum {area} wird mit angelegt" and lists its suggested sources (U4, P1). Error: „{area} ist eine
+  Außenseite." Changing the room in the form re-opens it with the new room's contacts.
+- Contacts: entity selectors for binary sensors with device class window, door, opening or garage door, plus sensors
+  with a text state, limited to the room's area plus entities without an area (U6; agreed 2026-10-13, second
+  prototype review). „Alle Kontakte zeigen" re-opens the form with all contacts of these types (not live, §2.4);
+  chosen contacts always stay visible. The outer opening of a pass-through always lists all contacts, because it
+  usually lies in another area (W5). Picker rows show „area ▸ device", and typing a room name narrows the list.
 - Name: optional. Empty means „Fenster" (pass-through: „Durchgang"), numbered from the second one in the same room.
   The integration page shows it with the room („Küche Fenster", „Küche Fenster 2"); the device itself is named
   without the area and sits in it, so the entity IDs read `sensor.kuche_fenster_zustand` (ADR-007). The preview shows
@@ -511,7 +537,7 @@ Field rules:
 - Room not yet a room: a line „Raum Küche wird mit angelegt, Quellen: Klimasensor Küche, Thermostat Küche."
 
 Editing an existing window opens its type form directly; „Typ ändern" in the preview goes back to the type menu.
-Started from the first-setup preview (S4), the room field offers the rooms of that setup, and „Speichern" returns to S4.
+Started from the first-setup preview (S4), the room step offers the rooms of that setup, and „Speichern" returns to S4.
 
 Example for W12 (double leaf with a shared tilt discriminator at the bottom between the leaves): left and right
 leaf contact at the top of each leaf, the bottom contact as „Kontakt zwischen den Flügeln". Left open at the top and
