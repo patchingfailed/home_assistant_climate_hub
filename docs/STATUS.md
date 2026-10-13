@@ -16,8 +16,12 @@ No product code exists yet.
 2. **Minimum HA version** as an ADR (at least 2025.10 for menu option descriptions; the spike ran on 2026.10.1).
 3. **Logic spec and pure logic modules** with table tests: psychrometrics (absolute humidity, dew point, humidity after
    ventilating), source resolution with offset learning, region fallback, window state (incl. the W12 table),
-   recommendation (A1–A6, A12), shading (SH1). The R6 pre-fill rules need unit tests: DEV's mirrored entities have
-   no devices.
+   recommendation (A1–A6, A12), shading (SH1), pre-fill (R3, R6). The pre-fill rules need unit tests: DEV's mirrored
+   entities have no devices.
+   How: write `docs/logic.md` first (rules, inputs/outputs, table cases per module; requirement IDs), Felix reviews it,
+   then Sonnet implementers build `custom_components/climate_hub/logic/` + `tests/logic/` module by module
+   (rule 6: no HA imports, `now` as a parameter). Branch off `planning/kickoff`. The spike branch `spike/native-ui`
+   shows working flow/subentry/repair idioms for the later UI build (reference only, never merge).
 4. **CI**: pytest, ruff, hassfest, HACS validation.
 5. After the review: remove the spike from DEV.
 
