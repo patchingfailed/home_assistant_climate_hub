@@ -10,7 +10,7 @@ No product code exists yet.
 
 ## Next
 
-1. **Rest of the click review on DEV** (Felix, optional): §7 items 1 (drag-sorting), 3 (markdown table), 5 (success
+1. **Rest of the click review on DEV** (Felix, optional): §7 items 3 (markdown table), 5 (success
    text), 10 (area per picker row). Item 2 (phone) is skipped by choice. DEV has a few mirrored entities assigned to
    areas as test fixtures (list and undo in the private local notes).
 2. **Minimum HA version** as an ADR (at least 2025.10 for menu option descriptions; the spike ran on 2026.10.1).

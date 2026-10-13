@@ -675,7 +675,7 @@ in the UI.
 
 | # | Check | Result |
 |---|---|---|
-| 1 | Sortable entity selector in a subentry form and in a section | Works (API, frontend source); drag-sorting: eyes |
+| 1 | Sortable entity selector in a subentry form and in a section | Works; drag-sorting confirmed by Felix in the UI |
 | 2 | S3: four sections with two area selectors, on a phone | Serialises (`expandable`, expanded); works on desktop. Phone not tested, accepted by Felix (2026-10-13) |
 | 3 | Markdown preview from a placeholder | Works: menu descriptions render GFM markdown incl. tables; look: eyes |
 | 4 | Area selector with a list of entity filters | Works: the frontend combines the list with „or". It still shows outdoor areas, so S2 and S3 now use computed lists |
