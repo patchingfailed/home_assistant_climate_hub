@@ -14,8 +14,8 @@ table. No integration code exists yet.
    choices to confirm or reject: S1 counts computed from the scan, S4 lists all further sources per room, a room
    without a main side defaults to „Keine".
 2. **DEV spike** on a throwaway branch for `docs/ui_mockups.md` §7 (12 items, incl. the area prefix in entity IDs).
-   DEV is clean (no old `climate_hub` entries, entities, devices or folder; checked 2026-10-13). `deploy.ps1 -Restart`
-   and `-Logs` need `HA_DEV_TOKEN` in the shell (not set yet).
+   DEV is clean (no old `climate_hub` entries, entities, devices or folder; checked 2026-10-13). The DEV token comes
+   from the repo's gitignored `.env` (`HA_TOKEN`), used by `deploy.ps1` and `ha.py`; verified against the DEV API.
 3. **Minimum HA version** as an ADR after the spike (at least 2025.10 for menu option descriptions).
 4. **Logic spec and pure logic modules** with table tests: psychrometrics (absolute humidity, dew point, humidity after
    ventilating), source resolution with offset learning, region fallback, window state, recommendation (A1–A6),
