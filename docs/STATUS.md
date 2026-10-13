@@ -23,11 +23,12 @@ No product code exists yet.
 
 ## Open decisions
 
-- U11: native UI vs. custom panel. Every mechanism the mockups need works natively (spike, §7); proposal: close U11
-  as native and confirm ADR-001.
+- None. Next design work: the logic spec (Next 3).
 
 ## Recently done
 
+- 2026-10-13: U11 closed, native UI (ADR-001 confirmed). R3: humidity and pressure follow the temperature devices;
+  without such devices the list is pre-filled from the area. Drag-sorting confirmed on DEV.
 - 2026-10-13: second click review on DEV folded into the mockups. Copy rule (no first person). S8d with one field per
   position. Windows start with the room; contacts filtered with „Alle Kontakte zeigen". S2/S3 use computed lists,
   S2 pre-selects by floors and thermostats. S5 shows the real card layout. Verified on DEV: yes (spike, UI).

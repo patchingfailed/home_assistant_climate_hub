@@ -329,7 +329,8 @@ both cards, which is more confusing than helpful. Not planned.
 - Thermostats and air conditioners also deliver humidity when they report it (R5), so they can appear in the
   humidity order too.
 - ▸ Feuchte und Luftdruck: „Feuchtequellen" and „Luftdruckquellen", sortable. Empty means "same devices as
-  temperature" (R3), which the description says.
+  temperature" (R3), which the description says. If those devices deliver no humidity or pressure, the list is
+  pre-filled at creation from the area's sensors of that metric (R3, R6). The preview always names the active source.
 - ▸ Heizen und Kühlen: „Heiz- und Klimageräte" (`climate` entities, multiple), pre-filled with the area's `climate`
   entities (R15). Description: „Sie werden nur gelesen, nie gesteuert. Läuft eines, während ein Fenster länger
   als zum Stoßlüften offen ist, gibt es eine Warnung." Open while adding, collapsed when editing.

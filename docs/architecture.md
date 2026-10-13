@@ -14,6 +14,8 @@ drag-and-drop and live views, but needs its own frontend build, a WebSocket API 
 **Consequences.** Lower build and maintenance cost. No live-updating forms: previews are snapshots rendered when a step
 opens. The data model must not depend on the UI technology, so a panel can be added later without migration.
 
+**Confirmed 2026-10-13** after the DEV spike: every mechanism the approved mockups need works natively (U11 closed).
+
 ## ADR-002: One hub entry with subentries `room`, `region`, `window` (2026-10-12)
 
 **Context.** Rooms, outdoor regions and windows are many similar objects that reference each other. Separate config

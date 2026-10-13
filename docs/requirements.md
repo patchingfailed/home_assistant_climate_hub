@@ -65,7 +65,7 @@ but they do not want to wade through settings.
 |---|---|---|
 | R1 | M | A room is created for exactly one indoor Home Assistant area. The area cannot be used by a second room. |
 | R2 | M | The user ranks the **temperature sources** in a sortable list. The highest-ranked valid source wins. |
-| R3 | M | Humidity and pressure sources follow the devices of the temperature list in the same order by default. The user can override them with an own sortable list per metric. |
+| R3 | M | Humidity and pressure sources follow the devices of the temperature list in the same order by default (an empty list means "follow"). The user can override them with an own sortable list per metric. If the temperature devices deliver no humidity or pressure (for example sensors without a device), that list is pre-filled at creation from the area's climate-grade sensors of the metric (R6 rules). |
 | R4 | M | A source is valid if its value is numeric, it is not `unavailable`/`unknown`, its unit converts to the metric's unit, and it reported within the maximum age (freshness from `last_reported`). |
 | R5 | M | `climate` entities contribute their current temperature and, if they report it, their current humidity (`current_humidity`, for example wall thermostats and air conditioners). Never a setpoint. |
 | R6 | M | When a room is created, the source list is **pre-filled with climate-grade sources only**: devices with exactly one temperature entity plus humidity first, then devices that only measure and have exactly one temperature entity, `climate` entities last. Not pre-filled: diagnostic entities (device temperature of plugs, routers and similar); temperatures of devices whose main purpose is something else (window and door contacts, motion sensors, lights, air-conditioner outdoor units); devices with several temperature entities (heat pumps, servers); entities without a device; derived values from helper platforms (template, min/max, statistics, filter, comfort calculations); values outside a plausible room range at setup time (for example a fridge). They stay selectable, and the preview names them with the reason. Climate Hub's own entities are never offered, so no source can feed on itself. |
@@ -183,7 +183,7 @@ Climate Hub **recommends** shading. It never moves covers; automations act on th
 | U8 | M | All texts come from translations (English and German). Every field has a short description. Domain terms come with an example sentence. |
 | U9 | M | Expert values sit in collapsed sections with good defaults. A typical room needs zero expert values. |
 | U10 | M | Mockups (screens, fields, texts, errors) are approved before UI code is written. |
-| U11 | M | Decision point after the mockups and the first DEV test: if the native UI cannot meet U1–U9, move management into a custom panel. |
+| U11 | M | Decision point after the mockups and the first DEV test: if the native UI cannot meet U1–U9, move management into a custom panel. **Decided 2026-10-13: native UI** (every mechanism the approved mockups need works natively, `docs/ui_mockups.md` §7; ADR-001). |
 
 ### 4.8 Entities and naming
 
