@@ -19,6 +19,7 @@ custom_components/climate_hub/  integration (logic/ = pure logic without HA impo
 tests/                          pytest (logic/, flows/, integration/)
 docs/                           requirements.md, STATUS.md, architecture.md (ADRs), ui_mockups.md
 scripts/deploy.ps1              deploy to DEV (hosts/tokens only in scripts/deploy.config.ps1, gitignored)
+win_compat.py                   pytest plugin: stubs Unix-only modules so HA tests start on Windows
 local input/                    private, gitignored raw material (never referenced from code or docs)
 ```
 
@@ -26,7 +27,8 @@ local input/                    private, gitignored raw material (never referenc
 
 ```powershell
 .venv\Scripts\activate
-python -m pytest                 # all tests (Windows socket fix in tests/conftest.py)
+pip install -r requirements_test.txt   # once, after creating .venv with py -3.14
+python -m pytest                 # all tests (Windows: win_compat.py + socket fix in tests/conftest.py)
 ruff check . ; ruff format .
 .\scripts\deploy.ps1             # DEV, copy only
 .\scripts\deploy.ps1 -Restart    # DEV + restart (new file / manifest / platform / translations)
