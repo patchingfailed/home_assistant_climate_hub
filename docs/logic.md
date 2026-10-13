@@ -428,8 +428,8 @@ class ForecastBias:              # persisted
     obs_min: float | None
     covered: timedelta           # time with a valid own-sensor house outdoor value that day
 
-def update_forecast_bias(state: ForecastBias | None, points, hourly: bool, house_outdoor: OutdoorValue,
-                         now: datetime) -> ForecastBias
+def update_forecast_bias(state: ForecastBias | None, points, hourly: bool, observed: float | None,
+                         now: datetime) -> ForecastBias   # observed: house outdoor from own sensors, else None
 def daily_strategy(points: Sequence[ForecastPoint] | None, hourly: bool, now: datetime, c_min: float,
                    c_max: float, threshold: float, bias: ForecastBias | None,
                    prev: Strategy | None) -> StrategyResult   # strategy + raw and corrected f_max / f_min
@@ -481,7 +481,7 @@ Bias learning cases (daily maximum; the minimum works the same way):
 | 2 | 26.0 | 27.5 | 24 h | +1.5 | 2.25 | 2 |
 | 3 | 30.0 | 32.0 | 24 h | +2.0 | 2.1875 | 3 |
 | 4 | 25.0 | 29.0 | 17 h | – | 2.1875 | 3 |
-| 5 | no forecast stored (restart at noon) | 27.0 | 24 h | – | 2.1875 | 3 |
+| 5 | no forecast stored (first evaluation at noon: only 12 hourly points left) | 27.0 | ≈ 12 h | – | 2.1875 | 3 |
 | 1 (new) | 20.0 | 29.0 | 24 h | +9.0 | 5.0 (clamped) | 1 |
 
 ## 8. Module `window` (W2–W12, scenarios 5–8)
@@ -493,9 +493,10 @@ class OpenLeaves(StrEnum): NONE, LEFT, RIGHT, BOTH, UNKNOWN     # double leaf on
 
 def contact_level(raw: str | None, kind: ContactKind, mapping: Mapping[Level, frozenset[str]] | None) -> Level | None
 def window_level(config: WindowConfig, levels: Mapping[str, Level | None]) -> WindowLevel   # level, open_leaves, implausible
-def debounce(raw: Level | None, prev: Debounced | None, now: datetime) -> Debounced           # 5 s
-def open_since(stable: WindowLevel, debounced: Debounced, min_level: Level, prev: datetime | None,
+def debounce(raw: Level | None, prev: Debounced | None, now: datetime, min_level: Level) -> Debounced  # 5 s
+def open_since(debounced: Debounced, min_level: Level, prev: datetime | None,
                startup_hint: datetime | None) -> datetime | None                              # persisted
+def suggest_text_mapping(texts, words: Mapping[Level, frozenset[str]]) -> Mapping[Level, frozenset[str]]  # S8d
 def room_windows(windows: Sequence[WindowState]) -> RoomWindows                               # W9
 ```
 
@@ -506,13 +507,15 @@ Contact mapping (W2):
 - `unavailable`, `unknown`, empty: `None` (W8).
 - Default words for S8d, instance language plus English: closed {zu, geschlossen, verriegelt, abgeschlossen, closed,
   locked}, ajar {angelehnt, ajar}, tilted {gekippt, kipp, tilted}, open {offen, open}. Known texts of the sensor that
-  match a default word are pre-assigned; the rest are offered unassigned.
+  match a default word are pre-assigned; the rest are offered unassigned. The words come from the translations and
+  are passed to `suggest_text_mapping`; none are hardcoded.
 
 Level rules (applied in this order):
 1. **Leaves** (single window: one leaf). If every leaf is known: `leaf = max(leaves)`. If some leaf is unknown: the
    known maximum if it is at least tilted (a moving leaf is certain), else unknown (D9: never closed by assumption).
 2. **Tilt discriminator** (optional, refiner). Reports open: the window is `open`, whatever the leaves say; if no
-   known leaf is moved (above ajar) the state is flagged *implausible* (W12 last row) and `open_leaves` is unknown.
+   known leaf is moved (above ajar), `open_leaves` is unknown, and if every leaf is known the state is flagged
+   *implausible* (W12 last row; an unknown leaf may be the moved one).
    Reports closed: a leaf level of `open` becomes `tilted` (the leaf moved but is not turned). Unknown: ignored.
 3. **Handle contact** (optional, refiner). Leaf level `closed` and handle open: `ajar` (scenario 6). Leaf level above
    closed: ignored. Unknown: ignored.
@@ -623,8 +626,8 @@ heating/cooling activity, and the options (humidity threshold, burst duration). 
 
 Evaluation order (the first step that decides wins):
 
-1. **Data.** No room (window outputs only, W11): `none` / `no_room`. `t_in` or `t_out` missing: `none` / `no_data`
-   (A5); the goal state is kept. Invalid comfort range: `none` / `comfort_range_invalid`.
+1. **Data.** `t_in` or `t_out` missing: `none` / `no_data`
+   (A5); the goal state is kept. (Windows without a room, W11, get `no_room` on their cover output, §10.) Invalid comfort range: `none` / `comfort_range_invalid`.
 2. **Humidity guard (D8).** `rh_after = humidity_after_ventilating(t_in, dew_point_out)`. The guard engages at
    `rh_after ≥ threshold` and releases at `rh_after < threshold − 5`. Unknown `rh_after` leaves the guard off.
 3. **Thermal goal.** Cooling target: `c_min` on *prevent heat-up* days (D6), else `middle`.
@@ -671,7 +674,6 @@ Reasons (attribute `reason`, translated; German draft):
 | `no_benefit` | Lüften hilft gerade nicht | close, keep_closed |
 | `no_data` | Werte fehlen | none |
 | `comfort_range_invalid` | Wunschbereich ungültig (Minimum über Maximum) | none |
-| `no_room` | Fenster ohne Raum | none |
 
 Cases. Comfort 20–24 (middle 22), humidity threshold 60 %, burst 10 min, pause 1 h, room humidity 50 % unless stated. Position, relation and dryness
 follow from the values (§6) with the previous state of the row above.
@@ -808,7 +810,8 @@ Rules:
    | d | sun on the window | open | `no_heat_risk` |
    | e | otherwise | open | `no_sun` |
 6. **Open window guard:** wanted closed while the window's level is `open` gives `none` / `window_open` (a closing
-   cover could lock someone out at a door). Tilted, ajar and unknown levels do not block.
+   cover could lock someone out at a door). Tilted, ajar and unknown levels do not block. The guard applies after
+   the hold (rule 7), so a held `closed` is blocked too.
 7. **Hold:** the wanted state changes only after the previous one was held for 15 min; a held state keeps its reason.
    Changes to and from `none` are immediate.
 8. **Cover state (SH2):** closed when `current_position ≤ 50`, or state `closed` without a position; `opening`,
@@ -882,9 +885,10 @@ def classify(entity: EntityInfo, device_entities: Sequence[EntityInfo], metric: 
              scope: Scope) -> Tier | Exclusion | None      # None: never offered (own entity)
 def suggest_sources(area_id, entities, metric, scope) -> Suggestion   # ordered sources + excluded with reasons
 def follow_devices(temperature_sources, entities, metric) -> list[str]  # R3 "follow"
-def suggest_metric_list(temperature_sources, area_id, entities, metric) -> list[str]  # [] means follow
+def suggest_metric_list(temperature_sources, area_id, entities, metric, scope) -> list[str]  # [] means follow
 def suggest_climate_devices(area_id, entities) -> list[str]           # R15
-def propose_rooms(areas: Sequence[AreaInfo], outside_words: frozenset[str]) -> RoomProposal  # S2
+def new_sources(area_id, entities, metric, scope, listed, dismissed) -> list[str]  # R14
+def propose_rooms(areas: Sequence[AreaInfo], entities, outside_words) -> RoomProposal  # S2
 ```
 
 Classification of a temperature candidate (sensor with device class temperature, or a `climate` entity). The first
@@ -922,7 +926,8 @@ Rules:
 - **New source (R14):** an entity in the area of a room or region is reported when it classifies as tier 1 or 2
   (rooms: also 3), is not in any of the object's lists, and is not dismissed.
 - **Heating and cooling devices (R15):** all `climate` entities in the area except own entities, by name.
-- **Rooms (S2):** areas with a temperature sensor or a `climate` entity. Pre-checked: not on a floor whose name
+- **Rooms (S2):** areas with at least one pre-fillable temperature source (tier 1–3, so a smart plug's diagnostic
+  temperature alone does not make a room). Pre-checked: not on a floor whose name
   contains an outside word (case-insensitive); checked if it has a `climate` entity; checked if it is on a floor;
   otherwise not checked. Sorted by floor level (floors without level after), then floor name, then area name; areas
   without a floor last. Outside words come from the translations (S2).
@@ -969,8 +974,8 @@ S2 cases (outside words contain „außen", „garten"):
 ```python
 def indoor_average(rooms: Sequence[float | None]) -> HouseValue      # mean, min, max of valid room temperatures
 def any_of(flags: Sequence[bool | None]) -> bool | None               # three-valued
-def outages(sources: Sequence[Reading], state: OutageState | None, now: datetime,
-            delay: timedelta) -> tuple[list[Outage], OutageState]     # persisted
+def outages(statuses: Mapping[str, Status], state: OutageState | None, now: datetime,
+            delay: timedelta) -> tuple[list[Outage], OutageState]     # persisted; Candidate.status (§4)
 ```
 
 Rules:
@@ -1044,6 +1049,18 @@ migration.
 Adapter concerns, specified in the build tasks, not here: unit conversion, reading `last_reported`, forecast
 subscription (`weather.get_forecasts`), state listeners and the 60 s tick, the 5 s re-evaluation after a contact
 change, `Store` persistence, area sync (R11), repair issues (R14, H5, W11).
+
+Contract the built modules expect from the adapter:
+- Persist and pass back `SourceState` (per object and metric), `WeatherOffsets`, `TrendState` and the previous
+  position, relation and dryness (per room), `ForecastBias`, `Debounced` and "open since" (per window), `GoalState`
+  (per room), `CoverState` (per window), `OutageState` (hub). Every state has a start-up value (`None` or the empty
+  dataclass).
+- Call `learn_weather_offsets` before `resolve_direction` and `house_outdoor` in the same evaluation.
+- Feed `update_forecast_bias` the house outdoor value only when its stage is not `weather`, else `None`.
+- Pass the same `min_level` to `debounce` and `open_since`.
+- Build outage statuses from `Resolution.candidates` (status after the staleness check).
+- The `DEFAULT_*` values of `logic/const.py` are the defaults of the hub options and number entities; the logic
+  receives the configured values as parameters.
 
 ## 15. Build order
 

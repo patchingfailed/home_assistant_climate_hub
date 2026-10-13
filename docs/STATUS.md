@@ -6,8 +6,9 @@ Updated 2026-10-13. The only place for project status.
 
 UI mockups are approved (2026-10-13). The native-UI spike ran on DEV (branch `spike/native-ui`, never merged):
 results in `docs/ui_mockups.md` §7. Its code stays deployed on DEV, without a hub entry, for Felix's click review.
-No product code exists yet. The logic spec `docs/logic.md` is approved (2026-10-13, D1–D16 except the replaced D13)
-and folded into `docs/requirements.md` and the mockups.
+The logic spec `docs/logic.md` is approved (2026-10-13, D1–D16 except the replaced D13) and **built**: the ten pure
+modules in `custom_components/climate_hub/logic/` with 393 table tests on branch `build/logic-modules` (off
+`planning/kickoff`, not merged, not pushed). No Home Assistant glue exists yet (no manifest, no entities, no flows).
 
 ## Next
 
@@ -15,14 +16,13 @@ and folded into `docs/requirements.md` and the mockups.
    text), 10 (area per picker row). Item 2 (phone) is skipped by choice. DEV has a few mirrored entities assigned to
    areas as test fixtures (list and undo in the private local notes).
 2. **Minimum HA version** as an ADR (at least 2025.10 for menu option descriptions; the spike ran on 2026.10.1).
-3. **Pure logic modules** with table tests, per `docs/logic.md` (approved): one Sonnet implementer per module in the
-   order of its §15 (`const` + `psychro` → `sources` → `outdoor` → `comfort` → `strategy` → `window` →
-   `recommendation` → `cover` → `prefill` → `house`), building `custom_components/climate_hub/logic/` +
-   `tests/logic/` (rule 6: no HA imports, `now` as a parameter). The table cases are the acceptance tests. Branch off
-   `planning/kickoff`. The spike branch `spike/native-ui` shows working flow/subentry/repair idioms for the later UI
-   build (reference only, never merge).
-4. **CI**: pytest, ruff, hassfest, HACS validation.
-5. After the review: remove the spike from DEV.
+3. **Merge `build/logic-modules`** into `planning/kickoff` after Felix's look at the logic (push is separate).
+4. **Adapter and integration build plan**: manifest, hub entry with subentries, coordinator (snapshot, 60 s tick,
+   debounced listeners), `Store` persistence of the logic states, entities, flows per the mockups, repairs. The
+   adapter contract is in `docs/logic.md` §14. The spike branch `spike/native-ui` shows working
+   flow/subentry/repair idioms (reference only, never merge). Needs the minimum HA version (item 2) first.
+5. **CI**: pytest, ruff, hassfest, HACS validation.
+6. After the review: remove the spike from DEV.
 
 ## Open decisions
 
@@ -30,6 +30,15 @@ and folded into `docs/requirements.md` and the mockups.
   and leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-13: pure logic built (`docs/logic.md` §3–§12): `const`, `psychro`, `sources`, `outdoor`, `comfort`,
+  `strategy`, `window`, `recommendation`, `cover`, `prefill`, `house`, every table case a pytest case (393 tests in
+  about 6 s, no `hass` fixture), plus a purity test (no `homeassistant` import, no clock read). Build refinements
+  folded into the spec: strategy takes the observed outdoor value as a number, `outages` takes candidate statuses,
+  "implausible" needs every leaf known, S8d default words come from translations, `no_room` only on the cover, the
+  cover's open-window guard applies after the hold (review find: a held `close` could have locked someone out),
+  S2 proposes only areas with a pre-fillable temperature, bias table row 5 coverage corrected. Line length stays
+  ruff's 88. Verified on DEV: no (pure logic, nothing to deploy).
 
 - 2026-10-13: logic spec approved. D15 (forecast bias A14, weather offset per side O5) and D16 (cover recommendation
   with heat and cold barrier, SH1/SH2) folded into the requirements; mockups §6 rename „Beschattung" to „Rollladen"
