@@ -1,7 +1,7 @@
 # UI mockups
 
-Status: **draft for review**, v2 of 2026-10-13 (reworked for what native flows can render, §2.4). Nothing here is
-built until it is approved (rule 8).
+Status: **draft for review**, v2 of 2026-10-13 (reworked for what native flows can render, §2.4; updated after the
+first prototype review). Nothing here is built until it is approved (rule 8).
 Screens show the German UI strings, because German is the primary language of the reference installation. The English
 strings use the same keys. Requirement IDs refer to `docs/requirements.md`, ADRs to `docs/architecture.md`.
 
@@ -17,7 +17,7 @@ Legend for screens: `[ … ▾ ]` dropdown, `[■]` toggle, `≡` drag handle of
 | Hub reconfigure | House plan: which outdoor area and which rooms belong to each side | Integration page → ⋮ → Rekonfigurieren |
 | Hub options | Weather service, area sync, expert defaults | Integration page → Konfigurieren |
 | Hub device entities | Comfort range (numbers), house-level values | Device "Hausklima" |
-| Repairs | Long sensor outages | Settings → Repairs |
+| Repairs | Long sensor outages, new sensors in a room, windows without a room | Settings → Repairs |
 
 ## 2. Flows
 
@@ -28,14 +28,17 @@ flowchart LR
   S1[Start: scan result, weather] --> S2[Rooms]
   S2 --> S3[House plan]
   S3 --> S4{Preview}
-  S4 -- Anlegen --> E[(Hub + rooms + sides)]
+  S4 -- Anlegen --> E[(Hub + rooms + sides + windows)]
+  S4 -- Fenster hinzufügen --> W[Window steps S8] --> S4
   S4 -- Räume ändern --> S2
   S4 -- Hausplan ändern --> S3
 ```
 
-Windows are an **add-on** (W0) and are not created during the first setup. They depend on hardware knowledge (leaves,
-tilt discriminator, handle, pass-through) that a guess would get wrong. "Fenster hinzufügen" sits in the hub entry's ⋮
-menu, which is easy to miss, so the success dialog after „Anlegen" says where to find it.
+Windows are an **add-on** (W0) and are never guessed. They depend on hardware knowledge (leaves, tilt discriminator,
+handle, pass-through) that a guess would get wrong. Instead the preview offers „Fenster hinzufügen (optional)": it runs
+the window steps (S8) and returns to the preview, as often as needed. Later, windows are added from the hub entry's ⋮
+menu. In the prototype review (2026-10-13) that menu took a while to find, so the first setup is the main entry
+point and the success dialog points to the menu.
 
 ### 2.2 Room and outdoor side (add and edit use the same form)
 
@@ -172,7 +175,8 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 │ • **Wohnzimmer** 21,4 °C · 48 % aus Klimasensor Wohnzimmer │
 │   Ersatz: Thermostat Wohnzimmer. Seite: Norden.            │
 │ • **Küche** 20,7 °C · 57 % aus Klimasensor Küche           │
-│   Nicht übernommen: Kühlschrank (6,9 °C, kein Raumwert).   │
+│   Nicht übernommen: Kühlschrank (6,9 °C, kein Raumwert),   │
+│   Fensterkontakt Küche (Nebenwert eines Kontakts).         │
 │ • **Bad** 19,9 °C · 66 % aus Klimasensor Bad               │
 │ • …                                                        │
 │ **Außenseiten**                                            │
@@ -181,17 +185,27 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 │ • **Süden · Garten** 12,5 °C · 76 %                        │
 │ • **Westen · Hof** 14,5 °C · 65 %                          │
 │ • Osten: keine Außenseite, Wetterdienst springt ein.       │
+│ **Fenster**                                                │
+│ • Noch keine. Mit Fenstern weiß ich, was gerade offen ist, │
+│   und kann warnen.                                         │
+│ Quellen und Reihenfolge änderst du später pro Raum.        │
 │                                                            │
 │  > Anlegen                                                 │
+│  > Fenster hinzufügen (optional)                           │
 │  > Räume ändern                                            │
 │  > Hausplan ändern                                         │
 └────────────────────────────────────────────────────────────┘
 ```
 
-- Shows what was **not** taken and why (P1, R6).
+- Shows what was **not** taken and why (P1, R6), with a short reason per entity: „kein Raumwert" (implausible
+  value), „Nebenwert eines Kontakts" / „eines Bewegungsmelders", „Gerätetemperatur" (diagnostic), „abgeleiteter Wert"
+  (helper platform), „mehrere Temperaturen am Gerät".
 - Shows each side's computed fallback chain (ADR-003).
-- „Anlegen" creates the hub entry with all room and region subentries in one step. The success dialog says:
-  „Fertig. Fenster fügst du jederzeit hinzu: ⋮ beim Eintrag Hausklima → Fenster hinzufügen."
+- **Fenster** lists the windows added so far („Küchenfenster (Küche): zu"); without any it says why they help.
+- „Fenster hinzufügen (optional)" runs S8 → S8d → window preview; „Speichern" there returns to this preview.
+- „Anlegen" creates the hub entry with all room, region and window subentries in one step. The success dialog says:
+  „Fertig. Quellen änderst du pro Raum: ⋮ beim Raum → Rekonfigurieren. Weitere Fenster: ⋮ beim Eintrag Hausklima →
+  Fenster hinzufügen."
 
 ## 4. Screens: objects
 
@@ -214,6 +228,9 @@ Climate Hub
 ```
 
 Layout is Home Assistant's. We control the type names, the subentry titles and the order of the add items.
+Home Assistant shows nothing for an empty type group and has no room for our own hints on this page. „Löschen"
+opens Home Assistant's own confirmation, which we cannot extend. Deleting a room therefore keeps its windows and
+raises a repair (W11, S11).
 
 ### S6 Raum
 
@@ -256,6 +273,7 @@ Layout is Home Assistant's. We control the type names, the subentry titles and t
 │   Ihre typische Abweichung gleiche ich aus.                │
 │                                                            │
 │ ▸ Feuchte und Luftdruck                                    │
+│ ▸ Heizen und Kühlen                                        │
 │ ▸ Erweitert                                                │
 │                                              [ Weiter ]    │
 └────────────────────────────────────────────────────────────┘
@@ -269,11 +287,17 @@ Layout is Home Assistant's. We control the type names, the subentry titles and t
   of the room's area plus entities without an area (U6). Pre-filled when the sources were suggested (R6).
 - Area: changing it re-opens this form with sources suggested for the new area. Chosen sources without an area stay.
   Hint in the description: „Bereich geändert: Ich habe die Quellen für {area} neu vorgeschlagen."
+- Thermostats and air conditioners also deliver humidity when they report it (R5), so they can appear in the
+  humidity order too.
 - ▸ Feuchte und Luftdruck: „Feuchtequellen" and „Luftdruckquellen", sortable. Empty means "same devices as
   temperature" (R3), which the description says.
+- ▸ Heizen und Kühlen: „Heiz- und Klimageräte" (`climate` entities, multiple), pre-filled with the area's `climate`
+  entities (R15). Description: „Ich steuere sie nicht. Läuft eines, während ein Fenster länger als zum Stoßlüften
+  offen ist, warne ich." Open while adding, collapsed when editing.
 - ▸ Erweitert: „Höchstalter einer Messung" (minutes; empty = hub default).
 - Errors: area already a room or an outdoor side (as in step 1), no temperature source („Wähle mindestens eine
   Temperaturquelle.").
+- When the sources were just suggested, the preview also lists what was not taken and why (as in S4).
 
 **Preview**
 
@@ -464,6 +488,11 @@ Field rules:
 - Room not yet a room: a line „Raum Küche wird mit angelegt, Quellen: Klimasensor Küche, Thermostat Küche."
 
 Editing an existing window opens its type form directly; „Typ ändern" in the preview goes back to the type menu.
+Started from the first-setup preview (S4), the room field offers the rooms of that setup, and „Speichern" returns to S4.
+
+Example for W12 (double leaf with a shared tilt discriminator at the bottom between the leaves): left and right
+leaf contact at the top of each leaf, the bottom contact as „Kipp-Erkennung". Left open at the top and bottom open
+means the left leaf is turned open; bottom closed means it is tilted.
 
 ## 5. Screens: hub
 
@@ -498,6 +527,32 @@ Klimasensor Bad liefert seit 6 Stunden keine Werte. Ich nutze gerade
 Die Meldung verschwindet von selbst, sobald der Sensor wieder Werte liefert.
 ```
 
+**New sensor (R14)**, fixable, one issue per entity. Home Assistant's own „Ignorieren" dismisses it for good.
+
+```
+Climate Hub: Neuer Sensor in der Küche
+Klimasensor Küche 2 misst Temperatur und Feuchte im Bereich Küche.
+Soll ich ihn als Quelle für den Raum Küche nehmen?
+                                                        [ Reparieren ]
+  → Fix flow: „Ich nehme Klimasensor Küche 2 als letzte Quelle auf.
+    Die Reihenfolge änderst du am Raum."            [ Absenden ]
+```
+
+Only climate-grade sources (R6) raise it; contacts, motion sensors and helpers never do.
+
+**Windows without a room (W11)**, fixable, one issue per area.
+
+```
+Climate Hub: Fenster in der Küche haben keinen Raum mehr
+Der Raum Küche wurde gelöscht. Küchenfenster meldet weiter, ob es offen
+ist, aber ohne Raum gibt es keine Empfehlung.
+                                                        [ Reparieren ]
+  → Fix flow, menu:  > Raum Küche wieder anlegen
+                     > Fenster löschen (Küchenfenster)
+```
+
+„Raum wieder anlegen" shows the room preview with suggested sources (S6) before saving. Both options resolve the issue.
+
 ## 6. Entities (what dashboards and automations see)
 
 German names on a German instance; entity IDs are generated once from them (ADR-005).
@@ -519,6 +574,7 @@ German names on a German instance; entity IDs are generated once from them (ADR-
 | | Empfehlung | enum: öffnen / offen lassen / schließen / geschlossen lassen / keine (+ reason attribute) | `sensor.wohnzimmer_klima_empfehlung` |
 | | Auskühlen | binary_sensor (only with windows) | |
 | | Aufheizen | binary_sensor (only with windows) | |
+| | Offen bei Heizen/Kühlen | binary_sensor (only with windows and heating/cooling devices, A12) | |
 | | Fenster | enum: zu / angelehnt / gekippt / offen, most open window of the room (only with windows, W9) | `sensor.wohnzimmer_klima_fenster` |
 | | Fenster offen seit | sensor, timestamp, earliest open window (only with windows) | |
 | Wohnzimmerfenster | Zustand | enum: zu / angelehnt / gekippt / offen (+ open leaves attribute) | `sensor.wohnzimmerfenster_zustand` |
@@ -528,7 +584,7 @@ German names on a German instance; entity IDs are generated once from them (ADR-
 | Hausklima | Wunschtemperatur min / max, Schwelle | number | `number.hausklima_wunschtemperatur_max` |
 | | Tagesstrategie | enum: Aufheizen verhindern / Auskühlen verhindern / neutral | |
 | | Innen Durchschnitt, Außen | sensors (+ min/max attributes) | |
-| | Irgendwo Auskühlen, Irgendwo Aufheizen | binary_sensor | |
+| | Irgendwo Auskühlen, Irgendwo Aufheizen, Irgendwo offen bei Heizen/Kühlen | binary_sensor | |
 | | Irgendwo beschatten | binary_sensor (SH1) | |
 
 Every measurement carries `source`, `stage`, `reason` and, for fallbacks, `offset` as attributes (E6).
@@ -551,7 +607,8 @@ Still to see on DEV:
 2. Four sections with two area selectors each (S3) render well on a phone.
 3. Menu step description with a multi-line markdown placeholder (lists, bold, maybe tables) as preview (S4, S6, S8).
 4. Area selector with a list of entity filters (temperature sensor **or** `climate`): does the list combine as „or"?
-5. Hub entry created together with room and region subentries in one step, and the success dialog text after it.
+5. Hub entry created together with room, region and window subentries in one step, and the success dialog text
+   after it.
 6. Device name translation with an `{area}` placeholder and the entity IDs generated from it, including the area
    prefix from core PR #170560 (§6).
 7. Window flow creating a room subentry (U4): does the integration page show it without a reload?
@@ -559,6 +616,7 @@ Still to see on DEV:
 9. Re-opening a form with replaced suggested values after an area change (S6).
 10. Entity picker shows each contact's area, so the unfiltered contact list (S8) stays usable.
 11. S8d: fields with data keys and no translation show the raw value as label.
+12. Repair fix flows (S11) that update a room subentry, recreate a room and delete window subentries.
 
 The minimum Home Assistant version is at least 2025.10 (menu option descriptions); the ADR follows the spike.
 
@@ -572,5 +630,7 @@ The minimum Home Assistant version is at least 2025.10 (menu option descriptions
 5. ~~Shutters per window~~: agreed 2026-10-12, shading recommendation only, optional cover per window (SH1–SH4).
 6. Defaults (requirements Q5) as shown in S9: review in the prototype.
 7. New in this version: state mapping for text sensors (S8d).
-8. New in this version: „Hinzufügen" lives in the ⋮ menu (S5); the success dialog after the first setup points to it.
-   Enough, or does it need more?
+8. ~~„Hinzufügen" only in the ⋮ menu~~: prototype review 2026-10-13, hard to find. Now also an optional windows step
+   in the first setup (S4); review in the prototype.
+9. New 2026-10-13: „Heizen und Kühlen" section in the room (R15) and the warning entity (A12).
+10. New 2026-10-13: repairs for new sensors (R14) and windows without a room (W11), S11.

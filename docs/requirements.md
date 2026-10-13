@@ -67,8 +67,8 @@ but they do not want to wade through settings.
 | R2 | M | The user ranks the **temperature sources** in a sortable list. The highest-ranked valid source wins. |
 | R3 | M | Humidity and pressure sources follow the devices of the temperature list in the same order by default. The user can override them with an own sortable list per metric. |
 | R4 | M | A source is valid if its value is numeric, it is not `unavailable`/`unknown`, its unit converts to the metric's unit, and it reported within the maximum age (freshness from `last_reported`). |
-| R5 | M | `climate` entities contribute their current temperature only, never the setpoint. |
-| R6 | M | When a room is created, the source list is **pre-filled**: dedicated climate sensors first (devices with both temperature and humidity), thermostats and air conditioners last. Values outside a plausible room range at setup time (for example a fridge) are not pre-filled. Other entities of the area stay selectable but are not pre-filled. |
+| R5 | M | `climate` entities contribute their current temperature and, if they report it, their current humidity (`current_humidity`, for example wall thermostats and air conditioners). Never a setpoint. |
+| R6 | M | When a room is created, the source list is **pre-filled with climate-grade sources only**: devices with exactly one temperature entity plus humidity first, then devices that only measure and have exactly one temperature entity, `climate` entities last. Not pre-filled: diagnostic entities (device temperature of plugs, routers and similar); temperatures of devices whose main purpose is something else (window and door contacts, motion sensors, lights, air-conditioner outdoor units); devices with several temperature entities (heat pumps, servers); entities without a device; derived values from helper platforms (template, min/max, statistics, filter, comfort calculations); values outside a plausible room range at setup time (for example a fridge). They stay selectable, and the preview names them with the reason. Climate Hub's own entities are never offered, so no source can feed on itself. |
 | R7 | M | **Offset learning.** While a higher-ranked source is valid, Climate Hub learns how far each lower-ranked source typically deviates from it (rolling window, about 24 h). When it falls back, it applies the learned offset, so a thermostat that reads 1.2 °C warm does not make the room jump. Learned offsets survive restarts and are visible (attribute and diagnostics). Temperature is M, humidity is S. |
 | R8 | M | A higher-ranked source takes over again as soon as it is valid. |
 | R9 | M | A room can have an outdoor region (its main side). Rooms without an exterior wall have none. The region can be set and changed at any time, in any order relative to creating regions. |
@@ -76,6 +76,8 @@ but they do not want to wade through settings.
 | R11 | M | Climate Hub writes the room's temperature and humidity entities into the Home Assistant area's *temperature sensor* and *humidity sensor* fields. Default on, confirmed once during setup, can be switched off. |
 | R12 | C | Mould-risk indicator per room (needs a surface-temperature estimate; define when picked up). |
 | R13 | S | **Humidity after ventilating:** the relative humidity the room would reach after a full air exchange, computed from the outside vapour pressure at the room temperature. Above 100 % means condensation (for example warm, humid summer air entering a cool cellar). |
+| R14 | S | **New sources:** when a climate-grade source (R6) appears later in the area of a room or region, Climate Hub raises a fixable repair issue naming the area and the entity. Fixing it adds the source at the end of the list. Home Assistant's own "ignore" dismisses it for good (one issue per entity). Nothing is added without confirmation (P1). |
+| R15 | S | **Heating and cooling devices:** a room knows its `climate` entities in a separate role, pre-filled from the area and editable. Their activity (`hvac_action`, else `hvac_mode`) feeds A12. Climate Hub never controls them. |
 
 Daily minimum and maximum come from Home Assistant's long-term statistics (`state_class`). No extra entities.
 
@@ -101,7 +103,7 @@ plants is real air that enters the window, so it must not be "corrected" towards
 
 | ID | Prio | Requirement |
 |---|---|---|
-| W0 | M | Windows are an optional add-on. Rooms, regions and the recommendation work without any window. Without windows the recommendation only says `open` or `close` (the `keep_*` states need a window state), and the warnings (A4) need at least one window. |
+| W0 | M | Windows are an optional add-on. Rooms, regions and the recommendation work without any window. Without windows the recommendation only says `open` or `close` (the `keep_*` states need a window state), and the warnings (A4) need at least one window. The first setup offers adding windows as an optional last step; they are never guessed. |
 | W1 | M | A window belongs to a room and faces a region. The region defaults to the room's region and can be changed. |
 | W2 | M | Contacts are `binary_sensor` entities (device class window, door, opening, garage door) or text sensors with a configurable state mapping. |
 | W3 | M | Opening levels: closed < ajar < tilted < open. A window counts as **ventilating** from a minimum level (default: tilted; ajar does not count). |
@@ -112,6 +114,21 @@ plants is real air that enters the window, so it must not be "corrected" towards
 | W8 | M | Unknown or unavailable contacts are ignored, never interpreted as closed. If no contact is usable, the window state is unavailable. |
 | W9 | M | A room can have any number of windows, also facing different sides. Two leaves of one frame are **one** window (W4), two frames are two windows. The room aggregates its windows: the most open level, the earliest "open since", and "ventilating" if any window ventilates. |
 | W10 | S | Contact changes are debounced (a few seconds), so a bouncing contact neither resets "open since" nor triggers automations. After a restart, "open since" comes from the contact's last change, not from the restart time. |
+| W11 | M | Deleting a room keeps its windows. They keep reporting their state; room-dependent outputs report `none` with reason `no_room`. A fixable repair issue per area offers to recreate the room (with suggested sources) or to delete those windows. Home Assistant's delete dialog cannot warn beforehand, so nothing is deleted implicitly. |
+| W12 | M | A double leaf with a shared tilt discriminator follows the table below (scenario 5). The discriminator sits where only a turned leaf can open it, for example at the bottom between the leaves. |
+
+Double leaf with a shared tilt discriminator (W12). 1 = contact reports open.
+
+| Left leaf | Right leaf | Discriminator | State | Open leaves |
+|---|---|---|---|---|
+| 0 | 0 | 0 | closed | none |
+| 1 | 0 | 0 | tilted | left |
+| 0 | 1 | 0 | tilted | right |
+| 1 | 1 | 0 | tilted | both |
+| 1 | 0 | 1 | open | left |
+| 0 | 1 | 1 | open | right |
+| 1 | 1 | 1 | open | both (one may be tilted; not distinguishable and irrelevant, the most open level wins) |
+| 0 | 0 | 1 | open | unknown (implausible, a leaf contact is probably faulty; never reported as closed, W8) |
 
 ### 4.4 Ventilation recommendation
 
@@ -128,6 +145,7 @@ plants is real air that enters the window, so it must not be "corrected" towards
 | A9 | C | **Cross-ventilation hint:** when rooms on opposite sides both recommend opening, suggest opening them together, preferring regions marked *preferred* (O9). |
 | A10 | S | If a room's windows face different sides, the recommendation names the window whose side helps most (coolest air when cooling, driest air when dehumidifying). A region preference (O9) breaks ties. |
 | A11 | C | **Time to close:** a timestamp for when the current ventilation will likely have reached its goal (room temperature or humidity trend plus outside values). |
+| A12 | S | **Open while heating or cooling:** binary sensor per room that turns on when a window ventilates longer than the burst time while one of the room's heating or cooling devices (R15) is active. A house-level "any room" variant exists for automations. Needs windows and R15. |
 
 ### 4.5 Shading
 
@@ -155,7 +173,7 @@ Climate Hub **recommends** shading. It never moves covers; automations act on th
 
 | ID | Prio | Requirement |
 |---|---|---|
-| U1 | M | **Guided first setup in a few screens:** Climate Hub scans areas, sensors and weather entities, then proposes rooms and outdoor regions. The user confirms or deselects. Nothing is created without confirmation. Windows are added afterwards (W0). |
+| U1 | M | **Guided first setup in a few screens:** Climate Hub scans areas, sensors and weather entities, then proposes rooms and outdoor regions. The user confirms or deselects. Nothing is created without confirmation. Windows can be added as an optional last step or later (W0). |
 | U2 | M | Rooms, regions and windows each have their own add, edit and delete. Changes take effect without a restart. |
 | U3 | M | Every field from creation is editable later, including fields that were left empty. |
 | U4 | M | No creation-order dependencies (P3). Adding a window in an area that has no room yet creates the room with suggestions (after confirmation) instead of failing. |
