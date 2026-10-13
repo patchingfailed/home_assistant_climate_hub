@@ -1,7 +1,7 @@
 # Logic specification
 
-Status: **draft**, 2026-10-13. First review done: D1–D12 and D14 approved, D13 replaced by D16; D15 and D16
-pending. Covers the pure modules in `custom_components/climate_hub/logic/`
+Status: **approved 2026-10-13** after two review rounds: D1–D12 and D14–D16 approved, D13 replaced by D16; all
+folded into `docs/requirements.md`. Covers the pure modules in `custom_components/climate_hub/logic/`
 (rule 6: no Home Assistant imports, `now` is a parameter, table tests). Requirement IDs refer to
 `docs/requirements.md`, ADRs to `docs/architecture.md`, screens to `docs/ui_mockups.md`.
 

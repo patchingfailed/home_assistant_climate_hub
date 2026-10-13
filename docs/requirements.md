@@ -89,7 +89,7 @@ Daily minimum and maximum come from Home Assistant's long-term statistics (`stat
 | O2 | M | Sources are ranked like room sources (R2–R8), including offset learning. |
 | O3 | M | **Automatic fallback** when a region has no valid source: adjacent directions (90°), then the opposite direction (180°), then the hub's weather entity, then unavailable. If several regions qualify at the same stage, their mean is used. |
 | O4 | M | There is **no fallback configuration**. No region depends on another region being configured first. |
-| O5 | M | The weather entity delivers temperature, humidity and pressure from its attributes, with its own maximum age (2 h, not configurable). |
+| O5 | M | The weather entity delivers temperature, humidity and pressure from its attributes, with its own maximum age (2 h, not configurable). While a region's own sensors work, Climate Hub learns how far the weather's current values deviate from them. When the weather stands in (O3), its values are corrected by that region's offset; a direction without a region and the house-level value use the mean offset. A street that runs warmer than the weather service stays warmer, and pressure does not jump between sea-level and station pressure. |
 | O6 | M | Derived values (absolute humidity, dew point) use temperature and humidity from the **same region and stage**. They walk the fallback chain on their own and take the first stage where both are available from the same regions, so they can come from another stage than the displayed temperature. If no stage has both, the derived values are unavailable rather than mixed. |
 | O7 | M | House-level outdoor value: mean of all valid regions, with minimum, maximum and the per-region values as attributes. It is for display and automations only. Recommendations always use the room's own region (A2), and fallbacks use neighbouring regions (O3). |
 | O8 | C | Learned offsets between regions (time-of-day dependent because of the sun). |
@@ -147,15 +147,18 @@ Double leaf with a shared tilt discriminator (W12). 1 = contact reports open.
 | A11 | C | **Time to close:** a timestamp for when the current ventilation will likely have reached its goal (room temperature or humidity trend plus outside values). |
 | A12 | S | **Open while heating or cooling:** binary sensor per room that turns on when a window ventilates longer than the burst time while one of the room's heating or cooling devices (R15) is active. A house-level "any room" variant exists for automations. Needs windows and R15. |
 | A13 | M | **Humidity guard:** no ventilation for temperature (A2) while the humidity after ventilating (R13) would reach the humidity threshold, released 5 points below it. Protects cellars and cool rooms from humid summer air (scenario 12). |
+| A14 | S | **Forecast bias:** once a day, Climate Hub compares the forecast maximum and minimum with what the house's own outdoor sensors measured and learns the typical deviation (about a week of memory, applied after three days). The daily strategy (A1) uses the corrected forecast. No setting; raw and corrected values are attributes of the strategy entity. |
 
-### 4.5 Shading
+### 4.5 Covers
 
-Climate Hub **recommends** shading. It never moves covers; automations act on the recommendation.
+Climate Hub **recommends** what to do with a window's cover: keep sun and heat out by day, keep warmth in at night,
+let the sun in when its warmth is welcome. It never moves covers. Automations act on the recommendation, and existing
+cover automations keep working unchanged; they can adopt the recommendation step by step.
 
 | ID | Prio | Requirement |
 |---|---|---|
-| SH1 | S | **Shading recommendation per window:** `shade`, `keep_shaded`, `open_cover`, `keep_open` or `none`, plus a translated reason. Shade when the sun shines on the window (sun azimuth within about ±60° of the window's facing, elevation above a minimum, enough sun after cloud cover) **and** the day is *prevent heat-up* or the room is near or above the comfort maximum. Never shade when the room is below the comfort minimum or it is cold outside, because the solar gain is welcome then. Hysteresis and a minimum hold time prevent flapping. A house-level "any window should be shaded" binary sensor exists for automations. |
-| SH2 | S | **Optional cover per window** (`cover` entity). With a cover, the recommendation knows the current position and can say `keep_*`. A cover is never treated as a window contact. The shading entity exists for every window and is enabled by default only when a cover is assigned. |
+| SH1 | S | **Cover recommendation per window:** `close`, `keep_closed`, `open`, `keep_open` or `none`, plus a translated reason. By day, close when the sun shines on the window (sun azimuth within about ±60° of the window's facing, elevation above a minimum, enough sun after cloud cover) **and** the day is *prevent heat-up* or the room is near or above the comfort maximum (sun protection), and on *prevent heat-up* days while outside is warmer than the room, even without sun (heat barrier). At night (sun below the horizon), close on *prevent cool-down* days or in a room below the comfort range while outside is colder (cold barrier); otherwise no recommendation. Never close by day when the room is below the comfort minimum or it is cold outside, because the solar gain is welcome then. Never close while the window or door is fully open. Hysteresis and a minimum hold time prevent flapping. Automations filter by reason (for example sun protection only), so there is no setting. A house-level "any cover to close" binary sensor exists for automations. |
+| SH2 | S | **Optional cover per window** (`cover` entity). With a cover, the recommendation knows the current position and can say `keep_*`. A cover is never treated as a window contact. The cover recommendation exists for every window and is enabled by default only when a cover is assigned. |
 | SH3 | C | Optional sun-intensity source on the hub (illuminance or irradiance sensor). Default: cloud cover from the weather entity. |
 | SH4 | C | Exact facing of a window in degrees (expert field), for windows that face differently than their room's side. Default: derived from the facing direction (N = 0°, E = 90°, S = 180°, W = 270°). |
 
@@ -229,9 +232,10 @@ These come from a real installation and must work without workarounds:
 ## 7. Out of scope (for now)
 
 - Heating control. Heating may later consume Climate Hub's room values.
-- Energy exchange and solar gain per window (physical window model). May be folded into windows much later.
+- Energy exchange and solar gain per window (physical window model). May be folded into windows much later. The
+  cover recommendation (4.5) works with rules, not with an energy model.
 - Exotic comfort indices (heat index, humidex and similar).
-- Moving covers. Climate Hub recommends shading (4.5); automations act on it.
+- Moving covers. Climate Hub recommends what to do with them (4.5); automations act on it.
 - A custom management panel, unless U11 triggers it.
 
 ## 8. Open questions

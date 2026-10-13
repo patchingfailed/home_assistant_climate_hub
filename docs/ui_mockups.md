@@ -486,8 +486,9 @@ Shared sections (all types):
   unten. Er meldet nur „offen", wenn der Flügel ganz aufgedreht ist.") and handle contact (W4). Double leaf: handle
   contact only, because its tilt discriminator is a main field („Kontakt zwischen den Flügeln", S8b, W12). Users
   look for the contact by where it sits, not by its role (prototype review 2026-10-13).
-- **▸ Rollladen**: „Rollladen" (cover entity, optional, SH2). Description: „Dann gibt es eine Empfehlung, wann du
-  beschatten solltest. Bewegen tut ihn deine Automation."
+- **▸ Rollladen**: „Rollladen" (cover entity, optional, SH2). Description: „Dann gibt es eine Empfehlung, wann der
+  Rollladen zu sein sollte: tagsüber gegen Sonne und Hitze, nachts gegen Kälte. Bewegen tut ihn deine Automation."
+  (Changed 2026-10-13 with the cover recommendation, `docs/logic.md` D16.)
 - **▸ Erweitert**: „Ausrichtung" (static options „Wie der Raum", Norden, Osten, Süden, Westen; default „Wie der Raum";
   the preview names the resulting direction), „Genaue Ausrichtung in Grad" (optional, SH4), „Lüftet ab" (default
   gekippt, W3).
@@ -648,13 +649,13 @@ carry no area (ADR-005, ADR-007). The device column shows the device name and, i
 | | Fenster offen seit | sensor, timestamp, earliest open window (only with windows) | |
 | Fenster (Wohnzimmer) | Zustand | enum: zu / angelehnt / gekippt / offen (+ open leaves attribute) | `sensor.wohnzimmer_fenster_zustand` |
 | | Offen seit | sensor, timestamp | |
-| | Beschattung | enum: beschatten / beschattet lassen / öffnen / offen lassen / keine (+ reason); enabled by default only with a cover (SH1, SH2) | `sensor.wohnzimmer_fenster_beschattung` |
+| | Rollladen | enum: schließen / geschlossen lassen / öffnen / offen lassen / keine (+ reason: Sonne, Hitze, Kälte, Sonnenwärme …); enabled by default only with a cover (SH1, SH2; renamed from „Beschattung" 2026-10-13) | `sensor.wohnzimmer_fenster_rollladen` |
 | Klima (Straße) | Temperatur, Luftfeuchtigkeit, Luftdruck, Absolute Feuchte, Taupunkt | sensors (+ stage attribute) | `sensor.strasse_klima_temperatur` |
 | Hausklima | Wunschtemperatur min / max, Schwelle | number | `number.hausklima_wunschtemperatur_max` |
-| | Tagesstrategie | enum: Aufheizen verhindern / Auskühlen verhindern / neutral | |
+| | Tagesstrategie | enum: Aufheizen verhindern / Auskühlen verhindern / neutral (+ raw and corrected forecast, learned bias, A14) | |
 | | Innen Durchschnitt, Außen | sensors (+ min/max attributes) | |
 | | Irgendwo Auskühlen, Irgendwo Aufheizen, Irgendwo offen bei Heizen/Kühlen | binary_sensor | |
-| | Irgendwo beschatten | binary_sensor (SH1) | |
+| | Irgendwo Rollladen schließen | binary_sensor (SH1, + windows and reasons attribute; renamed from „Irgendwo beschatten" 2026-10-13) | |
 
 Every measurement carries `source`, `stage`, `reason` and, for fallbacks, `offset` as attributes (E6).
 
@@ -702,6 +703,8 @@ The minimum Home Assistant version is at least 2025.10 (menu option descriptions
 3. ~~Main side options~~: agreed 2026-10-13, all four directions plus „Keine", assignment in the description (S6).
 4. ~~Entity list (§6)~~: agreed 2026-10-13, complete as listed.
 5. ~~Shutters per window~~: agreed 2026-10-12, shading recommendation only, optional cover per window (SH1–SH4).
+   Extended 2026-10-13: cover recommendation with heat barrier by day and cold barrier at night, entity „Rollladen"
+   (`docs/logic.md` D16). Still a recommendation only; existing cover automations stay untouched.
 6. ~~Defaults (requirements Q5)~~: agreed 2026-10-13, as shown in S9.
 7. ~~State mapping for text sensors (S8d)~~: agreed 2026-10-13.
 8. ~~„Hinzufügen" only in the ⋮ menu~~: prototype review 2026-10-13, hard to find. Agreed 2026-10-13: optional windows

@@ -6,9 +6,8 @@ Updated 2026-10-13. The only place for project status.
 
 UI mockups are approved (2026-10-13). The native-UI spike ran on DEV (branch `spike/native-ui`, never merged):
 results in `docs/ui_mockups.md` §7. Its code stays deployed on DEV, without a hub entry, for Felix's click review.
-No product code exists yet. The logic spec `docs/logic.md` had its first review: D1–D12 and D14 are approved and
-folded into `docs/requirements.md` (R7, R13, O5, O6, W7, W8, W10, A1–A4, new A13, H2, H6). D15 (local weather bias)
-and D16 (cover as a thermal barrier, replaces D13) wait for approval.
+No product code exists yet. The logic spec `docs/logic.md` is approved (2026-10-13, D1–D16 except the replaced D13)
+and folded into `docs/requirements.md` and the mockups.
 
 ## Next
 
@@ -16,23 +15,26 @@ and D16 (cover as a thermal barrier, replaces D13) wait for approval.
    text), 10 (area per picker row). Item 2 (phone) is skipped by choice. DEV has a few mirrored entities assigned to
    areas as test fixtures (list and undo in the private local notes).
 2. **Minimum HA version** as an ADR (at least 2025.10 for menu option descriptions; the spike ran on 2026.10.1).
-3. **Logic spec and pure logic modules** with table tests: psychrometrics (absolute humidity, dew point, humidity after
-   ventilating), source resolution with offset learning, region fallback, window state (incl. the W12 table),
-   recommendation (A1–A6, A12), shading (SH1), pre-fill (R3, R6). The pre-fill rules need unit tests: DEV's mirrored
-   entities have no devices.
-   How: `docs/logic.md` (rules, interfaces, table cases per module; requirement IDs). Next: Felix approves D15 and
-   D16; then A14 (forecast bias), O5 (weather offset), SH1/SH2 and mockups §6 (cover entity name and states) are
-   updated, and Sonnet implementers build `custom_components/climate_hub/logic/` + `tests/logic/` module by module
-   (rule 6: no HA imports, `now` as a parameter). Branch off `planning/kickoff`. The spike branch `spike/native-ui`
-   shows working flow/subentry/repair idioms for the later UI build (reference only, never merge).
+3. **Pure logic modules** with table tests, per `docs/logic.md` (approved): one Sonnet implementer per module in the
+   order of its §15 (`const` + `psychro` → `sources` → `outdoor` → `comfort` → `strategy` → `window` →
+   `recommendation` → `cover` → `prefill` → `house`), building `custom_components/climate_hub/logic/` +
+   `tests/logic/` (rule 6: no HA imports, `now` as a parameter). The table cases are the acceptance tests. Branch off
+   `planning/kickoff`. The spike branch `spike/native-ui` shows working flow/subentry/repair idioms for the later UI
+   build (reference only, never merge).
 4. **CI**: pytest, ruff, hassfest, HACS validation.
 5. After the review: remove the spike from DEV.
 
 ## Open decisions
 
-- D15 local weather bias and D16 cover as a thermal barrier (`docs/logic.md` §0), each with a proposal.
+- None. Scope guard from the review: no energy-exchange model (requirements §7); the cover recommendation is advisory
+  and leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-13: logic spec approved. D15 (forecast bias A14, weather offset per side O5) and D16 (cover recommendation
+  with heat and cold barrier, SH1/SH2) folded into the requirements; mockups §6 rename „Beschattung" to „Rollladen"
+  (`sensor.<area>_fenster_rollladen`) and „Irgendwo beschatten" to „Irgendwo Rollladen schließen". Verified on DEV:
+  no (spec only).
 
 - 2026-10-13: first review of the logic spec. D1–D12 and D14 approved and folded into the requirements; R13 becomes an
   attribute (mockups §6). From the review: D15 (forecast bias and weather offset per side) and D16 (cover
