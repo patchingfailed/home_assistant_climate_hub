@@ -1,7 +1,7 @@
 # UI mockups
 
-Status: **draft for review**, v2 of 2026-10-13 (reworked for what native flows can render, §2.4; updated after the
-first prototype review). Nothing here is built until it is approved (rule 8).
+Status: **approved 2026-10-13** after two prototype reviews, except S8d (§8.7, pending). v2 reworked the first draft
+for what native flows can render (§2.4). The DEV spike (§7) may still force changes; they come back here for approval.
 Screens show the German UI strings, because German is the primary language of the reference installation. The English
 strings use the same keys. Requirement IDs refer to `docs/requirements.md`, ADRs to `docs/architecture.md`.
 
@@ -630,12 +630,11 @@ The minimum Home Assistant version is at least 2025.10 (menu option descriptions
 1. ~~First setup without windows~~: agreed 2026-10-12, windows are an add-on (W0).
 2. ~~Window form vs. type menu~~: agreed 2026-10-12, type menu first (variant B, S8).
 3. ~~Main side options~~: agreed 2026-10-13, all four directions plus „Keine", assignment in the description (S6).
-4. Entity list (§6): anything missing for your dashboard, or anything to create disabled by default? Review in the
-   prototype.
+4. ~~Entity list (§6)~~: agreed 2026-10-13, complete as listed.
 5. ~~Shutters per window~~: agreed 2026-10-12, shading recommendation only, optional cover per window (SH1–SH4).
-6. Defaults (requirements Q5) as shown in S9: review in the prototype.
-7. New in this version: state mapping for text sensors (S8d).
-8. ~~„Hinzufügen" only in the ⋮ menu~~: prototype review 2026-10-13, hard to find. Now also an optional windows step
-   in the first setup (S4); review in the prototype.
-9. New 2026-10-13: „Heizen und Kühlen" section in the room (R15) and the warning entity (A12).
-10. New 2026-10-13: repairs for new sensors (R14) and windows without a room (W11), S11.
+6. ~~Defaults (requirements Q5)~~: agreed 2026-10-13, as shown in S9.
+7. State mapping for text sensors (S8d): pending.
+8. ~~„Hinzufügen" only in the ⋮ menu~~: prototype review 2026-10-13, hard to find. Agreed 2026-10-13: optional windows
+   step in the first setup (S4) plus the ⋮ menu.
+9. ~~„Heizen und Kühlen"~~: agreed 2026-10-13, room section (R15) and warning entity (A12).
+10. ~~Repairs~~: agreed 2026-10-13, new sensors (R14) and windows without a room (W11), S11.

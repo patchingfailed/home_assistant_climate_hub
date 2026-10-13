@@ -237,5 +237,5 @@ These come from a real installation and must work without workarounds:
 
 | # | Question |
 |---|---|
-| Q5 | Defaults: maximum age 40 min, burst time 10 min, humidity threshold 60 %, repair delay 6 h. Confirm. |
+| ~~Q5~~ | Confirmed 2026-10-13: maximum age 40 min, burst time 10 min, humidity threshold 60 %, repair delay 6 h. |
 | Q6 | Minimum Home Assistant version (N6): the entity selector supports `reorder` since 2025.9 (checked in core source), menu option descriptions (window type menu) need 2025.10. Still to verify: drag-sorting works inside a subentry flow on DEV. |

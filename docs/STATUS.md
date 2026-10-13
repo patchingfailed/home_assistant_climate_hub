@@ -4,32 +4,31 @@ Updated 2026-10-13. The only place for project status.
 
 ## Now
 
-UI mockups v2 are drafted and updated after the first prototype review. The clickable prototype (private Claude
-artifact „Climate Hub Prototyp", example data) shows that state, including repairs and a contact tool for the W12
-table. No integration code exists yet.
+UI mockups are approved (2026-10-13, except S8d). The clickable prototype (private Claude artifact „Climate Hub
+Prototyp", example data) shows the approved state. No integration code exists yet.
 
 ## Next
 
-1. **Second prototype review** (Felix): open points in `docs/ui_mockups.md` §8 (4, 6, 7, 8, 9, 10). Prototype-only
-   choices to confirm or reject: S1 counts computed from the scan, S4 lists all further sources per room, a room
-   without a main side defaults to „Keine".
-2. **DEV spike** on a throwaway branch for `docs/ui_mockups.md` §7 (12 items, incl. the area prefix in entity IDs).
+1. **DEV spike** on a throwaway branch for `docs/ui_mockups.md` §7 (12 items, incl. the area prefix in entity IDs).
    DEV is clean (no old `climate_hub` entries, entities, devices or folder; checked 2026-10-13). The DEV token comes
    from the repo's gitignored `.env` (`HA_TOKEN`), used by `deploy.ps1` and `ha.py`; verified against the DEV API.
-3. **Minimum HA version** as an ADR after the spike (at least 2025.10 for menu option descriptions).
-4. **Logic spec and pure logic modules** with table tests: psychrometrics (absolute humidity, dew point, humidity after
-   ventilating), source resolution with offset learning, region fallback, window state, recommendation (A1–A6),
-   shading (SH1).
-5. **CI**: pytest, ruff, hassfest, HACS validation.
+2. **Minimum HA version** as an ADR after the spike (at least 2025.10 for menu option descriptions).
+3. **Logic spec and pure logic modules** with table tests: psychrometrics (absolute humidity, dew point, humidity after
+   ventilating), source resolution with offset learning, region fallback, window state (incl. the W12 table),
+   recommendation (A1–A6, A12), shading (SH1).
+4. **CI**: pytest, ruff, hassfest, HACS validation.
 
 ## Open decisions
 
-- `docs/ui_mockups.md` §8: entity list complete (4), defaults = requirements Q5 (6), text-sensor state mapping S8d (7),
-  optional windows step in the first setup (8), heating/cooling role and warning (9), repairs (10).
+- `docs/ui_mockups.md` §8.7: text-sensor state mapping (S8d).
 - ADR-005 naming may change if Home Assistant prefixes the area to new entity IDs (spike item 6).
-- U11: native UI vs. custom panel, decided after the DEV spike and the prototype review.
+- U11: native UI vs. custom panel, decided after the DEV spike.
 
 ## Recently done
+
+- 2026-10-13: mockups approved after the second prototype review (entity list, defaults Q5, optional windows step,
+  heating/cooling, repairs). Window names default to „{Bereich} Fenster"; the double leaf's shared contact is a main
+  field. Verified on DEV: no.
 
 - 2026-10-13: first prototype review folded in. Requirements R5, R6, R14, R15, A12, W0, W11, W12 (truth table) and U1;
   mockups S4, S5, S6, S8, S11 and §6–§8. Prototype republished. Verified on DEV: no.
