@@ -1,6 +1,6 @@
 # UI mockups
 
-Status: **approved 2026-10-13** after two prototype reviews, except S8d (§8.7, pending). v2 reworked the first draft
+Status: **approved 2026-10-13** after two prototype reviews. v2 reworked the first draft
 for what native flows can render (§2.4). The DEV spike (§7) may still force changes; they come back here for approval.
 Screens show the German UI strings, because German is the primary language of the reference installation. The English
 strings use the same keys. Requirement IDs refer to `docs/requirements.md`, ADRs to `docs/architecture.md`.
@@ -633,7 +633,7 @@ The minimum Home Assistant version is at least 2025.10 (menu option descriptions
 4. ~~Entity list (§6)~~: agreed 2026-10-13, complete as listed.
 5. ~~Shutters per window~~: agreed 2026-10-12, shading recommendation only, optional cover per window (SH1–SH4).
 6. ~~Defaults (requirements Q5)~~: agreed 2026-10-13, as shown in S9.
-7. State mapping for text sensors (S8d): pending.
+7. ~~State mapping for text sensors (S8d)~~: agreed 2026-10-13.
 8. ~~„Hinzufügen" only in the ⋮ menu~~: prototype review 2026-10-13, hard to find. Agreed 2026-10-13: optional windows
    step in the first setup (S4) plus the ⋮ menu.
 9. ~~„Heizen und Kühlen"~~: agreed 2026-10-13, room section (R15) and warning entity (A12).

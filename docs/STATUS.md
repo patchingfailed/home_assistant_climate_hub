@@ -4,7 +4,7 @@ Updated 2026-10-13. The only place for project status.
 
 ## Now
 
-UI mockups are approved (2026-10-13, except S8d). The clickable prototype (private Claude artifact „Climate Hub
+UI mockups are approved (2026-10-13). The clickable prototype (private Claude artifact „Climate Hub
 Prototyp", example data) shows the approved state. No integration code exists yet.
 
 ## Next
@@ -20,14 +20,13 @@ Prototyp", example data) shows the approved state. No integration code exists ye
 
 ## Open decisions
 
-- `docs/ui_mockups.md` §8.7: text-sensor state mapping (S8d).
 - ADR-005 naming may change if Home Assistant prefixes the area to new entity IDs (spike item 6).
 - U11: native UI vs. custom panel, decided after the DEV spike.
 
 ## Recently done
 
-- 2026-10-13: mockups approved after the second prototype review (entity list, defaults Q5, optional windows step,
-  heating/cooling, repairs). Window names default to „{Bereich} Fenster"; the double leaf's shared contact is a main
+- 2026-10-13: mockups approved after the second prototype review (entity list, defaults Q5, S8d, optional windows
+  step, heating/cooling, repairs). Window names default to „{Bereich} Fenster"; the double leaf's shared contact is a main
   field. Verified on DEV: no.
 
 - 2026-10-13: first prototype review folded in. Requirements R5, R6, R14, R15, A12, W0, W11, W12 (truth table) and U1;
