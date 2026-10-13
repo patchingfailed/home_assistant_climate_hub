@@ -50,3 +50,6 @@ ruff check . ; ruff format .
 11. At session end: commit, update `docs/STATUS.md`, note "verified on DEV: yes/no". Push is a deliberate, separate action, not a default.
 12. Language: code, comments, commits and `docs/` in English.
 13. Nothing in the repo refers to earlier iterations of this project or to private installation details.
+14. **Branches:** `main` holds the current, tested state. A larger task gets a short-lived branch off `main`, merged
+    back once its tests are green and Felix has looked, then deleted. Spikes (`spike/*`) are reference only, never
+    merged.
