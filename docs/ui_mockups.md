@@ -594,10 +594,10 @@ German names on a German instance; entity IDs are generated once from them (ADR-
 
 Every measurement carries `source`, `stage`, `reason` and, for fallbacks, `offset` as attributes (E6).
 
-Entity IDs in this table assume Home Assistant builds them from device name plus entity name. Since 2026.6 Home
-Assistant may put the area in front of newly generated entity IDs (core PR #170560). A device „Küche Klima" in the
-area Küche could then become `sensor.kuche_kuche_klima_temperatur`. The spike (§7) checks this; if it happens, the
-device name drops `{area}` (ADR-005 is revisited then).
+Entity IDs: Home Assistant 2026.10 builds them from area, device name and entity name (default `entity_id_parts`,
+`helpers/entity_registry.py`). The area is not stripped from a device name, so a device „Küche Klima" in the area
+Küche gives `sensor.kuche_kuche_klima_temperatur` (seen on DEV). Device names therefore must not contain the area;
+see §7 item 6 and the pending naming decision.
 
 ## 7. To verify on DEV before building (spike)
 
@@ -606,24 +606,30 @@ subentry flows; menu option descriptions (2025.10); `include_entities` on entity
 humidity fields (2025.2); creating and updating other subentries from a flow. Not supported: live forms, select option
 descriptions, entity selectors filtered by area (§2.4).
 
-Still to see on DEV:
+Spike results (2026-10-13, HA 2026.10.1, branch `spike/native-ui`, never merged; flows driven through the REST/WS flow
+API on DEV and checked in core and frontend source). „Eyes" means the mechanism works and Felix still judges the look
+in the UI.
 
-1. Sortable entity selector (`multiple` + `reorder`) inside a subentry flow form and inside a section.
-2. Four sections with two area selectors each (S3) render well on a phone.
-3. Menu step description with a multi-line markdown placeholder (lists, bold, maybe tables) as preview (S4, S6, S8).
-4. Area selector with a list of entity filters (temperature sensor **or** `climate`): does the list combine as „or"?
-5. Hub entry created together with room, region and window subentries in one step, and the success dialog text
-   after it.
-6. Device name translation with an `{area}` placeholder and the entity IDs generated from it, including the area
-   prefix from core PR #170560 (§6).
-7. Window flow creating a room subentry (U4): does the integration page show it without a reload?
-8. Order of the add items in the ⋮ menu follows the order of `async_get_supported_subentry_types`.
-9. Re-opening a form with replaced suggested values after an area change (S6).
-10. Entity picker shows each contact's area, so the unfiltered contact list (S8) stays usable.
-11. S8d: fields with data keys and no translation show the raw value as label.
-12. Repair fix flows (S11) that update a room subentry, recreate a room and delete window subentries.
+| # | Check | Result |
+|---|---|---|
+| 1 | Sortable entity selector in a subentry form and in a section | Works (API, frontend source); drag-sorting: eyes |
+| 2 | S3: four sections with two area selectors, on a phone | Serialises (`expandable`, expanded); phone layout: eyes |
+| 3 | Markdown preview from a placeholder | Works: menu descriptions render GFM markdown incl. tables; look: eyes |
+| 4 | Area selector with a list of entity filters | Works: the frontend combines the list with „or" |
+| 5 | Hub entry with all subentries in one step, success text | Works: `async_create_entry(subentries=..., description=<translation key>)`; dialog: eyes |
+| 6 | Device name with `{area}` and the generated entity IDs | **Fails as designed**: the area doubles (`sensor.kuche_kuche_klima_temperatur`). A device „Fenster" in the area gives `sensor.kuche_fenster_zustand` |
+| 7 | Window flow creating a room subentry | Works (`async_add_subentry`); page refresh without F5: eyes |
+| 8 | Order of the ⋮ add items | Works: frontend follows the order of `async_get_supported_subentry_types` |
+| 9 | Re-open a form with replaced suggestions after an area change | Works (second step id for the hint text) |
+| 10 | Entity picker shows each contact's area | Search by area works (source); display: eyes |
+| 11 | S8d raw values as field labels | Works: untranslated field keys show as labels; look: eyes |
+| 12 | Repair fix flows (update, recreate room, delete windows) | Works, both menu paths |
 
-The minimum Home Assistant version is at least 2025.10 (menu option descriptions); the ADR follows the spike.
+Further findings for the real build: a room's device area must follow the room's area (`suggested_area` only places a
+new device); the new-sensor repair (R14) needs a registry listener, not only a check at setup. Implementation
+pitfalls are in the project skill `ha-integration-dev`.
+
+The minimum Home Assistant version is at least 2025.10 (menu option descriptions); the spike ran on 2026.10.1 only.
 
 ## 8. Open points for review
 

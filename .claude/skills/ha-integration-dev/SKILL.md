@@ -69,6 +69,12 @@ Invoke-RestMethod "http://${DevHost}:8123/api/states/sensor.arbeitszimmer_klima_
 | Raw state (`keep_open`) in the dashboard | No enum sensor | `SensorDeviceClass.ENUM` + `translation_key` |
 | New platform doesn't show up after reload | Platforms are only registered on start | Restart |
 | Entity history lost | `unique_id` changed | Never change it; the schema lives in `docs/architecture.md` |
+| `ModuleNotFoundError: voluptuous` on DEV | HA 2026.10 validates with `probatio` (pinned 0.13.0); voluptuous is gone from HA OS | `import probatio` (same `Schema`/`Required`/`Optional` API) |
+| Menu step gives HTTP 500 `UnknownStep` | `async_show_menu(step_id=x)` without an `async_step_x` | Every menu step id needs a real step method; a second translation variant gets its own alias step |
+| "Cannot update and reload entry with update listeners" | `async_update_reload_and_abort` while an update listener is registered | `async_update_and_abort`; the listener reloads |
+| Entity ID `sensor.kuche_kuche_klima_…` | HA puts the area in front of new entity IDs (default `entity_id_parts`) and does not strip it from the device name | Device names without the area |
+| Device stays in the old area after a room's area changed | `suggested_area` only places a new device | `device_registry.async_update_device(device_id, area_id=…)` on area change |
+| `deploy.ps1 -Restart` prints a connection error | HA closes the connection while restarting | Expected; the script waits for `/api/config` afterwards |
 
 ## Workflow decision tree
 

@@ -50,6 +50,21 @@ Write-Host "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Deployed -> $Target"
 
 if ($Restart) {
   if (-not $Token) { throw "No token configured - restart manually via the UI." }
-  Invoke-RestMethod -Uri "$BaseUrl/api/services/homeassistant/restart" -Headers $Headers -Method Post | Out-Null
-  Write-Host "Restart of $HostName triggered."
+  # HA often closes the connection while it restarts, so a failed call here is expected.
+  try {
+    Invoke-RestMethod -Uri "$BaseUrl/api/services/homeassistant/restart" -Headers $Headers -Method Post -TimeoutSec 30 | Out-Null
+  } catch {
+    Write-Host "Restart call ended early (expected while HA restarts)."
+  }
+  Write-Host "Restart of $HostName triggered, waiting for HA ..."
+  Start-Sleep -Seconds 10
+  $deadline = (Get-Date).AddMinutes(5)
+  while ((Get-Date) -lt $deadline) {
+    try {
+      $cfg = Invoke-RestMethod -Uri "$BaseUrl/api/config" -Headers $Headers -TimeoutSec 5
+      if ($cfg.state -eq "RUNNING") { Write-Host "HA is running again."; exit 0 }
+    } catch { }
+    Start-Sleep -Seconds 5
+  }
+  throw "HA did not report RUNNING within 5 minutes."
 }
