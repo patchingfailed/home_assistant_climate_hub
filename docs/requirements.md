@@ -173,7 +173,7 @@ Climate Hub **recommends** shading. It never moves covers; automations act on th
 
 | ID | Prio | Requirement |
 |---|---|---|
-| U1 | M | **Guided first setup in a few screens:** Climate Hub scans areas, sensors and weather entities, then proposes rooms and outdoor regions. The user confirms or deselects. Nothing is created without confirmation. Windows can be added as an optional last step or later (W0). |
+| U1 | M | **Guided first setup in a few screens:** Climate Hub scans areas, sensors and weather entities, then proposes rooms and outdoor regions. Floors help the proposal (areas on a floor that sounds like outside are proposed as outdoor areas), but are never required. The user confirms or deselects. Nothing is created without confirmation. Windows can be added as an optional last step or later (W0). |
 | U2 | M | Rooms, regions and windows each have their own add, edit and delete. Changes take effect without a restart. |
 | U3 | M | Every field from creation is editable later, including fields that were left empty. |
 | U4 | M | No creation-order dependencies (P3). Adding a window in an area that has no room yet creates the room with suggestions (after confirmation) instead of failing. |

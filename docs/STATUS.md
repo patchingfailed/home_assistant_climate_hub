@@ -10,8 +10,9 @@ No product code exists yet.
 
 ## Next
 
-1. **Click review on DEV** (Felix): the „eyes" items of §7 (1, 2, 3, 5, 7, 10, 11). DEV has a few mirrored entities
-   assigned to areas as test fixtures (list and undo in the private local notes).
+1. **Rest of the click review on DEV** (Felix, optional): §7 items 1 (drag-sorting), 3 (markdown table), 5 (success
+   text), 10 (area per picker row). Item 2 (phone) is skipped by choice. DEV has a few mirrored entities assigned to
+   areas as test fixtures (list and undo in the private local notes).
 2. **Minimum HA version** as an ADR (at least 2025.10 for menu option descriptions; the spike ran on 2026.10.1).
 3. **Logic spec and pure logic modules** with table tests: psychrometrics (absolute humidity, dew point, humidity after
    ventilating), source resolution with offset learning, region fallback, window state (incl. the W12 table),
@@ -22,11 +23,14 @@ No product code exists yet.
 
 ## Open decisions
 
-- S2 in the first setup offers outdoor areas too (a native area picker cannot hide them). Options after the click
-  review: a checkbox list of candidate areas we compute, or asking for the outdoor areas first.
-- U11: native UI vs. custom panel, decided after the click review. So far every mechanism works natively.
+- U11: native UI vs. custom panel. Every mechanism the mockups need works natively (spike, §7); proposal: close U11
+  as native and confirm ADR-001.
 
 ## Recently done
+
+- 2026-10-13: second click review on DEV folded into the mockups. Copy rule (no first person). S8d with one field per
+  position. Windows start with the room; contacts filtered with „Alle Kontakte zeigen". S2/S3 use computed lists,
+  S2 pre-selects by floors and thermostats. S5 shows the real card layout. Verified on DEV: yes (spike, UI).
 
 - 2026-10-13: ADR-007, device names without the area (accepted by Felix); E3 and the mockups follow it. First click
   review on DEV showed stale translations from the browser cache (the server serves the new ones).

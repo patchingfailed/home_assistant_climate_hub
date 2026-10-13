@@ -132,11 +132,18 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 ```
 ┌─ Welche Bereiche sind Räume? ──────────────────────────────┐
 │ Pro Raum werden die Sensoren zu einem Wert                 │
-│ zusammengefasst. Vorausgewählt sind Bereiche mit           │
-│ Klimasensor oder Thermostat.                               │
+│ zusammengefasst. Gezeigt sind Bereiche mit Temperatur-     │
+│ sensor oder Thermostat. Außenbereiche sind nicht           │
+│ angehakt.                                                  │
 │                                                            │
-│ Räume   [ Wohnzimmer ✕ ] [ Küche ✕ ] [ Bad ✕ ]             │
-│         [ Schlafzimmer ✕ ] [ Arbeitszimmer ✕ ] [ + ]       │
+│  [x] Erdgeschoss · Wohnzimmer                              │
+│  [x] Erdgeschoss · Küche                                   │
+│  [x] Erdgeschoss · Bad                                     │
+│  [x] Obergeschoss · Schlafzimmer                           │
+│  [x] Obergeschoss · Arbeitszimmer                          │
+│  [ ] Außen · Garten                                        │
+│  [ ] Außen · Hof                                           │
+│  [ ] ohne Stockwerk · Straße                               │
 │                                                            │
 │   Welche Sensoren pro Raum genutzt werden, zeigt die       │
 │   Vorschau. Die Reihenfolge änderst du später pro Raum.    │
@@ -144,7 +151,17 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 └────────────────────────────────────────────────────────────┘
 ```
 
-- Area selector, multiple, filtered to areas with a temperature sensor or a `climate` entity.
+- Checkbox list (select, `multiple`, list mode) of all areas with a temperature sensor or a `climate` entity, sorted
+  by floor, labelled „{floor} · {area}" („ohne Stockwerk" for areas without a floor). A native area selector cannot
+  hide areas (§2.4), so the list is computed (agreed 2026-10-13).
+- Pre-checked, for the user to confirm (P1):
+  1. Areas on a floor whose name sounds like outside (translated word list: Außen, Draußen, Garten, Hof, Terrasse,
+     Outside, Outdoor, Garden, Yard, Patio …): not checked.
+  2. Areas with a `climate` entity: checked (outdoor areas have no thermostat).
+  3. Other areas on a floor: checked.
+  4. Areas without a floor and without a `climate` entity: not checked.
+- Floors are never required. Users who keep their outdoor areas on a floor of their own get a correct pre-selection
+  without a click.
 - Error if empty: „Wähle mindestens einen Raum."
 
 ### S3 Hausplan
@@ -173,12 +190,13 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 └────────────────────────────────────────────────────────────┘
 ```
 
-- Four fixed sections, so all keys are translatable. Each section has one area selector (outdoor area, filtered to areas
-  with a temperature sensor) and one area selector, multiple (rooms on that side).
+- Four fixed sections, so all keys are translatable. Each section has a select for the outdoor area (options: areas
+  with a temperature sensor that are not rooms, i.e. the unchecked ones from S2; may stay empty) and a select,
+  multiple, for the rooms on that side (options: the rooms from S2). Computed lists instead of area selectors, so no
+  area can be room and outdoor area at once (agreed 2026-10-13).
 - Errors:
   - Room on two sides: „Ein Raum hat eine Hauptseite. Fenster zu anderen Seiten stellst du später am Fenster ein."
-  - Same area as outdoor area and room: „{area} kann nicht gleichzeitig Raum und Außenbereich sein."
-- A room chosen here that was not ticked in S2 becomes a room as well (P3) and is marked „neu" in the preview.
+  - Same outdoor area on two sides: „{area} ist schon der Außenbereich für {side}."
 
 ### S4 Vorschau
 
@@ -658,9 +676,9 @@ in the UI.
 | # | Check | Result |
 |---|---|---|
 | 1 | Sortable entity selector in a subentry form and in a section | Works (API, frontend source); drag-sorting: eyes |
-| 2 | S3: four sections with two area selectors, on a phone | Serialises (`expandable`, expanded); phone layout: eyes |
+| 2 | S3: four sections with two area selectors, on a phone | Serialises (`expandable`, expanded); works on desktop. Phone not tested, accepted by Felix (2026-10-13) |
 | 3 | Markdown preview from a placeholder | Works: menu descriptions render GFM markdown incl. tables; look: eyes |
-| 4 | Area selector with a list of entity filters | Works: the frontend combines the list with „or" |
+| 4 | Area selector with a list of entity filters | Works: the frontend combines the list with „or". It still shows outdoor areas, so S2 and S3 now use computed lists |
 | 5 | Hub entry with all subentries in one step, success text | Works: `async_create_entry(subentries=..., description=<translation key>)`; dialog: eyes |
 | 6 | Device name with `{area}` and the generated entity IDs | **Fails as designed**: the area doubles (`sensor.kuche_kuche_klima_temperatur`). A device „Fenster" in the area gives `sensor.kuche_fenster_zustand` |
 | 7 | Window flow creating a room subentry | Works (`async_add_subentry`); page refresh without F5: eyes |
