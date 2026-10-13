@@ -68,6 +68,8 @@ Unique IDs derive from subentry IDs only.
 in the instance language and never change on rename (rule 1). Fused values are distinguishable from raw sensors such as
 "Kitchen temperature".
 
+**Superseded in part** by ADR-007: device names no longer contain the area.
+
 ## ADR-006: Tunables that automations may change are entities (2026-10-12)
 
 **Context.** The comfort range is changed by people and by automations (for example a cooler range at night).
@@ -77,3 +79,20 @@ Expert tunables that nobody changes at runtime (maximum age, burst duration, hum
 the hub options.
 
 **Consequences.** Values are restored on restart and can be set from dashboards and automations. Options remain short.
+
+## ADR-007: Device names without the area (2026-10-13)
+
+**Context.** Home Assistant 2026.10 builds new entity IDs from area, device name and entity name (default
+`entity_id_parts`) and does not strip an area that the device name repeats. In the DEV spike a device „Küche Klima" in
+the area Küche got `sensor.kuche_kuche_klima_temperatur`. ADR-005 had put the area into device names.
+
+**Decision.** Device names do not contain the area: rooms and regions "Climate" / "Klima", windows the user's name or
+"Window" / "Fenster" (numbered from the second window in a room), the hub "Home climate" / "Hausklima" (no area).
+Every room, region and window device is placed in its area at creation and moved along when the area changes. Subentry
+titles keep the area („Küche", „Norden · Straße", „Küche Fenster"), so the integration page stays readable. If an
+instance's `entity_id_parts` setting leaves out the area, device names include it again („Küche Klima"), so entity IDs
+stay predictable either way.
+
+**Consequences.** Entity IDs as P7 intends: `sensor.kuche_klima_temperatur`, `sensor.kuche_fenster_zustand`. Friendly
+names carry no room („Klima Temperatur"); Home Assistant shows the area as context, and dashboards group by room
+anyway (accepted 2026-10-13). Entity IDs never follow later area changes (rule 1).

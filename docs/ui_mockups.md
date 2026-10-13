@@ -445,10 +445,11 @@ Field rules:
   sensors with device class window, door, opening or garage door, plus sensors with a text state. Reason:
   pass-through openings lie in other areas (W5), the room is chosen in the same form (§2.4), and a house has few
   contacts.
-- Name: optional. Empty means a name from the room: „{area} Fenster" (pass-through: „{area} Durchgang"), numbered
-  from the second one in the same room („Küche Fenster 2"). The preview shows it, and saving stores it, so it stays
-  stable and editable. Agreed 2026-10-13: room-based names give predictable entity IDs (P7,
-  `sensor.kuche_fenster_zustand`); compounds like „Küchenfenster" cannot be derived reliably.
+- Name: optional. Empty means „Fenster" (pass-through: „Durchgang"), numbered from the second one in the same room.
+  The integration page shows it with the room („Küche Fenster", „Küche Fenster 2"); the device itself is named
+  without the area and sits in it, so the entity IDs read `sensor.kuche_fenster_zustand` (ADR-007). The preview shows
+  the name, and saving stores it, so it stays stable and editable. Compounds like „Küchenfenster" cannot be derived
+  reliably (agreed 2026-10-13).
 
 ### S8d Zustände zuordnen (only for text sensors)
 
@@ -560,11 +561,12 @@ ist, aber ohne Raum gibt es keine Empfehlung.
 
 ## 6. Entities (what dashboards and automations see)
 
-German names on a German instance; entity IDs are generated once from them (ADR-005).
+German names on a German instance. Entity IDs are generated once from area, device name and entity name; device names
+carry no area (ADR-005, ADR-007). The device column shows the device name and, in brackets, its area.
 
 | Device | Entity | Type | Example entity ID |
 |---|---|---|---|
-| Wohnzimmer Klima | Temperatur | sensor, °C | `sensor.wohnzimmer_klima_temperatur` |
+| Klima (Wohnzimmer) | Temperatur | sensor, °C | `sensor.wohnzimmer_klima_temperatur` |
 | | Luftfeuchtigkeit | sensor, % | `sensor.wohnzimmer_klima_luftfeuchtigkeit` |
 | | Luftdruck | sensor, hPa | |
 | | Absolute Feuchte | sensor, g/m³ | |
@@ -582,10 +584,10 @@ German names on a German instance; entity IDs are generated once from them (ADR-
 | | Offen bei Heizen/Kühlen | binary_sensor (only with windows and heating/cooling devices, A12) | |
 | | Fenster | enum: zu / angelehnt / gekippt / offen, most open window of the room (only with windows, W9) | `sensor.wohnzimmer_klima_fenster` |
 | | Fenster offen seit | sensor, timestamp, earliest open window (only with windows) | |
-| Wohnzimmer Fenster | Zustand | enum: zu / angelehnt / gekippt / offen (+ open leaves attribute) | `sensor.wohnzimmer_fenster_zustand` |
+| Fenster (Wohnzimmer) | Zustand | enum: zu / angelehnt / gekippt / offen (+ open leaves attribute) | `sensor.wohnzimmer_fenster_zustand` |
 | | Offen seit | sensor, timestamp | |
 | | Beschattung | enum: beschatten / beschattet lassen / öffnen / offen lassen / keine (+ reason); enabled by default only with a cover (SH1, SH2) | `sensor.wohnzimmer_fenster_beschattung` |
-| Straße Klima | Temperatur, Luftfeuchtigkeit, Luftdruck, Absolute Feuchte, Taupunkt | sensors (+ stage attribute) | `sensor.strasse_klima_temperatur` |
+| Klima (Straße) | Temperatur, Luftfeuchtigkeit, Luftdruck, Absolute Feuchte, Taupunkt | sensors (+ stage attribute) | `sensor.strasse_klima_temperatur` |
 | Hausklima | Wunschtemperatur min / max, Schwelle | number | `number.hausklima_wunschtemperatur_max` |
 | | Tagesstrategie | enum: Aufheizen verhindern / Auskühlen verhindern / neutral | |
 | | Innen Durchschnitt, Außen | sensors (+ min/max attributes) | |
@@ -597,7 +599,7 @@ Every measurement carries `source`, `stage`, `reason` and, for fallbacks, `offse
 Entity IDs: Home Assistant 2026.10 builds them from area, device name and entity name (default `entity_id_parts`,
 `helpers/entity_registry.py`). The area is not stripped from a device name, so a device „Küche Klima" in the area
 Küche gives `sensor.kuche_kuche_klima_temperatur` (seen on DEV). Device names therefore must not contain the area;
-see §7 item 6 and the pending naming decision.
+see §7 item 6 and ADR-007.
 
 ## 7. To verify on DEV before building (spike)
 
