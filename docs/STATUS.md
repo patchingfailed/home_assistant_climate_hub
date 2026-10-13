@@ -6,7 +6,8 @@ Updated 2026-10-13. The only place for project status.
 
 UI mockups are approved (2026-10-13). The native-UI spike ran on DEV (branch `spike/native-ui`, never merged):
 results in `docs/ui_mockups.md` §7. Its code stays deployed on DEV, without a hub entry, for Felix's click review.
-No product code exists yet.
+No product code exists yet. The logic spec `docs/logic.md` is drafted and waits for Felix's review (decisions D1–D14
+in its §0).
 
 ## Next
 
@@ -18,8 +19,9 @@ No product code exists yet.
    ventilating), source resolution with offset learning, region fallback, window state (incl. the W12 table),
    recommendation (A1–A6, A12), shading (SH1), pre-fill (R3, R6). The pre-fill rules need unit tests: DEV's mirrored
    entities have no devices.
-   How: write `docs/logic.md` first (rules, inputs/outputs, table cases per module; requirement IDs), Felix reviews it,
-   then Sonnet implementers build `custom_components/climate_hub/logic/` + `tests/logic/` module by module
+   How: `docs/logic.md` is drafted (rules, interfaces, table cases per module; requirement IDs). Next: Felix reviews
+   §0 (D1–D14), approved decisions go into `docs/requirements.md` (A1, A2, A3/A6, A4, O6, R7, W7/W8/W10, H6, SH1,
+   §6 for R13), then Sonnet implementers build `custom_components/climate_hub/logic/` + `tests/logic/` module by module
    (rule 6: no HA imports, `now` as a parameter). Branch off `planning/kickoff`. The spike branch `spike/native-ui`
    shows working flow/subentry/repair idioms for the later UI build (reference only, never merge).
 4. **CI**: pytest, ruff, hassfest, HACS validation.
@@ -27,10 +29,14 @@ No product code exists yet.
 
 ## Open decisions
 
-- None. Next design work: the logic spec (Next 3).
+- Logic spec decisions D1–D14 (`docs/logic.md` §0), each with a proposal.
 
 ## Recently done
 
+- 2026-10-13: logic spec drafted (`docs/logic.md`): ten pure modules with interfaces and table cases, reference
+  values computed (psychrometrics, offset learning, fallback means). Proposes D1–D14, among them a glide for offsets at
+  the fallback switch, a binary recommendation with goals, a humidity guard against humid summer air, and a 24 h
+  forecast horizon. Verified on DEV: no (spec only).
 - 2026-10-13: U11 closed, native UI (ADR-001 confirmed). R3: humidity and pressure follow the temperature devices;
   without such devices the list is pre-filled from the area. Drag-sorting confirmed on DEV.
 - 2026-10-13: second click review on DEV folded into the mockups. Copy rule (no first person). S8d with one field per
