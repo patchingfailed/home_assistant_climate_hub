@@ -7,8 +7,17 @@ Updated 2026-10-13. The only place for project status.
 UI mockups are approved (2026-10-13). The native-UI spike ran on DEV (branch `spike/native-ui`, never merged):
 results in `docs/ui_mockups.md` §7. Its code stays deployed on DEV, without a hub entry, for Felix's click review.
 The logic spec `docs/logic.md` is approved (2026-10-13, D1–D16 except the replaced D13) and **built**: the ten pure
-modules in `custom_components/climate_hub/logic/` with 393 table tests on branch `build/logic-modules` (off
-`planning/kickoff`, not merged, not pushed). No Home Assistant glue exists yet (no manifest, no entities, no flows).
+modules in `custom_components/climate_hub/logic/` with 393 table tests. Felix approved the logic and the build
+decisions (2026-10-13). No Home Assistant glue exists yet (no manifest, no entities, no flows).
+
+**Branches today** (each line contains the one above it):
+
+| Branch | Contents | Pushed |
+|---|---|---|
+| `main` | only the initial commit | yes |
+| `planning/kickoff` | + all planning (requirements, ADRs, mockups, logic spec): 21 commits | 3 commits not pushed |
+| `build/logic-modules` | + the logic modules and this STATUS: 7 commits, **checked out, the current state** | no, local only |
+| `spike/native-ui` | throwaway UI spike, reference only | never merge |
 
 ## Next
 
@@ -16,7 +25,8 @@ modules in `custom_components/climate_hub/logic/` with 393 table tests on branch
    text), 10 (area per picker row). Item 2 (phone) is skipped by choice. DEV has a few mirrored entities assigned to
    areas as test fixtures (list and undo in the private local notes).
 2. **Minimum HA version** as an ADR (at least 2025.10 for menu option descriptions; the spike ran on 2026.10.1).
-3. **Merge `build/logic-modules`** into `planning/kickoff` after Felix's look at the logic (push is separate).
+3. **Branching decision, then tidy up** (see Open decisions): fold the branches into `main` and push, so the
+   logic is no longer local only.
 4. **Adapter and integration build plan**: manifest, hub entry with subentries, coordinator (snapshot, 60 s tick,
    debounced listeners), `Store` persistence of the logic states, entities, flows per the mockups, repairs. The
    adapter contract is in `docs/logic.md` §14. The spike branch `spike/native-ui` shows working
@@ -26,8 +36,14 @@ modules in `custom_components/climate_hub/logic/` with 393 table tests on branch
 
 ## Open decisions
 
-- None. Scope guard from the review: no energy-exchange model (requirements §7); the cover recommendation is advisory
-  and leaves existing cover automations untouched.
+- **Branching strategy** (Felix, 2026-10-14). Recommendation: `main` is the one line that always has the current,
+  tested state. Each larger task gets a short-lived branch off `main` (for example `build/adapter`), merged back once
+  its tests are green and Felix has looked; then the branch is deleted. Spikes stay separate and are never merged.
+  First step: fast-forward `main` to `build/logic-modules` (no conflicts, `main` has nothing of its own), push, delete
+  `planning/kickoff` and `build/logic-modules`. Alternative: keep working on `planning/kickoff` as the main line and
+  leave `main` for releases.
+- Scope guard from the review: no energy-exchange model (requirements §7); the cover recommendation is advisory and
+  leaves existing cover automations untouched.
 
 ## Recently done
 
