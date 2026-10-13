@@ -5,6 +5,10 @@ for what native flows can render (§2.4). The DEV spike (§7) may still force ch
 Screens show the German UI strings, because German is the primary language of the reference installation. The English
 strings use the same keys. Requirement IDs refer to `docs/requirements.md`, ADRs to `docs/architecture.md`.
 
+**Copy rule (2026-10-13):** texts never use the first person. Home Assistant and Climate Hub are not persons, so no
+„ich". Prefer what the user sees or does („Mit Fenstern siehst du …"), otherwise a neutral phrasing. The user is
+addressed with „du", as in Home Assistant's German UI.
+
 Legend for screens: `[ … ▾ ]` dropdown, `[■]` toggle, `≡` drag handle of a sortable list, `▸` collapsed section,
 `▾` expanded section, `>` menu option.
 
@@ -92,7 +96,7 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 
 ```
 ┌─ Climate Hub einrichten ───────────────────────────────────┐
-│ Ich habe dein Zuhause durchsucht und gefunden:             │
+│ Gefunden in deinem Zuhause:                                │
 │  • 7 Bereiche mit Klimasensor oder Thermostat              │
 │  • 3 Bereiche mit Temperatursensor, die draußen sein       │
 │    könnten                                                 │
@@ -118,14 +122,14 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 
 ```
 ┌─ Welche Bereiche sind Räume? ──────────────────────────────┐
-│ Pro Raum fasse ich die Sensoren zu einem Wert zusammen.    │
-│ Vorausgewählt sind Bereiche mit Klimasensor oder           │
-│ Thermostat.                                                │
+│ Pro Raum werden die Sensoren zu einem Wert                 │
+│ zusammengefasst. Vorausgewählt sind Bereiche mit           │
+│ Klimasensor oder Thermostat.                               │
 │                                                            │
 │ Räume   [ Wohnzimmer ✕ ] [ Küche ✕ ] [ Bad ✕ ]             │
 │         [ Schlafzimmer ✕ ] [ Arbeitszimmer ✕ ] [ + ]       │
 │                                                            │
-│   Welche Sensoren ich pro Raum nehme, siehst du in der     │
+│   Welche Sensoren pro Raum genutzt werden, zeigt die       │
 │   Vorschau. Die Reihenfolge änderst du später pro Raum.    │
 │                                              [ Weiter ]    │
 └────────────────────────────────────────────────────────────┘
@@ -186,8 +190,8 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 │ • **Westen · Hof** 14,5 °C · 65 %                          │
 │ • Osten: keine Außenseite, Wetterdienst springt ein.       │
 │ **Fenster**                                                │
-│ • Noch keine. Mit Fenstern weiß ich, was gerade offen ist, │
-│   und kann warnen.                                         │
+│ • Noch keine. Mit Fenstern siehst du, was gerade offen     │
+│   ist, und bekommst Warnungen.                             │
 │ Quellen und Reihenfolge änderst du später pro Raum.        │
 │                                                            │
 │  > Anlegen                                                 │
@@ -213,24 +217,32 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 
 ```
 Climate Hub
- └ Hausklima                                   ⚙ Konfigurieren   ⋮
-   │   ⋮ > Raum hinzufügen
-   │     > Außenseite hinzufügen
-   │     > Fenster hinzufügen
-   │     > Rekonfigurieren (Hausplan)
-   │     > …                                   (HA's own items)
-   ├ Räume
-   │    Wohnzimmer ⋮   Küche ⋮   Bad ⋮   Schlafzimmer ⋮     ⋮ > Rekonfigurieren · Löschen
-   ├ Außenseiten
-   │    Norden · Straße ⋮   Süden · Garten ⋮   Westen · Hof ⋮
-   └ Fenster
-        Küche Fenster ⋮
+ Hausklima                                     ⚙ Konfigurieren   ⋮
+     ⋮ > Raum hinzufügen · Außenseite hinzufügen · Fenster hinzufügen
+       > Rekonfigurieren (Hausplan) · …  (HA's own items)
+ ┌──────────────────────────────────────────────────────────────┐
+ │ ˄ Wohnzimmer                                         ⚙  ⋮   │
+ │   Raum                                                       │
+ │     Klima · Wohnzimmer · 1 Entität                   ›  ✎  ⋮ │
+ └──────────────────────────────────────────────────────────────┘
+ ┌──────────────────────────────────────────────────────────────┐
+ │ ˄ Wohnzimmer Fenster                                 ⚙  ⋮   │
+ │   Fenster                                                    │
+ │     Fenster · Wohnzimmer · 1 Entität                 ›  ✎  ⋮ │
+ └──────────────────────────────────────────────────────────────┘
+ … one card per room, outdoor side and window
 ```
 
-Layout is Home Assistant's. We control the type names, the subentry titles and the order of the add items.
-Home Assistant shows nothing for an empty type group and has no room for our own hints on this page. „Löschen"
-opens Home Assistant's own confirmation, which we cannot extend. Deleting a room therefore keeps its windows and
-raises a repair (W11, S11).
+Layout is Home Assistant's (seen on DEV, 2026-10-13): one card per subentry with its title, the type as subtitle,
+⚙ (reconfigure) and ⋮, and the subentry's devices inside. We control the type names, the subentry titles and the
+order of the add items. Subentry titles carry the area („Wohnzimmer", „Wohnzimmer Fenster", „Norden · Straße"); device
+names do not (ADR-007). There is no room for our own hints on this page. „Löschen" opens Home Assistant's own
+confirmation, which we cannot extend. Deleting a room therefore keeps its windows and raises a repair (W11, S11).
+
+A window cannot simply move into its room's card (asked 2026-10-13): Home Assistant groups devices by the subentry
+that owns them, a window needs its own subentry for its own edit and delete, and a window device owned only by the
+room's subentry would disappear with the room (W11). Linking the window device to both subentries would show it in
+both cards, which is more confusing than helpful. Not planned.
 
 ### S6 Raum
 
@@ -238,8 +250,8 @@ raises a repair (W11, S11).
 
 ```
 ┌─ Raum hinzufügen ──────────────────────────────────────────┐
-│ Welcher Bereich ist der Raum? Danach schlage ich die       │
-│ Quellen aus diesem Bereich vor.                            │
+│ Welcher Bereich ist der Raum? Danach werden die Quellen    │
+│ aus diesem Bereich vorgeschlagen.                          │
 │                                                            │
 │ Bereich         [ Wohnzimmer                           ▾ ] │
 │   Gezeigt werden Bereiche mit Temperatursensor oder        │
@@ -270,7 +282,7 @@ raises a repair (W11, S11).
 │   ≡ Thermostat Wohnzimmer                           ✕      │
 │   [ + Quelle ]                                             │
 │   Fällt die oberste Quelle aus, übernimmt die nächste.     │
-│   Ihre typische Abweichung gleiche ich aus.                │
+│   Ihre typische Abweichung wird ausgeglichen.              │
 │                                                            │
 │ ▸ Feuchte und Luftdruck                                    │
 │ ▸ Heizen und Kühlen                                        │
@@ -286,14 +298,14 @@ raises a repair (W11, S11).
 - Temperature sources: entity selector, `multiple` + `reorder`, limited to temperature sensors and `climate` entities
   of the room's area plus entities without an area (U6). Pre-filled when the sources were suggested (R6).
 - Area: changing it re-opens this form with sources suggested for the new area. Chosen sources without an area stay.
-  Hint in the description: „Bereich geändert: Ich habe die Quellen für {area} neu vorgeschlagen."
+  Hint in the description: „Bereich geändert: Die Quellen sind jetzt für {area} vorgeschlagen."
 - Thermostats and air conditioners also deliver humidity when they report it (R5), so they can appear in the
   humidity order too.
 - ▸ Feuchte und Luftdruck: „Feuchtequellen" and „Luftdruckquellen", sortable. Empty means "same devices as
   temperature" (R3), which the description says.
 - ▸ Heizen und Kühlen: „Heiz- und Klimageräte" (`climate` entities, multiple), pre-filled with the area's `climate`
-  entities (R15). Description: „Ich steuere sie nicht. Läuft eines, während ein Fenster länger als zum Stoßlüften
-  offen ist, warne ich." Open while adding, collapsed when editing.
+  entities (R15). Description: „Sie werden nur gelesen, nie gesteuert. Läuft eines, während ein Fenster länger
+  als zum Stoßlüften offen ist, gibt es eine Warnung." Open while adding, collapsed when editing.
 - ▸ Erweitert: „Höchstalter einer Messung" (minutes; empty = hub default).
 - Errors: area already a room or an outdoor side (as in step 1), no temperature source („Wähle mindestens eine
   Temperaturquelle.").
@@ -347,8 +359,8 @@ raises a repair (W11, S11).
 - Direction: static labels, but only free directions are offered (when editing: the free ones plus its own). The error
   stays as a safeguard: „Für Norden gibt es schon eine Außenseite: Straße."
 - Area: same re-open rule as S6.
-- Preview names the computed fallback chain: „Fällt Osten aus, nehme ich Norden (Straße) und Süden (Garten), dann
-  Westen (Hof), dann den Wetterdienst."
+- Preview names the computed fallback chain: „Fällt Osten aus, springen Norden (Straße) und Süden (Garten) ein,
+  dann Westen (Hof), dann der Wetterdienst."
 
 ### S8 Fenster: Typ
 
@@ -379,7 +391,7 @@ descriptions (Home Assistant 2025.10).
 │ Raum            [ Küche                                ▾ ] │
 │ Kontakt         [ Fensterkontakt Küche                 ▾ ] │
 │ Name            [                                        ] │
-│   Leer lassen: Ich nenne es nach dem Raum: Küche Fenster.  │
+│   Leer lassen: Name nach dem Raum, z. B. Küche Fenster.    │
 │ ▸ Zusatzkontakte                                           │
 │ ▸ Rollladen                                                │
 │ ▸ Erweitert                                                │
@@ -397,10 +409,10 @@ descriptions (Home Assistant 2025.10).
 │ Kontakt zwischen den Flügeln (optional)                    │
 │                 [ Kontakt unten Wohnzimmer             ▾ ] │
 │   Sitzt meist unten zwischen den Flügeln und meldet nur    │
-│   „offen", wenn ein Flügel ganz aufgedreht ist. Damit      │
-│   unterscheide ich gekippt und offen.                      │
+│   „offen", wenn ein Flügel ganz aufgedreht ist. So lassen  │
+│   sich gekippt und offen unterscheiden.                    │
 │ Name            [                                        ] │
-│   Leer lassen: Ich nenne es nach dem Raum.                 │
+│   Leer lassen: Name nach dem Raum.                         │
 │ ▸ Zusatzkontakte                                           │
 │ ▸ Rollladen                                                │
 │ ▸ Erweitert                                                │
@@ -431,8 +443,8 @@ Shared sections (all types):
   unten. Er meldet nur „offen", wenn der Flügel ganz aufgedreht ist.") and handle contact (W4). Double leaf: handle
   contact only, because its tilt discriminator is a main field („Kontakt zwischen den Flügeln", S8b, W12). Users
   look for the contact by where it sits, not by its role (prototype review 2026-10-13).
-- **▸ Rollladen**: „Rollladen" (cover entity, optional, SH2). Description: „Dann empfehle ich, wann du beschatten
-  solltest. Bewegen tut ihn deine Automation."
+- **▸ Rollladen**: „Rollladen" (cover entity, optional, SH2). Description: „Dann gibt es eine Empfehlung, wann du
+  beschatten solltest. Bewegen tut ihn deine Automation."
 - **▸ Erweitert**: „Ausrichtung" (static options „Wie der Raum", Norden, Osten, Süden, Westen; default „Wie der Raum";
   the preview names the resulting direction), „Genaue Ausrichtung in Grad" (optional, SH4), „Lüftet ab" (default
   gekippt, W3).
@@ -455,23 +467,28 @@ Field rules:
 
 ```
 ┌─ Zustände zuordnen ────────────────────────────────────────┐
-│ Fenstergriff Bad meldet Text. Ordne jedem Wert eine        │
-│ Stellung zu. Vorbelegt ist, was ich erkannt habe.          │
+│ Badfenster Schließzustand meldet Text. Welcher Text        │
+│ bedeutet welche Stellung? Vorbelegt aus bisherigen Werten  │
+│ und üblichen Wörtern. Fehlende Texte kannst du eintippen.  │
 │                                                            │
-│ closed          [ zu                                   ▾ ] │
-│ tilted          [ gekippt                              ▾ ] │
-│ open            [ offen                                ▾ ] │
+│ zu          [ zu ✕ ] [ closed ✕ ] [ + ]                    │
+│ angelehnt   [ angelehnt ✕ ] [ + ]                          │
+│ gekippt     [ + ]                                          │
+│ offen       [ offen ✕ ] [ open ✕ ] [ + ]                   │
 │                                              [ Weiter ]    │
 └────────────────────────────────────────────────────────────┘
 ```
 
 - Added on 2026-10-13: W2 requires a configurable mapping for text sensors, and no screen offered one.
 - Appears after the form only if a chosen contact is a text sensor; one step per such sensor, in add and edit.
-- One select per raw value, options zu / angelehnt / gekippt / offen. Empty means unknown, which is ignored (W8).
-- Raw values come from the sensor's `options` attribute (enum sensors), otherwise from its current state. A value
-  that appears later and is not mapped counts as unknown.
-- The field labels are the raw values themselves (data, not UI text). Pre-filled from common names
-  (closed/geschlossen → zu, tilted/gekippt → gekippt, open/offen → offen).
+- One field per position, with translated labels (zu / angelehnt / gekippt / offen): a select with `multiple` and
+  `custom_value`, so known texts can be picked and missing ones typed. A text in no field counts as unknown and is
+  ignored (W8).
+- Known texts come from the sensor's `options` attribute (enum sensors), its recorded history (distinct states) and
+  its current state. Pre-filled by common words in the instance language and in English (zu/geschlossen/closed,
+  angelehnt/ajar, gekippt/tilted, offen/open).
+- Changed 2026-10-13 after the DEV spike: a template sensor exposes only its current state, so the first design (one
+  field per raw value) could not map texts the sensor had not shown yet.
 
 **Preview**
 
@@ -528,7 +545,7 @@ second view on data that lives in the room and region subentries, so editing it 
 
 ```
 Climate Hub: Sensor im Bad meldet sich nicht
-Klimasensor Bad liefert seit 6 Stunden keine Werte. Ich nutze gerade
+Klimasensor Bad liefert seit 6 Stunden keine Werte. Stattdessen gilt gerade
 „Thermostat Bad", korrigiert um −0,8 °C. Prüfe Batterie oder Verbindung.
 Die Meldung verschwindet von selbst, sobald der Sensor wieder Werte liefert.
 ```
@@ -538,9 +555,9 @@ Die Meldung verschwindet von selbst, sobald der Sensor wieder Werte liefert.
 ```
 Climate Hub: Neuer Sensor in der Küche
 Klimasensor Küche 2 misst Temperatur und Feuchte im Bereich Küche.
-Soll ich ihn als Quelle für den Raum Küche nehmen?
+Als Quelle für den Raum Küche aufnehmen?
                                                         [ Reparieren ]
-  → Fix flow: „Ich nehme Klimasensor Küche 2 als letzte Quelle auf.
+  → Fix flow: „Klimasensor Küche 2 wird als letzte Quelle aufgenommen.
     Die Reihenfolge änderst du am Raum."            [ Absenden ]
 ```
 
