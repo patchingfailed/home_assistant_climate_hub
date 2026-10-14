@@ -1,5 +1,6 @@
-"""Engine part 1 (docs/integration.md §4): scenarios 2, 3, 4, 11, 12, the logic §14
-contract and isolation. Hand-built models and snapshots, no Home Assistant."""
+"""Engine (docs/integration.md §4): scenarios 2 to 7 and 9 to 12, the logic §14
+contract, isolation, windows, warnings and covers. Hand-built models and snapshots,
+no Home Assistant."""
 
 from datetime import UTC, datetime, timedelta
 from itertools import pairwise
@@ -7,8 +8,14 @@ from itertools import pairwise
 import pytest
 
 from custom_components.climate_hub.logic import engine
+from custom_components.climate_hub.logic.cover import (
+    CoverAdvice,
+    CoverPosition,
+    CoverReason,
+)
 from custom_components.climate_hub.logic.engine import (
     Comfort,
+    Contact,
     EngineState,
     Forecast,
     Snapshot,
@@ -17,10 +24,12 @@ from custom_components.climate_hub.logic.engine import (
 from custom_components.climate_hub.logic.model import (
     RegionModel,
     RoomModel,
+    WindowModel,
     build_house,
     parse_region,
     parse_room,
     parse_settings,
+    parse_window,
 )
 from custom_components.climate_hub.logic.outdoor import (
     Direction,
@@ -28,7 +37,11 @@ from custom_components.climate_hub.logic.outdoor import (
     WeatherReadings,
 )
 from custom_components.climate_hub.logic.psychro import absolute_humidity
-from custom_components.climate_hub.logic.recommendation import Reason, Recommendation
+from custom_components.climate_hub.logic.recommendation import (
+    ClimateDevice,
+    Reason,
+    Recommendation,
+)
 from custom_components.climate_hub.logic.sources import (
     Metric,
     Reading,
@@ -36,6 +49,7 @@ from custom_components.climate_hub.logic.sources import (
     Status,
 )
 from custom_components.climate_hub.logic.strategy import ForecastPoint, Strategy
+from custom_components.climate_hub.logic.window import Level, OpenLeaves
 
 N, E, S, W = Direction.N, Direction.E, Direction.S, Direction.W
 T, H, P = Metric.TEMPERATURE, Metric.HUMIDITY, Metric.PRESSURE
@@ -54,12 +68,14 @@ def room(
     side: Direction | None = None,
     humidity: list[str] | None = None,
     followed: dict[Metric, list[str]] | None = None,
+    devices: list[str] | None = None,
 ) -> RoomModel:
     data = {
         "area": f"area_{room_id}",
         "side": side or "none",
         "temperature": temperature,
         "humidity": humidity or [],
+        "climate_devices": devices or [],
     }
     return parse_room(room_id, data, SETTINGS, followed or {})
 
@@ -79,13 +95,26 @@ def region(
     return parse_region(region_id, data, SETTINGS, {})
 
 
-def house(rooms=(), regions=(), weather: str | None = "weather.home"):
+def window(window_id: str, in_room: str | None, **data) -> WindowModel:
+    """A single-leaf window in the area of `in_room` (None: an area without a room)."""
+    return parse_window(
+        window_id,
+        {
+            "area": f"area_{in_room}" if in_room else "area_nowhere",
+            "type": "single",
+            "leaf": f"binary_sensor.{window_id}",
+            **data,
+        },
+    )
+
+
+def house(rooms=(), regions=(), weather: str | None = "weather.home", windows=()):
     return build_house(
         SETTINGS,
         weather,
         {r.id: r for r in rooms},
         {r.id: r for r in regions},
-        {},
+        {w.id: w for w in windows},
     )
 
 
@@ -95,8 +124,21 @@ def weather_readings(now, t=11.0, h=80.0, p=1021.0) -> WeatherReadings:
     )
 
 
-def snapshot(now, values, *, weather=True, forecast=None) -> Snapshot:
-    """`values` maps (entity, metric) to a float, a Status or a ready Reading."""
+def snapshot(
+    now,
+    values,
+    *,
+    weather=True,
+    forecast=None,
+    contacts=None,
+    climate=None,
+    covers=None,
+    sun=(None, None),
+) -> Snapshot:
+    """`values` maps (entity, metric) to a float, a Status or a ready Reading.
+
+    `contacts` maps an entity to its raw state or a ready `Contact`; `sun` is
+    (azimuth, elevation)."""
     readings = {}
     for (entity_id, metric), value in values.items():
         if isinstance(value, Reading):
@@ -107,14 +149,17 @@ def snapshot(now, values, *, weather=True, forecast=None) -> Snapshot:
             readings[entity_id, metric] = Reading(entity_id, value, Status.OK, now)
     return Snapshot(
         readings=readings,
-        contacts={},
-        climate={},
-        covers={},
+        contacts={
+            entity_id: raw if isinstance(raw, Contact) else Contact(raw, None)
+            for entity_id, raw in (contacts or {}).items()
+        },
+        climate=climate or {},
+        covers=covers or {},
         weather=weather_readings(now) if weather is True else weather or None,
         clouds=None,
         forecast=forecast,
-        sun_azimuth=None,
-        sun_elevation=None,
+        sun_azimuth=sun[0],
+        sun_elevation=sun[1],
     )
 
 
@@ -571,3 +616,549 @@ def test_failing_hub_part_keeps_its_state(monkeypatch):
     assert result.house.strategy.strategy is None
     assert result.rooms["r1"].temperature.value == 21.0
     assert "g_s" in result.regions
+
+
+# Windows (docs/logic.md §8)
+
+
+def cold_forecast() -> Forecast:
+    """A cold day: prevent cool-down for comfort 20 to 24."""
+    return Forecast(
+        tuple(ForecastPoint(at(60 * i), 2.0 + i / 4) for i in range(24)), hourly=True
+    )
+
+
+def window_result(model, contacts):
+    """First evaluation of a house; returns the result of window `w`."""
+    result, _ = run(
+        model, {}, EngineState.empty(), at(), weather=None, contacts=contacts
+    )
+    return result.windows["w"]
+
+
+@pytest.mark.parametrize(
+    ("states", "level", "leaves"),
+    [
+        pytest.param(("on", "off", "off"), Level.TILTED, OpenLeaves.LEFT, id="tilted"),
+        pytest.param(("on", "on", "on"), Level.OPEN, OpenLeaves.BOTH, id="open"),
+        pytest.param(("off", "off", "off"), Level.CLOSED, OpenLeaves.NONE, id="closed"),
+        pytest.param(
+            ("off", "off", "on"), Level.OPEN, OpenLeaves.UNKNOWN, id="implausible"
+        ),
+    ],
+)
+def test_scenario_5_double_leaf_with_tilt_discriminator(states, level, leaves):
+    model = house(
+        windows=[
+            window(
+                "w",
+                None,
+                type="double",
+                leaf_left="binary_sensor.l",
+                leaf_right="binary_sensor.r",
+                tilt="binary_sensor.t",
+            )
+        ]
+    )
+    names = ("binary_sensor.l", "binary_sensor.r", "binary_sensor.t")
+    found = window_result(model, dict(zip(names, states, strict=True)))
+    assert (found.level.level, found.level.open_leaves) == (level, leaves)
+    assert found.state.level is level
+
+
+@pytest.mark.parametrize(
+    ("handle", "level"),
+    [("on", Level.AJAR), ("off", Level.CLOSED)],
+)
+def test_scenario_6_turned_handle_is_ajar_and_does_not_ventilate(handle, level):
+    model = house(
+        [room("r1", ["sensor.a"])],
+        windows=[window("w", "r1", handle="binary_sensor.handle")],
+    )
+    result, _ = run(
+        model,
+        {("sensor.a", T): 21.0},
+        EngineState.empty(),
+        at(),
+        weather=None,
+        contacts={"binary_sensor.w": "off", "binary_sensor.handle": handle},
+    )
+    assert result.windows["w"].state.level is level
+    assert result.windows["w"].state.ventilating is False
+    assert result.rooms["r1"].windows.ventilating is False
+
+
+@pytest.mark.parametrize(
+    ("door", "conservatory", "ventilating"),
+    [
+        ("on", "on", True),
+        ("on", "off", False),
+        ("off", "on", False),
+        ("unavailable", "off", False),  # no air path through a closed opening
+        ("unavailable", "on", None),
+    ],
+)
+def test_scenario_7_pass_through_needs_both_openings(door, conservatory, ventilating):
+    model = house(
+        windows=[
+            window(
+                "w",
+                None,
+                type="pass_through",
+                inner="binary_sensor.door",
+                outer="binary_sensor.conservatory",
+            )
+        ]
+    )
+    found = window_result(
+        model,
+        {"binary_sensor.door": door, "binary_sensor.conservatory": conservatory},
+    )
+    assert found.state.ventilating is ventilating
+
+
+def test_scenario_9_humid_bathroom_bursts_then_closes():
+    model = house(
+        [room("bath", ["sensor.t"], S, ["sensor.h"])],
+        [region("g_s", S, ["sensor.o_t"], ["sensor.o_h"])],
+        weather=None,
+        windows=[window("w1", "bath")],
+    )
+    values = {
+        ("sensor.t", T): 22.0,
+        ("sensor.h", H): 68.0,
+        ("sensor.o_t", T): 5.0,
+        ("sensor.o_h", H): 60.0,
+    }
+    # (minutes, contact, recommendation, reason, cooling down); the window opens at 1
+    timeline = [
+        (0, "off", Recommendation.OPEN, Reason.BURST_DRY, False),
+        (1, "on", Recommendation.OPEN, Reason.BURST_DRY, False),  # debounce pending
+        (1.2, "on", Recommendation.KEEP_OPEN, Reason.BURST_DRY, False),
+        (10.9, "on", Recommendation.KEEP_OPEN, Reason.BURST_DRY, False),
+        (11.2, "on", Recommendation.CLOSE, Reason.BURST_DONE, True),
+        (30, "off", Recommendation.CLOSE, Reason.BURST_DONE, True),  # debounce pending
+        (31, "off", Recommendation.KEEP_CLOSED, Reason.BURST_DONE, False),
+    ]
+    state = EngineState.empty()
+    for minutes, contact, recommendation, reason, cooling_down in timeline:
+        result, state = run(
+            model,
+            values,
+            state,
+            at(minutes),
+            weather=None,
+            forecast=cold_forecast(),
+            contacts={"binary_sensor.w1": contact},
+        )
+        assert not result.failures
+        assert result.house.strategy.strategy is Strategy.PREVENT_COOL_DOWN
+        found = result.rooms["bath"]
+        assert (found.recommendation.recommendation, found.recommendation.reason) == (
+            recommendation,
+            reason,
+        ), minutes
+        assert found.cooling_down is cooling_down, minutes
+    assert result.rooms["bath"].windows.open_since is None
+
+
+def test_scenario_10_creation_order_does_not_matter():
+    rooms = [
+        room("bath", ["sensor.t"], S, ["sensor.h"]),
+        room("hall", ["sensor.hall"], S, devices=["climate.heater"]),
+    ]
+    regions = [region("g_s", S, ["sensor.o_t"], ["sensor.o_h"])]
+    windows = [
+        window("w1", "bath", cover="cover.w1"),
+        window("w2", "hall", facing_degrees=180.0),
+        window("w3", None),
+    ]
+    forward = house(rooms, regions, weather=None, windows=windows)
+    backward = house(rooms[::-1], regions[::-1], weather=None, windows=windows[::-1])
+    values = {
+        ("sensor.t", T): 22.0,
+        ("sensor.h", H): 68.0,
+        ("sensor.hall", T): 25.0,
+        ("sensor.o_t", T): 5.0,
+        ("sensor.o_h", H): 60.0,
+    }
+    states = [EngineState.empty(), EngineState.empty()]
+    for minutes, contact in [
+        (0, "off"),
+        (1, "on"),
+        (1.2, "on"),
+        (12, "on"),
+        (13, "off"),
+    ]:
+        results = []
+        for index, model in enumerate((forward, backward)):
+            result, states[index] = run(
+                model,
+                values,
+                states[index],
+                at(minutes),
+                weather=None,
+                forecast=cold_forecast(),
+                contacts={f"binary_sensor.w{n}": contact for n in (1, 2, 3)},
+                climate={"climate.heater": ClimateDevice("heating", "heat")},
+                covers={"cover.w1": CoverPosition.NOT_CLOSED},
+                sun=(180.0, 40.0),
+            )
+            results.append(result)
+        assert results[0] == results[1]
+        assert states[0] == states[1]
+    assert results[0].windows["w3"].cover.reason is CoverReason.NO_ROOM
+
+
+def test_debounce_publishes_after_five_seconds_and_a_bounce_keeps_open_since():
+    model = house(windows=[window("w", None)])
+    state = EngineState.empty()
+    published, since = [], []
+    # seconds, contact: opens at 10, bounces closed at 20 for 3 s, closes for good at 30
+    steps = [
+        (0, "off"),
+        (10, "on"),
+        (12, "on"),
+        (15, "on"),
+        (20, "off"),
+        (23, "on"),
+        (28, "on"),
+        (30, "off"),
+        (34, "off"),
+        (35, "off"),
+    ]
+    for seconds, contact in steps:
+        result, state = run(
+            model,
+            {},
+            state,
+            at(seconds / 60),
+            weather=None,
+            contacts={"binary_sensor.w": contact},
+        )
+        published.append(result.windows["w"].state.level)
+        since.append(result.windows["w"].state.open_since)
+    closed, opened = Level.CLOSED, Level.OPEN
+    assert published == [closed] * 3 + [opened] * 6 + [closed]
+    assert since == [None] * 3 + [at(10 / 60)] * 6 + [None]
+
+
+def test_open_since_starts_from_the_latest_contact_change_after_a_restart():
+    model = house(
+        windows=[
+            window(
+                "w",
+                None,
+                type="double",
+                leaf_left="binary_sensor.l",
+                leaf_right="binary_sensor.r",
+            )
+        ]
+    )
+    contacts = {
+        "binary_sensor.l": Contact("on", at(-60)),
+        "binary_sensor.r": Contact("on", at(-20)),
+    }
+    assert window_result(model, contacts).state.open_since == at(-20)
+    # without a hint the evaluation time is the best guess
+    found = window_result(model, {"binary_sensor.l": "on", "binary_sensor.r": "on"})
+    assert found.state.open_since == at()
+
+
+def test_the_windows_min_level_reaches_debounce_and_open_since():
+    model = house(
+        windows=[window("w", None, handle="binary_sensor.handle", min_level="ajar")]
+    )
+    found = window_result(
+        model, {"binary_sensor.w": "off", "binary_sensor.handle": "on"}
+    )
+    assert found.state.level is Level.AJAR
+    assert found.state.ventilating is True
+    assert found.state.open_since == at()
+
+
+def test_a_missing_contact_is_a_missing_value():
+    found = window_result(house(windows=[window("w", None)]), {})
+    assert found.level.level is None
+    assert found.state.ventilating is None
+
+
+def test_window_without_room_has_a_state_and_a_no_room_cover():
+    model = house([room("r1", ["sensor.a"], S)], windows=[window("w", None)])
+    result, state = run(
+        model,
+        {("sensor.a", T): 21.0},
+        EngineState.empty(),
+        at(),
+        weather=None,
+        contacts={"binary_sensor.w": "on"},
+        sun=(180.0, 40.0),
+    )
+    found = result.windows["w"]
+    assert found.state.ventilating is True
+    assert (found.cover.advice, found.cover.reason) == (
+        CoverAdvice.NONE,
+        CoverReason.NO_ROOM,
+    )
+    assert result.rooms["r1"].windows is None
+    assert state.windows["w"].cover.reason is CoverReason.NO_ROOM
+    assert not result.failures
+
+
+def test_window_of_a_failed_room_reports_missing_data_not_a_missing_room(monkeypatch):
+    real = engine.resolve
+
+    def resolve(readings, *args):
+        if any(r.entity_id == "sensor.bad" for r in readings):
+            raise RuntimeError("boom")
+        return real(readings, *args)
+
+    monkeypatch.setattr(engine, "resolve", resolve)
+    model = house(
+        [room("bad", ["sensor.bad"], S), room("ok", ["sensor.ok"], S)],
+        windows=[window("w_bad", "bad"), window("w_ok", "ok")],
+    )
+    result, _ = run(
+        model,
+        {("sensor.bad", T): 22.0, ("sensor.ok", T): 21.0},
+        EngineState.empty(),
+        at(),
+        weather=None,
+        contacts={"binary_sensor.w_bad": "on", "binary_sensor.w_ok": "on"},
+        sun=(180.0, 40.0),
+    )
+    assert set(result.failures) == {"bad"}
+    assert "bad" not in result.rooms
+    bad = result.windows["w_bad"]
+    assert bad.state.ventilating is True
+    assert (bad.cover.advice, bad.cover.reason) == (
+        CoverAdvice.NONE,
+        CoverReason.NO_DATA,
+    )
+    assert result.windows["w_ok"].cover.reason is CoverReason.NO_HEAT_RISK
+
+
+def test_failed_window_counts_as_unknown_and_keeps_its_store(monkeypatch):
+    model = house(
+        [room("r1", ["sensor.a"], S)],
+        [region("g_s", S, ["sensor.o"])],
+        windows=[window("w", "r1")],
+    )
+    values = {("sensor.a", T): 21.0, ("sensor.o", T): 15.0}
+    contacts = {"binary_sensor.w": "off"}
+    _, state = run(
+        model, values, EngineState.empty(), at(), weather=None, contacts=contacts
+    )
+
+    def boom(*args):
+        raise ValueError("bad contact")
+
+    monkeypatch.setattr(engine, "window_level", boom)
+    result, new_state = run(
+        model, values, state, at(1), weather=None, contacts=contacts
+    )
+    assert result.failures == {"w": "ValueError: bad contact"}
+    assert "w" not in result.windows
+    assert new_state.windows["w"] is state.windows["w"]
+    aggregated = result.rooms["r1"].windows
+    assert (aggregated.level, aggregated.ventilating) == (None, None)
+
+
+# Warnings, A12 and the any-flags
+
+
+@pytest.mark.parametrize(
+    ("forecast", "cooling_down"),
+    [(cold_forecast(), True), (None, False)],
+    ids=["cool_down_day", "neutral_day"],
+)
+def test_warning_cooling_down_after_the_burst_time(forecast, cooling_down):
+    model = house(
+        [room("r1", ["sensor.a"], S)],
+        [region("g_s", S, ["sensor.o"])],
+        weather=None,
+        windows=[window("w", "r1")],
+    )
+    values = {("sensor.a", T): 21.0, ("sensor.o", T): 5.0}
+    contacts = {"binary_sensor.w": Contact("on", at(0))}
+    state = EngineState.empty()
+    flags = []
+    for minutes in (1, 9.9, 10):
+        result, state = run(
+            model,
+            values,
+            state,
+            at(minutes),
+            weather=None,
+            forecast=forecast,
+            contacts=contacts,
+        )
+        flags.append(result.rooms["r1"].cooling_down)
+        assert result.rooms["r1"].recommendation.wanted_open is False
+    assert flags == [False, False, cooling_down]
+    assert result.rooms["r1"].heating_up is False
+    assert result.rooms["r1"].open_while_conditioning is None  # no devices
+
+
+@pytest.mark.parametrize(
+    ("device", "expected"),
+    [
+        (ClimateDevice("heating", "heat"), True),
+        (ClimateDevice("idle", "heat"), False),
+        (ClimateDevice(None, "off"), False),
+        (None, False),  # not in the snapshot
+    ],
+)
+def test_a12_open_window_while_a_device_is_active(device, expected):
+    model = house(
+        [room("r1", ["sensor.a"], S, devices=["climate.heater"])],
+        windows=[window("w", "r1")],
+    )
+    result, _ = run(
+        model,
+        {("sensor.a", T): 21.0},
+        EngineState.empty(),
+        at(15),
+        weather=None,
+        contacts={"binary_sensor.w": Contact("on", at(0))},
+        climate={"climate.heater": device} if device else {},
+    )
+    assert result.rooms["r1"].open_while_conditioning is expected
+    assert result.house.any_open_while_conditioning is expected
+
+
+@pytest.mark.parametrize(
+    ("contact", "device", "expected"),
+    [
+        pytest.param("on", "heating", (True, False, True), id="open_and_heating"),
+        pytest.param("on", "idle", (True, False, False), id="open_and_idle"),
+        pytest.param("off", "heating", (False, False, False), id="closed"),
+    ],
+)
+def test_house_any_flags_cover_rooms_with_windows_only(contact, device, expected):
+    model = house(
+        [
+            room("a", ["sensor.a"], S, devices=["climate.heater"]),
+            room("b", ["sensor.b"], S),
+            room("c", ["sensor.c"], S),  # no windows: not part of any flag
+        ],
+        [region("g_s", S, ["sensor.o"])],
+        weather=None,
+        windows=[window("wa", "a"), window("wb", "b")],
+    )
+    result, _ = run(
+        model,
+        {
+            ("sensor.a", T): 21.0,
+            ("sensor.b", T): 21.0,
+            ("sensor.c", T): 21.0,
+            ("sensor.o", T): 5.0,
+        },
+        EngineState.empty(),
+        at(15),
+        weather=None,
+        forecast=cold_forecast(),
+        contacts={
+            "binary_sensor.wa": Contact(contact, at(0)),
+            "binary_sensor.wb": Contact(contact, at(0)),
+        },
+        climate={"climate.heater": ClimateDevice(device, "heat")},
+    )
+    flags = result.house
+    assert (
+        flags.any_cooling_down,
+        flags.any_heating_up,
+        flags.any_open_while_conditioning,
+    ) == expected
+    assert result.rooms["c"].cooling_down is None
+
+
+# Covers (docs/logic.md §10)
+
+
+@pytest.mark.parametrize(
+    ("cover", "advice"),
+    [(None, CoverAdvice.CLOSE), (CoverPosition.CLOSED, CoverAdvice.KEEP_CLOSED)],
+)
+def test_cover_closes_against_sun_heat_and_feeds_the_house_flag(cover, advice):
+    model = house(
+        [room("r1", ["sensor.a"], S)],
+        windows=[window("w", "r1", cover="cover.w")],
+    )
+    result, state = run(
+        model,
+        {("sensor.a", T): 25.0},
+        EngineState.empty(),
+        at(),
+        weather=None,
+        contacts={"binary_sensor.w": "off"},
+        covers={"cover.w": cover} if cover else {},
+        sun=(180.0, 40.0),
+    )
+    found = result.windows["w"].cover
+    assert (found.advice, found.reason) == (advice, CoverReason.SUN_HEAT)
+    assert state.windows["w"].cover is not None
+    assert result.house.any_cover_to_close is True
+    assert result.house.covers_to_close == (("w", CoverReason.SUN_HEAT),)
+
+
+def test_exact_degrees_win_without_a_direction():
+    model = house(
+        [room("r1", ["sensor.a"])],  # no side
+        windows=[window("w", "r1", facing_degrees=180.0)],
+    )
+    result, _ = run(
+        model,
+        {("sensor.a", T): 25.0},
+        EngineState.empty(),
+        at(),
+        weather=None,
+        sun=(180.0, 40.0),
+    )
+    assert result.windows["w"].cover.reason is CoverReason.SUN_HEAT
+
+
+def test_no_direction_and_no_degrees_means_no_data_and_keeps_the_cover_state():
+    model = house([room("r1", ["sensor.a"])], windows=[window("w", "r1")])
+    result, state = run(
+        model,
+        {("sensor.a", T): 25.0},
+        EngineState.empty(),
+        at(),
+        weather=None,
+        sun=(180.0, 40.0),
+    )
+    found = result.windows["w"].cover
+    assert (found.advice, found.reason) == (CoverAdvice.NONE, CoverReason.NO_DATA)
+    assert state.windows["w"].cover is None
+    assert result.house.any_cover_to_close is False
+
+
+# Outages of failed objects
+
+
+def test_outage_timer_survives_a_failed_evaluation_of_its_room(monkeypatch):
+    broken = {"on": False}
+    real = engine.resolve
+
+    def resolve(readings, *args):
+        if broken["on"]:
+            raise RuntimeError("boom")
+        return real(readings, *args)
+
+    monkeypatch.setattr(engine, "resolve", resolve)
+    model = house([room("r1", ["sensor.a"])], weather=None)
+    values = {("sensor.a", T): Status.UNAVAILABLE}
+    _, state = run(model, values, EngineState.empty(), at(0), weather=None)
+    assert state.hub.outages.invalid_since == {"r1/sensor.a": at(0)}
+
+    broken["on"] = True
+    result, state = run(model, values, state, at(60), weather=None)
+    assert set(result.failures) == {"r1"}
+    assert state.hub.outages.invalid_since == {"r1/sensor.a": at(0)}
+
+    broken["on"] = False
+    result, state = run(model, values, state, at(6 * 60), weather=None)
+    assert not result.failures
+    (outage,) = result.house.outages
+    assert (outage.entity_id, outage.invalid_since) == ("r1/sensor.a", at(0))

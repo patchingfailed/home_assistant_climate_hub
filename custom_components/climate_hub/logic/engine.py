@@ -7,7 +7,7 @@ see missing data.
 """
 
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from functools import partial
 
@@ -24,14 +24,18 @@ from .comfort import (
 )
 from .comfort import trend as compute_trend
 from .cover import (
+    CoverAdvice,
+    CoverInput,
     CoverPosition,
     CoverReason,
     CoverResult,
     CoverState,
     any_cover_to_close,
+    facing_azimuth,
 )
+from .cover import cover as compute_cover
 from .house import HouseValue, Outage, OutageState, any_of, indoor_average, outages
-from .model import HouseModel, RegionModel, RoomModel, Settings
+from .model import HouseModel, RegionModel, RoomModel, Settings, WindowModel
 from .outdoor import (
     Direction,
     HouseOutdoor,
@@ -51,7 +55,9 @@ from .recommendation import (
     GoalState,
     RecommendationResult,
     RoomInput,
+    open_while_conditioning,
     recommend,
+    warnings,
 )
 from .sources import Metric, Reading, Resolution, SourceState, Stage, Status, resolve
 from .strategy import (
@@ -62,7 +68,18 @@ from .strategy import (
     daily_strategy,
     update_forecast_bias,
 )
-from .window import Debounced, RoomWindows, WindowLevel, WindowState
+from .window import (
+    Debounced,
+    RoomWindows,
+    WindowLevel,
+    WindowState,
+    contact_level,
+    debounce,
+    open_since,
+    room_windows,
+    ventilating,
+    window_level,
+)
 
 # Inputs (§4.1)
 
@@ -210,6 +227,10 @@ _NO_OUTDOOR = OutdoorValues(_NO_VALUE, _NO_VALUE, _NO_VALUE, _NO_VALUE, _NO_VALU
 _NO_HOUSE_OUTDOOR = HouseOutdoor(None, Stage.NONE, None, None, {})
 _NO_STRATEGY = StrategyResult(None, None, None, None, None, None, None)
 _FRESH_ROOM = RoomState({}, TrendState(), None, None, None, None, None)
+_NO_CONTACT = Contact(None, None)
+_NO_WINDOW_STATE = WindowState(None, None, None)
+_NO_DEVICE = ClimateDevice(None, None)
+_NO_COVER = CoverResult(CoverAdvice.NONE, CoverReason.NO_DATA)
 
 
 def _attempt[T](
@@ -289,6 +310,78 @@ def _difference(outside: float | None, inside: float | None) -> float | None:
     return None if outside is None or inside is None else outside - inside
 
 
+def _evaluate_window(
+    window: WindowModel,
+    snap: Snapshot,
+    prev: WindowStore | None,
+    now: datetime,
+) -> tuple[WindowLevel, WindowState, WindowStore]:
+    """Step 7: contacts to level, debounce and open since of one window."""
+    contacts = {
+        entity_id: snap.contacts.get(entity_id, _NO_CONTACT)
+        for entity_id in window.kinds
+    }
+    levels = {
+        entity_id: contact_level(
+            contact.raw, window.kinds[entity_id], window.mappings.get(entity_id)
+        )
+        for entity_id, contact in contacts.items()
+    }
+    level = window_level(window.config, levels)
+    debounced = debounce(
+        level.level, prev.debounced if prev else None, now, window.min_level
+    )
+    changed = [c.last_changed for c in contacts.values() if c.last_changed is not None]
+    since = open_since(
+        debounced,
+        window.min_level,
+        prev.open_since if prev else None,
+        max(changed, default=None),
+    )
+    state = WindowState(
+        debounced.published, ventilating(debounced.published, window.min_level), since
+    )
+    store = WindowStore(debounced, since, prev.cover if prev else None)
+    return level, state, store
+
+
+def _evaluate_cover(
+    window: WindowModel,
+    snap: Snapshot,
+    prev: CoverState | None,
+    published: WindowState,
+    room: RoomResult | None,
+    outdoor: OutdoorValues,
+    strategy: Strategy | None,
+    comfort: Comfort,
+    now: datetime,
+) -> tuple[CoverResult, CoverState | None]:
+    """Step 9: cover advice of one window; `room` is `None` when its room failed."""
+    has_room = window.room_id is not None
+    if window.direction is None:
+        facing = window.facing_degrees
+    else:
+        facing = facing_azimuth(window.direction, window.facing_degrees)
+    if has_room and facing is None:
+        return _NO_COVER, prev
+    inp = CoverInput(
+        has_room=has_room,
+        sun_azimuth=snap.sun_azimuth,
+        sun_elevation=snap.sun_elevation,
+        clouds=snap.clouds,
+        facing=0.0 if facing is None else facing,
+        t_room=room.temperature.value if room else None,
+        c_min=comfort.c_min,
+        c_max=comfort.c_max,
+        position=room.position if room else None,
+        t_out=outdoor.temperature.value,
+        strategy=strategy,
+        window_level=published.level,
+        cover=snap.covers.get(window.cover) if window.cover else None,
+    )
+    return compute_cover(inp, prev, now)
+
+
 def _evaluate_room(
     room: RoomModel,
     snap: Snapshot,
@@ -297,9 +390,10 @@ def _evaluate_room(
     strategy: Strategy | None,
     comfort: Comfort,
     settings: Settings,
+    window_states: Sequence[WindowState],
     now: datetime,
 ) -> tuple[RoomResult, RoomState, dict[str, Status]]:
-    """Steps 5 and 8: derived values, comfort, trend and the recommendation."""
+    """Steps 5, 7 (room part) and 8: derived values, windows, recommendation."""
     prev = prev or _FRESH_ROOM
     resolutions, source_states = _resolve_metrics(snap, room, prev.sources, now)
     temperature = resolutions[Metric.TEMPERATURE]
@@ -315,6 +409,7 @@ def _evaluate_room(
     dryness = outside_dryness(outdoor.absolute_humidity.value, ah_in, prev.dryness)
     trend, trend_state = compute_trend(prev.trend_state, t_in, now, prev.trend)
 
+    aggregated = room_windows(window_states) if window_states else None
     recommendation, goal = recommend(
         RoomInput(
             t_in=t_in,
@@ -328,15 +423,38 @@ def _evaluate_room(
             dryness=dryness,
             trend=trend,
             strategy=strategy,
-            has_windows=False,
-            ventilating=None,
-            ventilating_since=None,
+            has_windows=aggregated is not None,
+            ventilating=aggregated.ventilating if aggregated else None,
+            ventilating_since=aggregated.open_since if aggregated else None,
             humidity_threshold=settings.humidity_threshold,
             burst_duration=settings.burst_duration,
         ),
         prev.goal,
         now,
     )
+    cooling_down = heating_up = conditioning = None
+    if aggregated is not None:
+        cooling_down, heating_up = warnings(
+            strategy=strategy,
+            relation=relation,
+            trend=trend,
+            ventilating=aggregated.ventilating,
+            ventilating_since=aggregated.open_since,
+            wanted_open=recommendation.wanted_open,
+            burst_duration=settings.burst_duration,
+            now=now,
+        )
+        if room.climate_devices:
+            conditioning = open_while_conditioning(
+                devices=tuple(
+                    snap.climate.get(entity_id, _NO_DEVICE)
+                    for entity_id in room.climate_devices
+                ),
+                ventilating=aggregated.ventilating,
+                ventilating_since=aggregated.open_since,
+                burst_duration=settings.burst_duration,
+                now=now,
+            )
     result = RoomResult(
         temperature=temperature,
         humidity=humidity,
@@ -351,10 +469,10 @@ def _evaluate_room(
         relation=relation,
         trend=trend,
         recommendation=recommendation,
-        windows=None,
-        cooling_down=None,
-        heating_up=None,
-        open_while_conditioning=None,
+        windows=aggregated,
+        cooling_down=cooling_down,
+        heating_up=heating_up,
+        open_while_conditioning=conditioning,
     )
     state = RoomState(
         source_states, trend_state, position, relation, dryness, trend, goal
@@ -369,7 +487,7 @@ def evaluate(
     comfort: Comfort,
     now: datetime,
 ) -> tuple[EngineResult, EngineState]:
-    """One evaluation of the house; windows and covers follow in a later step."""
+    """One evaluation of the house (docs/integration.md §4.3)."""
     failures: dict[str, str] = {}
     hub = state.hub
     statuses: dict[str, Status] = {}
@@ -450,7 +568,25 @@ def evaluate(
         _NO_STRATEGY,
     )
 
+    # 7. Windows, before the rooms that aggregate them
+    window_levels: dict[str, WindowLevel] = {}
+    window_states: dict[str, WindowState] = {}
+    stores: dict[str, WindowStore] = {}
+    for window_id, window in model.windows.items():
+        outcome = _attempt(
+            failures,
+            window_id,
+            partial(_evaluate_window, window, snap, state.windows.get(window_id), now),
+            None,
+        )
+        if outcome is None:
+            if window_id in state.windows:
+                stores[window_id] = state.windows[window_id]
+            continue
+        window_levels[window_id], window_states[window_id], stores[window_id] = outcome
+
     # 5 and 8. Rooms
+    failed_objects = [key for key in failures if key in model.regions]
     room_results: dict[str, RoomResult] = {}
     room_states: dict[str, RoomState] = {}
     for room_id, room in model.rooms.items():
@@ -466,16 +602,50 @@ def evaluate(
                 strategy.strategy,
                 comfort,
                 model.settings,
+                [
+                    window_states.get(window_id, _NO_WINDOW_STATE)
+                    for window_id in room.window_ids
+                ],
                 now,
             ),
             None,
         )
         if outcome is None:
+            failed_objects.append(room_id)
             if room_id in state.rooms:
                 room_states[room_id] = state.rooms[room_id]
             continue
         room_results[room_id], room_states[room_id], found = outcome
         statuses.update(found)
+
+    # 9. Covers
+    window_results: dict[str, WindowResult] = {}
+    for window_id, window in model.windows.items():
+        if window_id not in window_states:
+            continue
+        store = stores[window_id]
+        room_failed = window.room_id in failed_objects
+        cover_result, cover_state = _attempt(
+            failures,
+            f"{window_id}/cover",
+            partial(
+                _evaluate_cover,
+                window,
+                snap,
+                store.cover,
+                window_states[window_id],
+                None if room_failed else room_results.get(window.room_id),
+                outdoor[window.direction],
+                strategy.strategy,
+                comfort,
+                now,
+            ),
+            (_NO_COVER, store.cover),
+        )
+        stores[window_id] = replace(store, cover=cover_state)
+        window_results[window_id] = WindowResult(
+            window_levels[window_id], window_states[window_id], cover_result
+        )
 
     # 10. House
     reported, outage_state = _attempt(
@@ -484,7 +654,7 @@ def evaluate(
         partial(outages, statuses, hub.outages, now, model.settings.repair_delay),
         ([], hub.outages),
     )
-    window_results: dict[str, WindowResult] = {}
+    outage_state = _carry_over_outages(outage_state, hub.outages, failed_objects)
     house = _attempt(
         failures,
         "hub/house",
@@ -516,7 +686,7 @@ def evaluate(
     new_state = EngineState(
         rooms=room_states,
         regions=region_states,
-        windows=state.windows,
+        windows=stores,
         hub=HubState(
             weather_offsets=offsets,
             forecast_bias=bias,
@@ -525,6 +695,21 @@ def evaluate(
         ),
     )
     return result, new_state
+
+
+def _carry_over_outages(
+    new: OutageState | None, previous: OutageState | None, failed: Sequence[str]
+) -> OutageState | None:
+    """A failed object reports no statuses: keep its running invalid-since timers."""
+    if new is None or previous is None or not failed:
+        return new
+    prefixes = tuple(f"{object_id}/" for object_id in failed)
+    carried = {
+        key: since
+        for key, since in previous.invalid_since.items()
+        if key.startswith(prefixes) and key not in new.invalid_since
+    }
+    return OutageState({**new.invalid_since, **carried})
 
 
 def _house_result(
