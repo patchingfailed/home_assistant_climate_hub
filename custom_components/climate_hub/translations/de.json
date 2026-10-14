@@ -444,5 +444,284 @@
     "climate_area": {
       "name": "{area} Klima"
     }
+  },
+  "config_subentries": {
+    "room": {
+      "entry_type": "Raum",
+      "initiate_flow": {
+        "user": "Raum hinzufügen",
+        "reconfigure": "Raum rekonfigurieren"
+      },
+      "step": {
+        "user": {
+          "title": "Raum hinzufügen",
+          "description": "Welcher Bereich ist der Raum? Danach werden die Quellen aus diesem Bereich vorgeschlagen.",
+          "data": {
+            "area": "Bereich"
+          },
+          "data_description": {
+            "area": "Gezeigt werden Bereiche mit Temperatursensor oder Thermostat."
+          }
+        },
+        "room_form": {
+          "title": "Raum",
+          "data": {
+            "area": "Bereich",
+            "side": "Hauptseite",
+            "temperature": "Temperaturquellen, wichtigste oben"
+          },
+          "data_description": {
+            "side": "Von dieser Seite kommt die Außenluft, wenn du hier lüftest. Innenliegende Räume: Keine.",
+            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen."
+          },
+          "sections": {
+            "humidity_pressure": {
+              "name": "Feuchte und Luftdruck",
+              "description": "Leer heißt: dieselben Geräte wie bei der Temperatur.",
+              "data": {
+                "humidity": "Feuchtequellen",
+                "pressure": "Luftdruckquellen"
+              }
+            },
+            "climate": {
+              "name": "Heizen und Kühlen",
+              "description": "Sie werden nur gelesen, nie gesteuert. Läuft eines, während ein Fenster länger als zum Stoßlüften offen ist, gibt es eine Warnung.",
+              "data": {
+                "climate_devices": "Heiz- und Klimageräte"
+              }
+            },
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "max_age": "Höchstalter einer Messung"
+              },
+              "data_description": {
+                "max_age": "In Minuten. Leer heißt: Standardwert des Hubs."
+              }
+            }
+          },
+          "description": "{suggested}{sides}"
+        },
+        "room_form_changed": {
+          "title": "Raum",
+          "data": {
+            "area": "Bereich",
+            "side": "Hauptseite",
+            "temperature": "Temperaturquellen, wichtigste oben"
+          },
+          "data_description": {
+            "side": "Von dieser Seite kommt die Außenluft, wenn du hier lüftest. Innenliegende Räume: Keine.",
+            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen."
+          },
+          "sections": {
+            "humidity_pressure": {
+              "name": "Feuchte und Luftdruck",
+              "description": "Leer heißt: dieselben Geräte wie bei der Temperatur.",
+              "data": {
+                "humidity": "Feuchtequellen",
+                "pressure": "Luftdruckquellen"
+              }
+            },
+            "climate": {
+              "name": "Heizen und Kühlen",
+              "description": "Sie werden nur gelesen, nie gesteuert. Läuft eines, während ein Fenster länger als zum Stoßlüften offen ist, gibt es eine Warnung.",
+              "data": {
+                "climate_devices": "Heiz- und Klimageräte"
+              }
+            },
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "max_age": "Höchstalter einer Messung"
+              },
+              "data_description": {
+                "max_age": "In Minuten. Leer heißt: Standardwert des Hubs."
+              }
+            }
+          },
+          "description": "Bereich geändert: Die Quellen sind jetzt für {area} vorgeschlagen.\n\n{sides}"
+        },
+        "room_preview": {
+          "title": "Vorschau",
+          "description": "**{area}**\n\n{preview}",
+          "menu_options": {
+            "room_save": "Speichern",
+            "room_adjust": "Anpassen"
+          }
+        }
+      },
+      "error": {
+        "already_room": "{area} ist schon ein Raum.",
+        "is_region": "{area} ist eine Außenseite.",
+        "no_temperature": "Wähle mindestens eine Temperaturquelle."
+      }
+    },
+    "region": {
+      "entry_type": "Außenseite",
+      "initiate_flow": {
+        "user": "Außenseite hinzufügen",
+        "reconfigure": "Außenseite rekonfigurieren"
+      },
+      "step": {
+        "user": {
+          "title": "Außenseite hinzufügen",
+          "data": {
+            "direction": "Himmelsrichtung",
+            "area": "Außenbereich"
+          },
+          "data_description": {
+            "direction": "Nur Richtungen, die noch frei sind.",
+            "area": "Gezeigt werden Bereiche mit Temperatursensor."
+          }
+        },
+        "region_form": {
+          "title": "Außenseite",
+          "data": {
+            "direction": "Himmelsrichtung",
+            "area": "Außenbereich",
+            "temperature": "Temperaturquellen, wichtigste oben"
+          },
+          "data_description": {
+            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen."
+          },
+          "sections": {
+            "humidity_pressure": {
+              "name": "Feuchte und Luftdruck",
+              "description": "Leer heißt: dieselben Geräte wie bei der Temperatur.",
+              "data": {
+                "humidity": "Feuchtequellen",
+                "pressure": "Luftdruckquellen"
+              }
+            },
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "max_age": "Höchstalter einer Messung"
+              },
+              "data_description": {
+                "max_age": "In Minuten. Leer heißt: Standardwert des Hubs."
+              }
+            }
+          }
+        },
+        "region_form_changed": {
+          "title": "Außenseite",
+          "data": {
+            "direction": "Himmelsrichtung",
+            "area": "Außenbereich",
+            "temperature": "Temperaturquellen, wichtigste oben"
+          },
+          "data_description": {
+            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen."
+          },
+          "sections": {
+            "humidity_pressure": {
+              "name": "Feuchte und Luftdruck",
+              "description": "Leer heißt: dieselben Geräte wie bei der Temperatur.",
+              "data": {
+                "humidity": "Feuchtequellen",
+                "pressure": "Luftdruckquellen"
+              }
+            },
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "max_age": "Höchstalter einer Messung"
+              },
+              "data_description": {
+                "max_age": "In Minuten. Leer heißt: Standardwert des Hubs."
+              }
+            }
+          },
+          "description": "Bereich geändert: Die Quellen sind jetzt für {area} vorgeschlagen."
+        },
+        "region_preview": {
+          "title": "Vorschau",
+          "description": "**{area}**\n\n{preview}",
+          "menu_options": {
+            "region_save": "Speichern",
+            "region_adjust": "Anpassen"
+          }
+        }
+      },
+      "error": {
+        "direction_taken": "Für {direction} gibt es schon eine Außenseite: {area}.",
+        "already_region": "{area} ist schon der Außenbereich für {direction}.",
+        "is_room": "{area} ist ein Raum.",
+        "no_temperature": "Wähle mindestens eine Temperaturquelle."
+      }
+    }
+  },
+  "selector": {
+    "side": {
+      "options": {
+        "n": "Norden",
+        "e": "Osten",
+        "s": "Süden",
+        "w": "Westen",
+        "none": "Keine"
+      }
+    },
+    "direction": {
+      "options": {
+        "n": "Norden",
+        "e": "Osten",
+        "s": "Süden",
+        "w": "Westen"
+      }
+    }
+  },
+  "common": {
+    "direction_n": "Norden",
+    "direction_e": "Osten",
+    "direction_s": "Süden",
+    "direction_w": "Westen",
+    "no_floor": "ohne Stockwerk",
+    "number_decimal": ",",
+    "and": "und",
+    "side_item": "{direction} {area}",
+    "side_item_none": "{direction} keine (dort hilft der Wetterdienst aus)",
+    "sides_line": "Außenseiten: {items}.",
+    "suggested_hint": "Vorgeschlagen aus {area}. Prüfe die Reihenfolge.",
+    "region_title": "{direction} · {area}",
+    "preview_unavailable": "Für diese Konfiguration gibt es gerade keine Vorschau.",
+    "preview_none": "Noch kein Wert: Keine Quelle liefert gerade eine Messung.",
+    "preview_now": "Jetzt **{value} °C** aus {source} (Quelle {rank}).",
+    "preview_spare_head": "Ersatz bereit:",
+    "preview_spare_offset": "{rank}. {source}: {value} °C, Abweichung {offset} °C",
+    "preview_spare_learning": "{rank}. {source}: {value} °C, Abweichung wird gelernt",
+    "preview_humidity": "Feuchte {value} %",
+    "preview_pressure": "Luftdruck {value} hPa",
+    "preview_part_from": "{part} aus {source}",
+    "preview_parts": "{parts}.",
+    "preview_same_devices": "{parts}, aus denselben Geräten.",
+    "preview_no_humidity": "Keine Feuchte- und Luftdruckquelle.",
+    "place_side": "{direction}, {area}",
+    "place_weather": "Wetterdienst",
+    "preview_outside": "Außen ({place}): {value} °C, {relation}.",
+    "preview_outside_plain": "Außen ({place}): {value} °C.",
+    "preview_outside_none": "Außen: kein Wert.",
+    "relation_colder": "also {difference} °C kälter",
+    "relation_warmer": "also {difference} °C wärmer",
+    "relation_equal": "also ebenso warm",
+    "not_taken": "Nicht übernommen: {items}.",
+    "not_taken_item": "{name} ({reason})",
+    "not_taken_item_value": "{name} ({value} °C, {reason})",
+    "exclusion_diagnostic": "Gerätetemperatur",
+    "exclusion_helper": "abgeleiteter Wert",
+    "exclusion_no_device": "ohne Gerät",
+    "exclusion_contact": "Nebenwert eines Kontakts",
+    "exclusion_motion": "Nebenwert eines Bewegungsmelders",
+    "exclusion_secondary": "Nebenwert eines Geräts",
+    "exclusion_several_temperatures": "mehrere Temperaturen am Gerät",
+    "exclusion_implausible": "kein Raumwert",
+    "chain_start": "Fällt {direction} aus,",
+    "chain_first_one": "springt {places} ein",
+    "chain_first_two": "springen {places} ein",
+    "chain_then": ", dann {place}",
+    "chain_place": "{direction} ({area})",
+    "chain_weather_first": "springt der Wetterdienst ein",
+    "chain_weather_then": ", dann der Wetterdienst",
+    "chain_end": "."
   }
 }

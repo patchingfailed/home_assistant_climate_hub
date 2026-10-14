@@ -444,5 +444,284 @@
     "climate_area": {
       "name": "{area} climate"
     }
+  },
+  "config_subentries": {
+    "room": {
+      "entry_type": "Room",
+      "initiate_flow": {
+        "user": "Add room",
+        "reconfigure": "Reconfigure room"
+      },
+      "step": {
+        "user": {
+          "title": "Add room",
+          "description": "Which area is the room? The sources are then suggested from that area.",
+          "data": {
+            "area": "Area"
+          },
+          "data_description": {
+            "area": "Areas with a temperature sensor or a thermostat are shown."
+          }
+        },
+        "room_form": {
+          "title": "Room",
+          "data": {
+            "area": "Area",
+            "side": "Main side",
+            "temperature": "Temperature sources, most important first"
+          },
+          "data_description": {
+            "side": "The outside air comes from this side when ventilating here. Interior rooms: None.",
+            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated."
+          },
+          "sections": {
+            "humidity_pressure": {
+              "name": "Humidity and pressure",
+              "description": "Empty means: the same devices as for temperature.",
+              "data": {
+                "humidity": "Humidity sources",
+                "pressure": "Pressure sources"
+              }
+            },
+            "climate": {
+              "name": "Heating and cooling",
+              "description": "They are only read, never controlled. If one is running while a window is open longer than needed for a burst of ventilation, there is a warning.",
+              "data": {
+                "climate_devices": "Heating and cooling devices"
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "max_age": "Maximum age of a measurement"
+              },
+              "data_description": {
+                "max_age": "In minutes. Empty means the hub default."
+              }
+            }
+          },
+          "description": "{suggested}{sides}"
+        },
+        "room_form_changed": {
+          "title": "Room",
+          "data": {
+            "area": "Area",
+            "side": "Main side",
+            "temperature": "Temperature sources, most important first"
+          },
+          "data_description": {
+            "side": "The outside air comes from this side when ventilating here. Interior rooms: None.",
+            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated."
+          },
+          "sections": {
+            "humidity_pressure": {
+              "name": "Humidity and pressure",
+              "description": "Empty means: the same devices as for temperature.",
+              "data": {
+                "humidity": "Humidity sources",
+                "pressure": "Pressure sources"
+              }
+            },
+            "climate": {
+              "name": "Heating and cooling",
+              "description": "They are only read, never controlled. If one is running while a window is open longer than needed for a burst of ventilation, there is a warning.",
+              "data": {
+                "climate_devices": "Heating and cooling devices"
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "max_age": "Maximum age of a measurement"
+              },
+              "data_description": {
+                "max_age": "In minutes. Empty means the hub default."
+              }
+            }
+          },
+          "description": "Area changed: The sources are now suggested for {area}.\n\n{sides}"
+        },
+        "room_preview": {
+          "title": "Preview",
+          "description": "**{area}**\n\n{preview}",
+          "menu_options": {
+            "room_save": "Save",
+            "room_adjust": "Adjust"
+          }
+        }
+      },
+      "error": {
+        "already_room": "{area} is already a room.",
+        "is_region": "{area} is an outdoor side.",
+        "no_temperature": "Select at least one temperature source."
+      }
+    },
+    "region": {
+      "entry_type": "Outdoor side",
+      "initiate_flow": {
+        "user": "Add outdoor side",
+        "reconfigure": "Reconfigure outdoor side"
+      },
+      "step": {
+        "user": {
+          "title": "Add outdoor side",
+          "data": {
+            "direction": "Direction",
+            "area": "Outdoor area"
+          },
+          "data_description": {
+            "direction": "Only directions that are still free.",
+            "area": "Areas with a temperature sensor are shown."
+          }
+        },
+        "region_form": {
+          "title": "Outdoor side",
+          "data": {
+            "direction": "Direction",
+            "area": "Outdoor area",
+            "temperature": "Temperature sources, most important first"
+          },
+          "data_description": {
+            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated."
+          },
+          "sections": {
+            "humidity_pressure": {
+              "name": "Humidity and pressure",
+              "description": "Empty means: the same devices as for temperature.",
+              "data": {
+                "humidity": "Humidity sources",
+                "pressure": "Pressure sources"
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "max_age": "Maximum age of a measurement"
+              },
+              "data_description": {
+                "max_age": "In minutes. Empty means the hub default."
+              }
+            }
+          }
+        },
+        "region_form_changed": {
+          "title": "Outdoor side",
+          "data": {
+            "direction": "Direction",
+            "area": "Outdoor area",
+            "temperature": "Temperature sources, most important first"
+          },
+          "data_description": {
+            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated."
+          },
+          "sections": {
+            "humidity_pressure": {
+              "name": "Humidity and pressure",
+              "description": "Empty means: the same devices as for temperature.",
+              "data": {
+                "humidity": "Humidity sources",
+                "pressure": "Pressure sources"
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "max_age": "Maximum age of a measurement"
+              },
+              "data_description": {
+                "max_age": "In minutes. Empty means the hub default."
+              }
+            }
+          },
+          "description": "Area changed: The sources are now suggested for {area}."
+        },
+        "region_preview": {
+          "title": "Preview",
+          "description": "**{area}**\n\n{preview}",
+          "menu_options": {
+            "region_save": "Save",
+            "region_adjust": "Adjust"
+          }
+        }
+      },
+      "error": {
+        "direction_taken": "{direction} already has an outdoor side: {area}.",
+        "already_region": "{area} is already the outdoor area for {direction}.",
+        "is_room": "{area} is a room.",
+        "no_temperature": "Select at least one temperature source."
+      }
+    }
+  },
+  "selector": {
+    "side": {
+      "options": {
+        "n": "North",
+        "e": "East",
+        "s": "South",
+        "w": "West",
+        "none": "None"
+      }
+    },
+    "direction": {
+      "options": {
+        "n": "North",
+        "e": "East",
+        "s": "South",
+        "w": "West"
+      }
+    }
+  },
+  "common": {
+    "direction_n": "North",
+    "direction_e": "East",
+    "direction_s": "South",
+    "direction_w": "West",
+    "no_floor": "no floor",
+    "number_decimal": ".",
+    "and": "and",
+    "side_item": "{direction} {area}",
+    "side_item_none": "{direction} none (the weather service helps out there)",
+    "sides_line": "Outdoor sides: {items}.",
+    "suggested_hint": "Suggested from {area}. Check the order.",
+    "region_title": "{direction} · {area}",
+    "preview_unavailable": "There is no preview for this configuration right now.",
+    "preview_none": "No value yet: No source is delivering a measurement right now.",
+    "preview_now": "Now **{value} °C** from {source} (source {rank}).",
+    "preview_spare_head": "Fallbacks ready:",
+    "preview_spare_offset": "{rank}. {source}: {value} °C, deviation {offset} °C",
+    "preview_spare_learning": "{rank}. {source}: {value} °C, deviation is being learned",
+    "preview_humidity": "Humidity {value} %",
+    "preview_pressure": "Pressure {value} hPa",
+    "preview_part_from": "{part} from {source}",
+    "preview_parts": "{parts}.",
+    "preview_same_devices": "{parts}, from the same devices.",
+    "preview_no_humidity": "No humidity or pressure source.",
+    "place_side": "{direction}, {area}",
+    "place_weather": "weather service",
+    "preview_outside": "Outside ({place}): {value} °C, {relation}.",
+    "preview_outside_plain": "Outside ({place}): {value} °C.",
+    "preview_outside_none": "Outside: no value.",
+    "relation_colder": "so {difference} °C colder",
+    "relation_warmer": "so {difference} °C warmer",
+    "relation_equal": "so just as warm",
+    "not_taken": "Not taken: {items}.",
+    "not_taken_item": "{name} ({reason})",
+    "not_taken_item_value": "{name} ({value} °C, {reason})",
+    "exclusion_diagnostic": "device temperature",
+    "exclusion_helper": "derived value",
+    "exclusion_no_device": "no device",
+    "exclusion_contact": "secondary value of a contact",
+    "exclusion_motion": "secondary value of a motion sensor",
+    "exclusion_secondary": "secondary value of a device",
+    "exclusion_several_temperatures": "several temperatures on the device",
+    "exclusion_implausible": "not a room value",
+    "chain_start": "If {direction} fails,",
+    "chain_first_one": "{places} steps in",
+    "chain_first_two": "{places} step in",
+    "chain_then": ", then {place}",
+    "chain_place": "{direction} ({area})",
+    "chain_weather_first": "the weather service steps in",
+    "chain_weather_then": ", then the weather service",
+    "chain_end": "."
   }
 }

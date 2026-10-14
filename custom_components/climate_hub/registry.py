@@ -3,7 +3,7 @@
 No caching and no listeners: the coordinator owns both (integration.md 6.4).
 """
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -120,25 +120,38 @@ def followed_sources(
     }
 
 
-def build_model(hass: HomeAssistant, entry: ConfigEntry) -> m.HouseModel:
-    """The resolved house model from the hub entry and the registries."""
-    settings = m.parse_settings(entry.options)
+def build_model_from(
+    hass: HomeAssistant,
+    options: Mapping[str, Any],
+    subentries: Iterable[tuple[str, str, Mapping[str, Any]]],
+) -> m.HouseModel:
+    """The resolved house model from options and (subentry ID, type, data) triples."""
+    settings = m.parse_settings(options)
     infos = entity_infos(hass)
     rooms: dict[str, m.RoomModel] = {}
     regions: dict[str, m.RegionModel] = {}
     windows: dict[str, m.WindowModel] = {}
-    for sub in entry.subentries.values():
-        data = sub.data
-        if sub.subentry_type == SUBENTRY_ROOM:
-            rooms[sub.subentry_id] = m.parse_room(
-                sub.subentry_id, data, settings, followed_sources(data, infos)
+    for subentry_id, subentry_type, data in subentries:
+        if subentry_type == SUBENTRY_ROOM:
+            rooms[subentry_id] = m.parse_room(
+                subentry_id, data, settings, followed_sources(data, infos)
             )
-        elif sub.subentry_type == SUBENTRY_REGION:
-            regions[sub.subentry_id] = m.parse_region(
-                sub.subentry_id, data, settings, followed_sources(data, infos)
+        elif subentry_type == SUBENTRY_REGION:
+            regions[subentry_id] = m.parse_region(
+                subentry_id, data, settings, followed_sources(data, infos)
             )
-        elif sub.subentry_type == SUBENTRY_WINDOW:
-            windows[sub.subentry_id] = m.parse_window(sub.subentry_id, data)
-    return m.build_house(
-        settings, entry.options.get(m.CONF_WEATHER), rooms, regions, windows
+        elif subentry_type == SUBENTRY_WINDOW:
+            windows[subentry_id] = m.parse_window(subentry_id, data)
+    return m.build_house(settings, options.get(m.CONF_WEATHER), rooms, regions, windows)
+
+
+def build_model(hass: HomeAssistant, entry: ConfigEntry) -> m.HouseModel:
+    """The resolved house model from the hub entry and the registries."""
+    return build_model_from(
+        hass,
+        entry.options,
+        (
+            (sub.subentry_id, sub.subentry_type, sub.data)
+            for sub in entry.subentries.values()
+        ),
     )
