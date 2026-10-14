@@ -117,15 +117,15 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 │   Außenwerte, wenn alle Außensensoren ausfallen.           │
 │                                                            │
 │ Bereiche aktuell halten  [■]                               │
-│   Trägt die Raumwerte als Temperatur- und Feuchtesensor    │
-│   deiner Bereiche ein. Dann zeigen Bereichskarten den      │
-│   zuverlässigen Wert.                                      │
+│   Trägt die Klimawerte der Räume und Außenseiten als       │
+│   Temperatur- und Feuchtesensor ihrer Bereiche ein. Dann   │
+│   zeigen Bereichskarten den zuverlässigen Wert.            │
 │                                              [ Weiter ]    │
 └────────────────────────────────────────────────────────────┘
 ```
 
 - Weather: entity selector, domain `weather`, pre-filled with the first available entity that supports forecasts. Optional.
-- Area sync: R11, default on.
+- Area sync: R11, default on. Covers rooms and outdoor sides (text changed 2026-10-14, `docs/integration.md` I5).
 
 ### S2 Räume
 
@@ -659,6 +659,10 @@ carry no area (ADR-005, ADR-007). The device column shows the device name and, i
 | | Irgendwo Rollladen schließen | binary_sensor (SH1, + windows and reasons attribute; renamed from „Irgendwo beschatten" 2026-10-13) | |
 
 Every measurement carries `source`, `stage`, `reason` and, for fallbacks, `offset` as attributes (E6).
+
+The hub's „Irgendwo …" binary sensors exist only when at least one window exists („Irgendwo offen bei Heizen/Kühlen":
+a room with windows and heating or cooling devices), like the room entities marked „only with windows". Entities that
+the configuration no longer produces are removed (agreed 2026-10-14, `docs/integration.md` I7).
 
 Entity IDs: Home Assistant 2026.10 builds them from area, device name and entity name (default `entity_id_parts`,
 `helpers/entity_registry.py`). The area is not stripped from a device name, so a device „Küche Klima" in the area

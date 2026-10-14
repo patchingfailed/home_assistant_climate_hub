@@ -1046,7 +1046,7 @@ Deferred with their requirements: air quality (A7), forecast extras (A8), cross-
 plausibility (O10), sun-intensity sensor (SH3). Their inputs fit the interfaces above, so adding them later needs no
 migration.
 
-Adapter concerns, specified in the build tasks, not here: unit conversion, reading `last_reported`, forecast
+Adapter concerns, specified in `docs/integration.md`, not here: unit conversion, reading `last_reported`, forecast
 subscription (`weather.get_forecasts`), state listeners and the 60 s tick, the 5 s re-evaluation after a contact
 change, `Store` persistence, area sync (R11), repair issues (R14, H5, W11).
 

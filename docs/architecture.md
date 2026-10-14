@@ -27,6 +27,10 @@ entry. House-level settings live in the entry (data for wiring, options for tuna
 **Consequences.** Home Assistant renders add/edit/delete per object. House-level entities belong to the hub device and
 need no ownership logic. Subentries require a recent Home Assistant (minimum version: ADR-008).
 
+**Amended 2026-10-14:** all house-level settings, wiring included (weather entity, area sync), live in the entry's
+options, because the options flow (S9) edits them and an options flow writes options only. The entry's data stays
+empty (`docs/integration.md` I3).
+
 ## ADR-003: Regions are HA areas with a compass direction; fallback order is derived (2026-10-12)
 
 **Context.** Configured fallback chains between regions create order dependencies: the first region cannot name a
@@ -117,3 +121,20 @@ test pin moves past the minimum, CI tests both.
 fallbacks. A manual install on an older release fails at import with a log error; there is no extra guard. Since 2026.8
 a device belongs to one config entry and at most one subentry, so every room, region and window device belongs to its
 own subentry only, as S5 already planned.
+
+## ADR-009: Pure engine, one coordinator, reload on configuration change (2026-10-14)
+
+**Context.** The pure modules (`docs/logic.md`) need an orchestration: eight steps per evaluation with an order
+contract (logic §14), per-object error isolation (N2) and persisted state. Configuration changes (subentries, options)
+add and remove objects, entities and listeners.
+
+**Decision.** The orchestration is a pure module `logic/engine.py`: configuration model, snapshot of the inputs,
+previous state and `now` in, results and new state out. One `DataUpdateCoordinator` reads Home Assistant into the
+snapshot, calls the engine, persists the state in a `Store` and publishes the results; it does nothing the engine
+could do. Every subentry or options change reloads the hub entry; changes in one burst give one reload. The comfort
+numbers only trigger a new evaluation. Flow previews are one-shot engine runs on the pending configuration.
+
+**Consequences.** The acceptance scenarios and the logic §14 contract are table tests without `hass`. Previews show
+exactly what saving will produce. A reload makes all Climate Hub entities briefly unavailable, so an automation that
+triggers on a state change can fire once more after a configuration change. State survives reloads only through the
+`Store`, which is written on unload. Details: `docs/integration.md` §4–§7.
