@@ -9,24 +9,22 @@ results in `docs/ui_mockups.md` §7. Its code stays deployed on DEV, without a h
 The logic spec `docs/logic.md` is approved (2026-10-13, D1–D16 except the replaced D13) and **built**: the ten pure
 modules in `custom_components/climate_hub/logic/` with 393 table tests. Felix approved the logic and the build
 decisions (2026-10-13). Minimum Home Assistant version is 2026.10.0 (ADR-008, 2026-10-14). No Home Assistant glue
-exists yet (no manifest, no entities, no flows). The integration spec and build plan `docs/integration.md` is drafted
-(2026-10-14): I1–I11 approved by Felix, I12–I17 await his review.
+exists yet (no manifest, no entities, no flows). The integration spec and build plan `docs/integration.md` is approved
+(2026-10-14, I1–I17). Build of milestone M1 runs on branch `build/m1-rooms`.
 
 Branches (CLAUDE.md rule 14): `main` is the current line, on GitHub too. `spike/native-ui` stays local as a
 reference and is never merged.
 
 ## Next
 
-1. **Review `docs/integration.md`** (Felix): decisions I12–I17 (§0), the entity table (§8.3) and the build order
-   (§15).
-2. **Rest of the click review on DEV** (Felix, optional): §7 items 3 (markdown table), 5 (success
+1. **Rest of the click review on DEV** (Felix, optional): §7 items 3 (markdown table), 5 (success
    text), 10 (area per picker row). Item 2 (phone) is skipped by choice. DEV has a few mirrored entities assigned to
    areas as test fixtures (list and undo in the private local notes). Must happen before M1 reaches DEV, because the
    first M1 deploy replaces the spike.
-3. **Build M1** (rooms and outdoor sides) on branch `build/m1-rooms`, steps 1–13 of `docs/integration.md` §15, one
+2. **Build M1** (rooms and outdoor sides) on branch `build/m1-rooms`, steps 1–13 of `docs/integration.md` §15, one
    Sonnet implementer per step. Then M2 (windows) and M3 (repairs).
-4. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
-5. Remove the spike from DEV: part of M1 step 13.
+3. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
+4. Remove the spike from DEV: part of M1 step 13.
 
 ## Open decisions
 

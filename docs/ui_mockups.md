@@ -587,6 +587,9 @@ The comfort range is not here. It lives on the device „Hausklima" as number en
 
 Same screen as S3, filled with the current state. Saving updates the affected rooms and sides. The house plan is a
 second view on data that lives in the room and region subentries, so editing it in either place gives the same result.
+If a side gets a new or different outdoor area, a preview with the „Außenseiten" part of S4 (suggested sources, what
+was not taken and why) comes before saving, so no source is taken unseen (P1; agreed 2026-10-14, `docs/integration.md`
+I17).
 
 ### S11 Reparatur
 
@@ -662,7 +665,10 @@ Every measurement carries `source`, `stage`, `reason` and, for fallbacks, `offse
 
 The hub's „Irgendwo …" binary sensors exist only when at least one window exists („Irgendwo offen bei Heizen/Kühlen":
 a room with windows and heating or cooling devices), like the room entities marked „only with windows". Entities that
-the configuration no longer produces are removed (agreed 2026-10-14, `docs/integration.md` I7).
+the configuration no longer produces are removed (agreed 2026-10-14, `docs/integration.md` I7). The same rule covers
+sources: a room's humidity, absolute humidity, dew point and humidity difference exist only with a humidity source,
+its pressure only with a pressure source, its outdoor entities and the hub's „Außen" only with an outdoor side or a
+weather entity, and „Tagesstrategie" only with a weather entity (agreed 2026-10-14, I12).
 
 Entity IDs: Home Assistant 2026.10 builds them from area, device name and entity name (default `entity_id_parts`,
 `helpers/entity_registry.py`). The area is not stripped from a device name, so a device „Küche Klima" in the area

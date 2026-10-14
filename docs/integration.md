@@ -1,6 +1,6 @@
 # Integration specification and build plan
 
-Status: **draft for review**, 2026-10-14. Covers the Home Assistant layer around the pure logic of `docs/logic.md`:
+Status: **approved 2026-10-14**. Covers the Home Assistant layer around the pure logic of `docs/logic.md`:
 manifest, hub entry with subentries, engine, snapshot, coordinator, persistence, devices and entities, flows,
 repairs, area sync, translations, diagnostics, tests, and the build order (§15). Requirement IDs refer to
 `docs/requirements.md`, ADRs to `docs/architecture.md`, screens to `docs/ui_mockups.md`, logic sections to
@@ -11,8 +11,8 @@ keys, unique IDs, Store keys) cannot change after the first release without a mi
 
 ## 0. Decisions
 
-Approved by Felix on 2026-10-14 (I1–I11) and folded where the last column says. I12–I17 are new in this draft and
-need review.
+Approved by Felix on 2026-10-14 (I1–I11 in the first round, I12–I17 after the plan review; I16 without objection)
+and folded where the last column says.
 
 | # | Topic | Decision | Folded into |
 |---|---|---|---|
@@ -27,12 +27,12 @@ need review.
 | I9 | Milestones | Three milestones (§15), one short-lived branch each, merged after green tests and Felix's DEV click review. | §15 |
 | I10 | Sun | Sun azimuth and elevation come from `sun.sun`, the standard entity. | §5 |
 | I11 | Forecast | Fetched at start, when the weather entity changes (at most every 15 min), and hourly as a backstop. Providers usually update hourly. | §5 |
-| I12 | **For review:** source-dependent entities | I7 extended by the same rule (no empty shells, rule 4): a room's humidity, absolute humidity, dew point and humidity difference need a humidity source, its pressure a pressure source (own list or followed devices). Room outdoor entities and the hub's outdoor sensor need a region or a weather entity; the strategy needs a weather entity. | §8.3 |
-| I13 | **For review:** comfort values | Comfort minimum, maximum and threshold are persisted in the Store (not via `RestoreNumber`), so the first evaluation after a start already uses them. | §7 |
-| I14 | **For review:** first evaluation | During Home Assistant start-up the first evaluation waits until Home Assistant has started; entities are unavailable until then (about a minute). Avoids fake fallbacks, outage timers and recommendation flips while source integrations still load. A reload while running evaluates at once. | §6 |
-| I15 | **For review:** device area | A device follows its subentry's area only when that area changes. A device the user moved by hand stays where it is. | §8.1 |
-| I16 | **For review:** word lists and preview language | Outside words (S2) and state words (S8d) are comma-separated strings in the `common` section of the translations (the only free section hassfest accepts). Previews are assembled in the instance language, because a flow does not know the user's language. | §12 |
-| I17 | **For review:** S10 preview | Changing or adding an outdoor area in the house plan (S10) suggests sources for it. P1 needs them visible, so S10 gets the regions part of the S4 preview before saving. This is a UI addition (rule 8). | §9.6 |
+| I12 | Source-dependent entities | I7 extended by the same rule (no empty shells, rule 4): a room's humidity, absolute humidity, dew point and humidity difference need a humidity source, its pressure a pressure source (own list or followed devices). Room outdoor entities and the hub's outdoor sensor need a region or a weather entity; the strategy needs a weather entity. | §8.3, mockups §6 |
+| I13 | Comfort values | Comfort minimum, maximum and threshold are persisted in the Store (not via `RestoreNumber`), so the first evaluation after a start already uses them. | §7 |
+| I14 | First evaluation | During Home Assistant start-up the first evaluation waits until Home Assistant has started; entities are unavailable until then (about a minute). Avoids fake fallbacks, outage timers and recommendation flips while source integrations still load. A reload while running evaluates at once. | §6 |
+| I15 | Device area | A device follows its subentry's area only when that area changes. A device the user moved by hand stays where it is. | §8.1 |
+| I16 | Word lists and preview language | Outside words (S2) and state words (S8d) are comma-separated strings in the `common` section of the translations (the only free section hassfest accepts). Previews are assembled in the instance language, because a flow does not know the user's language. | §12 |
+| I17 | S10 preview | Changing or adding an outdoor area in the house plan (S10) suggests sources for it. P1 needs them visible, so S10 gets the regions part of the S4 preview before saving. This is a UI addition (rule 8), approved without a mockup round. | §9.6, mockups S10 |
 
 ## 1. Layers and files
 
