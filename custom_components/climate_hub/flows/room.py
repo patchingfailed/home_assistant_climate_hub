@@ -16,6 +16,7 @@ from .common import (
     AREA_ENTITY_FILTER,
     SourceFlow,
     option_selector,
+    room_unique_id,
     subentry_by_area,
 )
 from .preview import PreviewRun, Texts, area_name, async_texts, room_markdown
@@ -55,7 +56,7 @@ class RoomSubentryFlow(SourceFlow):
         return area_name(hass, self._data[m.CONF_AREA])
 
     def _unique_id(self) -> str:
-        return f"room_{self._data[m.CONF_AREA]}"
+        return room_unique_id(self._data[m.CONF_AREA])
 
     def _markdown(self, texts: Texts, run: PreviewRun) -> str:
         return room_markdown(self.hass, texts, run, self._data, self._not_taken)

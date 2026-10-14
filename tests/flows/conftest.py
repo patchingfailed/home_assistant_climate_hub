@@ -1,55 +1,19 @@
-"""Fixtures for the flow tests.
+"""Fixtures for the flow tests."""
 
-The subentry flows are registered through a stand-in hub ConfigFlow, because the real
-config_flow.py arrives with build step 12 (which replaces this stand-in).
-"""
-
-from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
-from homeassistant import config_entries
-from homeassistant.config_entries import ConfigEntry, ConfigSubentryData
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.loader import async_get_integration
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    mock_config_flow,
-    mock_platform,
-)
+from homeassistant.config_entries import ConfigSubentryData
+from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.climate_hub.const import (
     DOMAIN,
     SUBENTRY_REGION,
     SUBENTRY_ROOM,
 )
-from custom_components.climate_hub.flows.region import RegionSubentryFlow
-from custom_components.climate_hub.flows.room import RoomSubentryFlow
 
 from ..house import House
-
-
-class _StandInConfigFlow(config_entries.ConfigFlow):
-    """Stand-in for the hub flow: only the subentry types."""
-
-    @classmethod
-    @callback
-    def async_get_supported_subentry_types(
-        cls, config_entry: ConfigEntry
-    ) -> dict[str, type[config_entries.ConfigSubentryFlow]]:
-        return {
-            SUBENTRY_ROOM: RoomSubentryFlow,
-            SUBENTRY_REGION: RegionSubentryFlow,
-        }
-
-
-@pytest.fixture(autouse=True)
-async def config_flow_platform(hass: HomeAssistant) -> AsyncIterator[None]:
-    """Remove with build step 12, which adds the real config flow."""
-    await async_get_integration(hass, DOMAIN)
-    mock_platform(hass, f"{DOMAIN}.config_flow")
-    with mock_config_flow(DOMAIN, _StandInConfigFlow):
-        yield
 
 
 @pytest.fixture

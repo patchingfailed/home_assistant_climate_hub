@@ -33,6 +33,14 @@ reference and is never merged.
 
 ## Recently done
 
+- 2026-10-14: M1 steps 1–11 built on `build/m1-rooms` (Sonnet implementers, each reviewed and committed separately):
+  package skeleton with coalesced reload, shared test fixture house, pure `logic/model.py` and `logic/engine.py` (whole
+  data flow incl. windows and covers), codec and `Store`, registry and model building, snapshot and forecast fetch,
+  coordinator (I14 start, contact re-check, forecast kept on fetch errors, tick independent of entity listeners),
+  devices and entities for rooms, regions and hub, diagnostics, area sync, room and region subentry flows with live
+  previews. 601 tests green, ruff clean. Area sync leaves a field alone once the user changed it (R11 amended).
+  Translation values must be strip-clean for hassfest; `tests/test_translations.py` guards it. Verified on DEV: no.
+
 - 2026-10-14: integration spec and build plan drafted (`docs/integration.md`): pure engine `logic/engine.py`,
   snapshot, coordinator (60 s tick, 2 s debounce, contact re-check, forecast at start, on weather change and hourly),
   `Store` schema and codec, devices and entity table with unique IDs, flows mapped to step IDs and data keys, repairs,

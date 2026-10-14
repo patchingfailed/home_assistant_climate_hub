@@ -445,6 +445,125 @@
       "name": "{area} Klima"
     }
   },
+  "config": {
+    "step": {
+      "user": {
+        "title": "Climate Hub einrichten",
+        "description": "Gefunden in deinem Zuhause:\n\n- {rooms} Bereiche mit Klimasensor oder Thermostat\n- {outdoor} Bereiche mit Temperatursensor, die draußen sein könnten\n- {contacts} Fenster- und Türkontakte\n- {weather} Wetterdienste",
+        "data": {
+          "weather": "Wetterdienst",
+          "area_sync": "Bereiche aktuell halten"
+        },
+        "data_description": {
+          "weather": "Liefert die Vorhersage für die Tagesstrategie und Außenwerte, wenn alle Außensensoren ausfallen.",
+          "area_sync": "Trägt die Klimawerte der Räume und Außenseiten als Temperatur- und Feuchtesensor ihrer Bereiche ein. Dann zeigen Bereichskarten den zuverlässigen Wert."
+        }
+      },
+      "rooms": {
+        "title": "Welche Bereiche sind Räume?",
+        "description": "Pro Raum werden die Sensoren zu einem Wert zusammengefasst. Gezeigt sind Bereiche mit Temperatursensor oder Thermostat. Außenbereiche sind nicht angehakt.",
+        "data": {
+          "rooms": "Räume"
+        },
+        "data_description": {
+          "rooms": "Welche Sensoren pro Raum genutzt werden, zeigt die Vorschau. Die Reihenfolge änderst du später pro Raum."
+        }
+      },
+      "plan": {
+        "title": "Hausplan",
+        "description": "Ordne jeder Hausseite ihren Außenbereich zu und die Räume, deren Fenster dorthin zeigen. Seiten ohne Außenbereich, etwa eine Wand zum Nachbarhaus, bleiben leer.\n\nInnenliegende Räume ohne Fenster einfach weglassen.",
+        "sections": {
+          "n": {
+            "name": "Norden",
+            "data": {
+              "outdoor": "Außenbereich",
+              "rooms": "Räume auf der Seite"
+            }
+          },
+          "e": {
+            "name": "Osten",
+            "data": {
+              "outdoor": "Außenbereich",
+              "rooms": "Räume auf der Seite"
+            }
+          },
+          "s": {
+            "name": "Süden",
+            "data": {
+              "outdoor": "Außenbereich",
+              "rooms": "Räume auf der Seite"
+            }
+          },
+          "w": {
+            "name": "Westen",
+            "data": {
+              "outdoor": "Außenbereich",
+              "rooms": "Räume auf der Seite"
+            }
+          }
+        }
+      },
+      "preview": {
+        "title": "Vorschau",
+        "description": "{preview}",
+        "menu_options": {
+          "create": "Anlegen",
+          "rooms": "Räume ändern",
+          "plan": "Hausplan ändern"
+        }
+      },
+      "reconfigure": {
+        "title": "Hausplan",
+        "description": "Ordne jeder Hausseite ihren Außenbereich zu und die Räume, deren Fenster dorthin zeigen. Seiten ohne Außenbereich, etwa eine Wand zum Nachbarhaus, bleiben leer.\n\nInnenliegende Räume ohne Fenster einfach weglassen.",
+        "sections": {
+          "n": {
+            "name": "Norden",
+            "data": {
+              "outdoor": "Außenbereich",
+              "rooms": "Räume auf der Seite"
+            }
+          },
+          "e": {
+            "name": "Osten",
+            "data": {
+              "outdoor": "Außenbereich",
+              "rooms": "Räume auf der Seite"
+            }
+          },
+          "s": {
+            "name": "Süden",
+            "data": {
+              "outdoor": "Außenbereich",
+              "rooms": "Räume auf der Seite"
+            }
+          },
+          "w": {
+            "name": "Westen",
+            "data": {
+              "outdoor": "Außenbereich",
+              "rooms": "Räume auf der Seite"
+            }
+          }
+        }
+      },
+      "plan_preview": {
+        "title": "Vorschau",
+        "description": "Für neue oder geänderte Außenseiten werden diese Quellen vorgeschlagen. Die Reihenfolge änderst du später pro Außenseite.\n\n{preview}",
+        "menu_options": {
+          "plan_save": "Speichern",
+          "plan_adjust": "Anpassen"
+        }
+      }
+    },
+    "error": {
+      "no_rooms": "Wähle mindestens einen Raum.",
+      "room_two_sides": "Ein Raum hat eine Hauptseite. Fenster zu anderen Seiten stellst du später am Fenster ein.",
+      "outdoor_twice": "{area} ist schon der Außenbereich für {side}."
+    },
+    "create_entry": {
+      "created": "Fertig. Quellen änderst du pro Raum: ⋮ beim Raum → Rekonfigurieren."
+    }
+  },
   "config_subentries": {
     "room": {
       "entry_type": "Raum",
@@ -652,6 +771,32 @@
       }
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optionen",
+        "data": {
+          "weather": "Wetterdienst",
+          "area_sync": "Bereiche aktuell halten"
+        },
+        "data_description": {
+          "weather": "Liefert die Vorhersage für die Tagesstrategie und Außenwerte, wenn alle Außensensoren ausfallen.",
+          "area_sync": "Trägt die Klimawerte der Räume und Außenseiten als Temperatur- und Feuchtesensor ihrer Bereiche ein. Dann zeigen Bereichskarten den zuverlässigen Wert."
+        },
+        "sections": {
+          "timing": {
+            "name": "Zeiten und Schwellen",
+            "data": {
+              "max_age": "Höchstalter einer Messung",
+              "burst_duration": "Dauer Stoßlüften",
+              "humidity_threshold": "Lüften wegen Feuchte ab",
+              "repair_delay": "Ausfall melden nach"
+            }
+          }
+        }
+      }
+    }
+  },
   "selector": {
     "side": {
       "options": {
@@ -722,6 +867,18 @@
     "chain_place": "{direction} ({area})",
     "chain_weather_first": "springt der Wetterdienst ein",
     "chain_weather_then": ", dann der Wetterdienst",
-    "chain_end": "."
+    "chain_end": ".",
+    "outside_words": "Außen, Draußen, Garten, Hof, Terrasse, Balkon",
+    "plan_rooms_head": "**Räume**",
+    "plan_regions_head": "**Außenseiten**",
+    "plan_item_value": "**{name}** {value} °C{parts} aus {source}",
+    "plan_item_none": "**{name}** noch kein Wert",
+    "plan_humidity": "{value} %",
+    "plan_spare": "Ersatz: {sources}.",
+    "plan_side": "Seite: {side}.",
+    "plan_side_none": "Keine Seite.",
+    "plan_no_side": "{direction}: keine Außenseite, Wetterdienst springt ein.",
+    "plan_no_side_no_weather": "{direction}: keine Außenseite.",
+    "plan_closing": "Quellen und Reihenfolge änderst du später pro Raum."
   }
 }

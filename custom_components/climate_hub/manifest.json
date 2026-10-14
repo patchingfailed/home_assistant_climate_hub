@@ -2,6 +2,7 @@
   "domain": "climate_hub",
   "name": "Climate Hub",
   "codeowners": ["@patchingfailed"],
+  "config_flow": true,
   "dependencies": ["repairs"],
   "after_dependencies": ["recorder", "sun", "weather"],
   "documentation": "https://github.com/patchingfailed/home_assistant_climate_hub",

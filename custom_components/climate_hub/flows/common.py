@@ -124,6 +124,27 @@ def climate_choices(
     return _context_filter(climates, area_id, chosen)
 
 
+# Ids and titles of the subentries (docs/integration.md §3.2)
+
+
+def room_unique_id(area_id: str) -> str:
+    return f"room_{area_id}"
+
+
+def region_unique_id(direction: str) -> str:
+    return f"region_{direction}"
+
+
+def region_title(
+    hass: HomeAssistant, texts: Texts, direction: str, area_id: str
+) -> str:
+    return texts(
+        "region_title",
+        direction=texts.direction(direction),
+        area=area_name(hass, area_id),
+    )
+
+
 # Suggestions (R6)
 
 

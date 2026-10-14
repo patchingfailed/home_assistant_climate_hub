@@ -445,6 +445,125 @@
       "name": "{area} climate"
     }
   },
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Climate Hub",
+        "description": "Found in your home:\n\n- {rooms} areas with a climate sensor or thermostat\n- {outdoor} areas with a temperature sensor that could be outside\n- {contacts} window and door contacts\n- {weather} weather services",
+        "data": {
+          "weather": "Weather service",
+          "area_sync": "Keep areas up to date"
+        },
+        "data_description": {
+          "weather": "Provides the forecast for the daily strategy and the outside values when all outdoor sensors fail.",
+          "area_sync": "Enters the climate values of the rooms and outdoor sides as the temperature and humidity sensor of their areas. Area cards then show the reliable value."
+        }
+      },
+      "rooms": {
+        "title": "Which areas are rooms?",
+        "description": "For each room, the sensors are combined into one value. Areas with a temperature sensor or a thermostat are shown. Outdoor areas are not checked.",
+        "data": {
+          "rooms": "Rooms"
+        },
+        "data_description": {
+          "rooms": "The preview shows which sensors are used per room. You change the order later per room."
+        }
+      },
+      "plan": {
+        "title": "House plan",
+        "description": "Assign each side of the house its outdoor area and the rooms whose windows face that way. Sides without an outdoor area, such as a wall facing the neighbour, stay empty.\n\nSimply leave out interior rooms without windows.",
+        "sections": {
+          "n": {
+            "name": "North",
+            "data": {
+              "outdoor": "Outdoor area",
+              "rooms": "Rooms on this side"
+            }
+          },
+          "e": {
+            "name": "East",
+            "data": {
+              "outdoor": "Outdoor area",
+              "rooms": "Rooms on this side"
+            }
+          },
+          "s": {
+            "name": "South",
+            "data": {
+              "outdoor": "Outdoor area",
+              "rooms": "Rooms on this side"
+            }
+          },
+          "w": {
+            "name": "West",
+            "data": {
+              "outdoor": "Outdoor area",
+              "rooms": "Rooms on this side"
+            }
+          }
+        }
+      },
+      "preview": {
+        "title": "Preview",
+        "description": "{preview}",
+        "menu_options": {
+          "create": "Create",
+          "rooms": "Change rooms",
+          "plan": "Change house plan"
+        }
+      },
+      "reconfigure": {
+        "title": "House plan",
+        "description": "Assign each side of the house its outdoor area and the rooms whose windows face that way. Sides without an outdoor area, such as a wall facing the neighbour, stay empty.\n\nSimply leave out interior rooms without windows.",
+        "sections": {
+          "n": {
+            "name": "North",
+            "data": {
+              "outdoor": "Outdoor area",
+              "rooms": "Rooms on this side"
+            }
+          },
+          "e": {
+            "name": "East",
+            "data": {
+              "outdoor": "Outdoor area",
+              "rooms": "Rooms on this side"
+            }
+          },
+          "s": {
+            "name": "South",
+            "data": {
+              "outdoor": "Outdoor area",
+              "rooms": "Rooms on this side"
+            }
+          },
+          "w": {
+            "name": "West",
+            "data": {
+              "outdoor": "Outdoor area",
+              "rooms": "Rooms on this side"
+            }
+          }
+        }
+      },
+      "plan_preview": {
+        "title": "Preview",
+        "description": "These sources are suggested for new or changed outdoor sides. You change their order later per outdoor side.\n\n{preview}",
+        "menu_options": {
+          "plan_save": "Save",
+          "plan_adjust": "Adjust"
+        }
+      }
+    },
+    "error": {
+      "no_rooms": "Select at least one room.",
+      "room_two_sides": "A room has one main side. You set windows facing other sides later on the window.",
+      "outdoor_twice": "{area} is already the outdoor area for {side}."
+    },
+    "create_entry": {
+      "created": "Done. Change the sources per room: ⋮ next to the room → Reconfigure."
+    }
+  },
   "config_subentries": {
     "room": {
       "entry_type": "Room",
@@ -652,6 +771,32 @@
       }
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "weather": "Weather service",
+          "area_sync": "Keep areas up to date"
+        },
+        "data_description": {
+          "weather": "Provides the forecast for the daily strategy and the outside values when all outdoor sensors fail.",
+          "area_sync": "Enters the climate values of the rooms and outdoor sides as the temperature and humidity sensor of their areas. Area cards then show the reliable value."
+        },
+        "sections": {
+          "timing": {
+            "name": "Times and thresholds",
+            "data": {
+              "max_age": "Maximum age of a measurement",
+              "burst_duration": "Duration of burst ventilation",
+              "humidity_threshold": "Ventilate for humidity from",
+              "repair_delay": "Report an outage after"
+            }
+          }
+        }
+      }
+    }
+  },
   "selector": {
     "side": {
       "options": {
@@ -722,6 +867,18 @@
     "chain_place": "{direction} ({area})",
     "chain_weather_first": "the weather service steps in",
     "chain_weather_then": ", then the weather service",
-    "chain_end": "."
+    "chain_end": ".",
+    "outside_words": "Outside, Outdoor, Garden, Yard, Patio, Terrace, Balcony",
+    "plan_rooms_head": "**Rooms**",
+    "plan_regions_head": "**Outdoor sides**",
+    "plan_item_value": "**{name}** {value} °C{parts} from {source}",
+    "plan_item_none": "**{name}** no value yet",
+    "plan_humidity": "{value} %",
+    "plan_spare": "Fallbacks: {sources}.",
+    "plan_side": "Side: {side}.",
+    "plan_side_none": "No side.",
+    "plan_no_side": "{direction}: no outdoor side, the weather service steps in.",
+    "plan_no_side_no_weather": "{direction}: no outdoor side.",
+    "plan_closing": "You change sources and their order later per room."
   }
 }

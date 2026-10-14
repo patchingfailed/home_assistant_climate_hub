@@ -96,28 +96,37 @@ class PreviewRun:
     result: EngineResult
 
 
-async def async_run_preview(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    subentry_id: str | None,
-    subentry_type: str,
-    data: Mapping[str, Any],
-) -> PreviewRun:
-    """One engine run with the pending data applied to the model.
+@dataclass(frozen=True, slots=True)
+class HouseRun:
+    """An engine run over a whole pending configuration (S4, S10)."""
 
-    A loaded hub lends its state, comfort values and forecast; otherwise (first
-    setup) the state is empty, the comfort values are the defaults and the forecast is
-    fetched once.
+    model: m.HouseModel
+    result: EngineResult
+
+
+@dataclass(frozen=True, slots=True)
+class PlanItem:
+    """A room or outdoor side the house plan would create (S4, S10)."""
+
+    subentry_id: str  # a placeholder until the subentry exists
+    subentry_type: str
+    area_id: str
+    data: Mapping[str, Any]
+    not_taken: tuple[NotTaken, ...]
+
+
+async def _async_evaluate(
+    hass: HomeAssistant,
+    entry: ConfigEntry | None,
+    options: Mapping[str, Any],
+    triples: Iterable[tuple[str, str, Mapping[str, Any]]],
+) -> tuple[m.HouseModel, EngineResult]:
+    """One engine run. A loaded hub lends its state, comfort values and forecast;
+    otherwise (first setup) the state is empty, the comfort values are the defaults and
+    the forecast is fetched once.
     """
-    pending_id = subentry_id or PENDING_ID
-    triples = [
-        (sub.subentry_id, sub.subentry_type, sub.data)
-        for sub in entry.subentries.values()
-        if sub.subentry_id != subentry_id
-    ]
-    triples.append((pending_id, subentry_type, data))
-    model = build_model_from(hass, entry.options, triples)
-    if entry.state is ConfigEntryState.LOADED:
+    model = build_model_from(hass, options, triples)
+    if entry is not None and entry.state is ConfigEntryState.LOADED:
         coordinator = entry.runtime_data.coordinator
         state, comfort, forecast = (
             coordinator.state,
@@ -136,7 +145,38 @@ async def async_run_preview(
         )
     snapshot = build_snapshot(hass, model, forecast)
     result, _ = evaluate(model, snapshot, state, comfort, dt_util.now())
+    return model, result
+
+
+async def async_run_preview(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    subentry_id: str | None,
+    subentry_type: str,
+    data: Mapping[str, Any],
+) -> PreviewRun:
+    """One engine run with the pending data applied to the model."""
+    pending_id = subentry_id or PENDING_ID
+    triples = [
+        (sub.subentry_id, sub.subentry_type, sub.data)
+        for sub in entry.subentries.values()
+        if sub.subentry_id != subentry_id
+    ]
+    triples.append((pending_id, subentry_type, data))
+    model, result = await _async_evaluate(hass, entry, entry.options, triples)
     return PreviewRun(pending_id, model, result)
+
+
+async def async_run_house(
+    hass: HomeAssistant,
+    entry: ConfigEntry | None,
+    options: Mapping[str, Any],
+    items: Iterable[PlanItem],
+) -> HouseRun:
+    """One engine run over pending rooms and outdoor sides."""
+    triples = [(i.subentry_id, i.subentry_type, i.data) for i in items]
+    model, result = await _async_evaluate(hass, entry, options, triples)
+    return HouseRun(model, result)
 
 
 # Markdown
@@ -363,5 +403,139 @@ def region_markdown(
             *_value_lines(hass, texts, result.own.temperature),
             _metric_line(hass, texts, resolutions, _own_metrics(data)),
             _chain_sentence(hass, texts, run.model, result.own.direction),
+        ]
+    )
+
+
+def _spare_names(hass: HomeAssistant, resolution: Resolution) -> list[str]:
+    return [
+        entity_name(hass, c.entity_id)
+        for c in resolution.candidates
+        if c.entity_id != resolution.source
+        and c.status is Status.OK
+        and c.value is not None
+    ]
+
+
+def _plan_value(
+    hass: HomeAssistant,
+    texts: Texts,
+    name: str,
+    temperature: Resolution,
+    humidity: Resolution,
+) -> str:
+    if temperature.value is None or temperature.source is None:
+        return texts("plan_item_none", name=name)
+    parts = (
+        DOT_SEPARATOR + texts("plan_humidity", value=texts.number(humidity.value, 0))
+        if humidity.value is not None
+        else ""
+    )
+    return texts(
+        "plan_item_value",
+        name=name,
+        value=texts.number(temperature.value),
+        parts=parts,
+        source=entity_name(hass, temperature.source),
+    )
+
+
+def _plan_item(head: str, details: Iterable[str]) -> str:
+    return f"- {head}\n  " + " ".join(d for d in details if d)
+
+
+def rooms_markdown(
+    hass: HomeAssistant, texts: Texts, run: HouseRun, items: Sequence[PlanItem]
+) -> str:
+    """The rooms part of screen S4."""
+    lines = []
+    for item in items:
+        result = run.result.rooms.get(item.subentry_id)
+        if result is None:
+            continue
+        side = item.data[m.CONF_SIDE]
+        spares = _spare_names(hass, result.temperature)
+        lines.append(
+            _plan_item(
+                _plan_value(
+                    hass,
+                    texts,
+                    area_name(hass, item.area_id),
+                    result.temperature,
+                    result.humidity,
+                ),
+                [
+                    texts("plan_spare", sources=COMMA_SEPARATOR.join(spares))
+                    if spares
+                    else "",
+                    texts("plan_side", side=texts.direction(side))
+                    if side != m.SIDE_NONE
+                    else texts("plan_side_none"),
+                    _not_taken_line(hass, texts, item.not_taken)
+                    if item.not_taken
+                    else "",
+                ],
+            )
+        )
+    return _BLOCK.join([texts("plan_rooms_head"), "\n".join(lines)])
+
+
+def regions_markdown(
+    hass: HomeAssistant,
+    texts: Texts,
+    run: HouseRun,
+    items: Sequence[PlanItem],
+    *,
+    missing_sides: bool,
+) -> str:
+    """The outdoor sides part of screens S4 and S10 (I17)."""
+    lines = []
+    for item in sorted(items, key=lambda i: str(i.data[m.CONF_DIRECTION])):
+        result = run.result.regions.get(item.subentry_id)
+        if result is None:
+            continue
+        direction = Direction(item.data[m.CONF_DIRECTION])
+        title = texts(
+            "region_title",
+            direction=texts.direction(direction),
+            area=area_name(hass, item.area_id),
+        )
+        lines.append(
+            _plan_item(
+                _plan_value(
+                    hass, texts, title, result.own.temperature, result.own.humidity
+                ),
+                [
+                    _chain_sentence(hass, texts, run.model, direction),
+                    _not_taken_line(hass, texts, item.not_taken)
+                    if item.not_taken
+                    else "",
+                ],
+            )
+        )
+    if missing_sides:
+        configured = {i.data[m.CONF_DIRECTION] for i in items}
+        key = "plan_no_side" if run.model.weather else "plan_no_side_no_weather"
+        lines.extend(
+            "- " + texts(key, direction=texts.direction(d))
+            for d in (d.value for d in Direction)
+            if d not in configured
+        )
+    return _BLOCK.join([texts("plan_regions_head"), "\n".join(lines)])
+
+
+def plan_markdown(
+    hass: HomeAssistant,
+    texts: Texts,
+    run: HouseRun,
+    rooms: Sequence[PlanItem],
+    regions: Sequence[PlanItem],
+) -> str:
+    """Screen S4 (the windows part comes with milestone M2)."""
+    return _BLOCK.join(
+        [
+            rooms_markdown(hass, texts, run, rooms),
+            regions_markdown(hass, texts, run, regions, missing_sides=True),
+            texts("plan_closing"),
         ]
     )

@@ -17,6 +17,8 @@ from .common import (
     SourceFlow,
     option_selector,
     region_by_direction,
+    region_title,
+    region_unique_id,
     subentry_by_area,
 )
 from .preview import PreviewRun, Texts, area_name, async_texts, region_markdown
@@ -67,14 +69,12 @@ class RegionSubentryFlow(SourceFlow):
         return None
 
     def _title(self, hass: HomeAssistant, texts: Texts) -> str:
-        return texts(
-            "region_title",
-            direction=texts.direction(self._data[m.CONF_DIRECTION]),
-            area=area_name(hass, self._data[m.CONF_AREA]),
+        return region_title(
+            hass, texts, self._data[m.CONF_DIRECTION], self._data[m.CONF_AREA]
         )
 
     def _unique_id(self) -> str:
-        return f"region_{self._data[m.CONF_DIRECTION]}"
+        return region_unique_id(self._data[m.CONF_DIRECTION])
 
     def _markdown(self, texts: Texts, run: PreviewRun) -> str:
         return region_markdown(self.hass, texts, run, self._data)
