@@ -4,6 +4,7 @@ from homeassistant.const import Platform
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later
 
+from .area_sync import async_clear_recorded, async_sync_after_first_evaluation
 from .const import RELOAD_DELAY
 from .coordinator import ClimateHubConfigEntry, ClimateHubCoordinator, ClimateHubData
 from .entity import async_remove_stale_entities, async_sync_devices
@@ -26,6 +27,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ClimateHubConfigEntry) -
     async_sync_devices(hass, entry, coordinator)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     async_remove_stale_entities(hass, entry, (*SENSORS, *NUMBERS))
+
+    async_sync_after_first_evaluation(hass, entry, coordinator)
 
     pending: CALLBACK_TYPE | None = None
 
@@ -60,5 +63,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ClimateHubConfigEntry) 
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ClimateHubConfigEntry) -> None:
-    """Delete the hub's Store."""
-    await ClimateHubStore(hass, entry.entry_id).async_remove()
+    """Clear the area fields Climate Hub wrote, then delete the hub's Store."""
+    store = ClimateHubStore(hass, entry.entry_id)
+    await async_clear_recorded(hass, await store.async_load_area_sync())
+    await store.async_remove()

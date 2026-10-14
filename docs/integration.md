@@ -682,6 +682,9 @@ raised again after "ignore"; both fix flows end to end; issues removed with the 
 - Written values are recorded in the Store (`area_sync`). A recorded field that is no longer wanted (sync off, object
   deleted, entity gone) is cleared only if it still holds the recorded entity ID. `async_remove_entry` clears all
   recorded fields under the same rule. The previous value is not restored.
+- A field the user changed after Climate Hub wrote it (another sensor, or emptied) is left alone from then on, so one
+  area can opt out without switching the sync off. A field never written by Climate Hub is taken over once (the S1
+  confirmation covers that).
 
 Tests (`tests/integration/test_area_sync.py`): written on setup; cleared on sync off, room delete and entry removal;
 a field the user changed is left alone; regions included.

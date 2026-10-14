@@ -130,6 +130,13 @@ class ClimateHubStore:
             device_areas=_load_device_areas(raw.get("device_areas"), known),
         )
 
+    async def async_load_area_sync(self) -> dict[str, dict[str, str]]:
+        """Only the area-sync records, for removal when no model exists."""
+        raw = await self._store.async_load()
+        return _load_area_sync(
+            raw.get("area_sync") if isinstance(raw, Mapping) else None
+        )
+
     def schedule_save(self, provider: Callable[[], StoreData]) -> None:
         """Save after `STORE_SAVE_DELAY`; the provider runs when the write is due."""
         self._store.async_delay_save(
