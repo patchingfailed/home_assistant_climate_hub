@@ -19,6 +19,7 @@ scripts/deploy.config.ps1
 
 # Claude Code: local overrides stay local; settings.json + project skills are committed
 .claude/settings.local.json
+.claude/worktrees/
 
 # Local-only raw material (V1 learnings, private notes) - never goes public
 local input/
