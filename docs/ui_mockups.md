@@ -269,7 +269,8 @@ confirmation, which we cannot extend. Deleting a room therefore keeps its window
 A window cannot simply move into its room's card (asked 2026-10-13): Home Assistant groups devices by the subentry
 that owns them, a window needs its own subentry for its own edit and delete, and a window device owned only by the
 room's subentry would disappear with the room (W11). Linking the window device to both subentries would show it in
-both cards, which is more confusing than helpful. Not planned.
+both cards, which is more confusing than helpful, and Home Assistant allows a device in one subentry only since 2026.8.
+Not planned.
 
 ### S6 Raum
 
@@ -694,7 +695,7 @@ Further findings for the real build: a room's device area must follow the room's
 new device); the new-sensor repair (R14) needs a registry listener, not only a check at setup. Implementation
 pitfalls are in the project skill `ha-integration-dev`.
 
-The minimum Home Assistant version is at least 2025.10 (menu option descriptions); the spike ran on 2026.10.1 only.
+Minimum Home Assistant version: 2026.10.0 (ADR-008).
 
 ## 8. Open points for review
 

@@ -209,7 +209,7 @@ cover automations keep working unchanged; they can adopt the recommendation step
 | N3 | Calculation logic is pure Python without Home Assistant imports and has table tests. Flows are tested end to end through the flow manager. |
 | N4 | Learned and timed state (offsets, open-since, trend, burst timers) survives restarts. |
 | N5 | No registry scans per update. Sources are resolved when the configuration or the registries change. |
-| N6 | Minimum Home Assistant version: must support config subentries and the sortable entity selector. Exact version decided in an ADR. |
+| N6 | Minimum Home Assistant version 2026.10.0 (ADR-008). |
 | N7 | Nothing is built that the UI cannot reach. No placeholders, no dormant code paths. |
 
 ## 6. Acceptance scenarios
@@ -243,4 +243,4 @@ These come from a real installation and must work without workarounds:
 | # | Question |
 |---|---|
 | ~~Q5~~ | Confirmed 2026-10-13: maximum age 40 min, burst time 10 min, humidity threshold 60 %, repair delay 6 h. |
-| Q6 | Minimum Home Assistant version (N6): the entity selector supports `reorder` since 2025.9 (checked in core source), menu option descriptions (window type menu) need 2025.10. Still to verify: drag-sorting works inside a subentry flow on DEV. |
+| ~~Q6~~ | Decided 2026-10-14: minimum Home Assistant 2026.10.0 (ADR-008). The UI alone would need 2025.10 (`reorder` 2025.8, menu option descriptions 2025.10); entity IDs with the area and `probatio` set the rest. Drag-sorting inside a subentry flow confirmed on DEV. |

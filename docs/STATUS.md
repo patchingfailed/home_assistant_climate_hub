@@ -1,6 +1,6 @@
 # Status
 
-Updated 2026-10-13. The only place for project status.
+Updated 2026-10-14. The only place for project status.
 
 ## Now
 
@@ -8,7 +8,8 @@ UI mockups are approved (2026-10-13). The native-UI spike ran on DEV (branch `sp
 results in `docs/ui_mockups.md` §7. Its code stays deployed on DEV, without a hub entry, for Felix's click review.
 The logic spec `docs/logic.md` is approved (2026-10-13, D1–D16 except the replaced D13) and **built**: the ten pure
 modules in `custom_components/climate_hub/logic/` with 393 table tests. Felix approved the logic and the build
-decisions (2026-10-13). No Home Assistant glue exists yet (no manifest, no entities, no flows).
+decisions (2026-10-13). Minimum Home Assistant version is 2026.10.0 (ADR-008, 2026-10-14). No Home Assistant glue
+exists yet (no manifest, no entities, no flows).
 
 Branches (CLAUDE.md rule 14): `main` is the current line, on GitHub too. `spike/native-ui` stays local as a
 reference and is never merged.
@@ -18,13 +19,12 @@ reference and is never merged.
 1. **Rest of the click review on DEV** (Felix, optional): §7 items 3 (markdown table), 5 (success
    text), 10 (area per picker row). Item 2 (phone) is skipped by choice. DEV has a few mirrored entities assigned to
    areas as test fixtures (list and undo in the private local notes).
-2. **Minimum HA version** as an ADR (at least 2025.10 for menu option descriptions; the spike ran on 2026.10.1).
-3. **Adapter and integration build plan**: manifest, hub entry with subentries, coordinator (snapshot, 60 s tick,
+2. **Adapter and integration build plan**: manifest, hub entry with subentries, coordinator (snapshot, 60 s tick,
    debounced listeners), `Store` persistence of the logic states, entities, flows per the mockups, repairs. The
    adapter contract is in `docs/logic.md` §14. The spike branch `spike/native-ui` shows working
-   flow/subentry/repair idioms (reference only, never merge). Needs the minimum HA version (item 2) first.
-4. **CI**: pytest, ruff, hassfest, HACS validation.
-5. After the review: remove the spike from DEV.
+   flow/subentry/repair idioms (reference only, never merge). Targets Home Assistant 2026.10 only (ADR-008).
+3. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
+4. After the review: remove the spike from DEV.
 
 ## Open decisions
 
@@ -32,6 +32,11 @@ reference and is never merged.
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-14: ADR-008, minimum Home Assistant 2026.10.0 (Felix agreed). Researched with sources: subentries 2025.3,
+  `reorder` 2025.8 (ADR-004 and Q6 said 2025.9, corrected), menu option descriptions 2025.10, area prefix in entity
+  IDs 2026.6, `entity_id_parts` 2026.8, `probatio` 2026.9. Since 2026.8 a device may sit in one subentry only (fits
+  S5). N6 and Q6 closed. Verified on DEV: no (docs only).
 
 - 2026-10-13: branches folded into `main` (fast-forward, nothing lost) and `main` pushed; GitHub's default branch
   is `main`, `planning/kickoff` and `build/logic-modules` are deleted locally and on GitHub. Branch rule as CLAUDE.md rule 14 (Felix agreed).

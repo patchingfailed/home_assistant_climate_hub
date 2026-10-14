@@ -25,7 +25,7 @@ entries per object type need ownership rules for house-level entities and break 
 entry. House-level settings live in the entry (data for wiring, options for tunables). One coordinator computes all objects.
 
 **Consequences.** Home Assistant renders add/edit/delete per object. House-level entities belong to the hub device and
-need no ownership logic. Subentries require a recent Home Assistant (see ADR-004 for the minimum version).
+need no ownership logic. Subentries require a recent Home Assistant (minimum version: ADR-008).
 
 ## ADR-003: Regions are HA areas with a compass direction; fallback order is derived (2026-10-12)
 
@@ -46,13 +46,12 @@ fallback chain.
 Rank dropdowns are clumsy, and multi-select order is invisible unless the selector supports sorting.
 
 **Decision.** Source priority is the order of an entity selector with `multiple` and `reorder` (available since Home
-Assistant 2025.9). The highest-ranked valid source wins and takes over again as soon as it is valid. Lower-ranked sources
+Assistant 2025.8; corrected 2026-10-14). The highest-ranked valid source wins and takes over again as soon as it is valid. Lower-ranked sources
 are corrected by a learned offset relative to the higher-ranked source (rolling window of about 24 h, persisted).
 There is no switch hysteresis between sources.
 
-**Consequences.** Minimum Home Assistant version is at least 2025.9; the exact minimum is set together with the
-subentry features we use. Learned offsets need persistent storage and must be visible (attributes, diagnostics).
-Sorting inside a subentry flow must be verified on DEV before the room form is built.
+**Consequences.** Needs Home Assistant 2025.8 or later; the minimum is set in ADR-008. Learned offsets need persistent
+storage and must be visible (attributes, diagnostics). Sorting inside a subentry flow works (DEV spike, 2026-10-13).
 
 ## ADR-005: Naming (2026-10-12)
 
@@ -98,3 +97,23 @@ stay predictable either way.
 **Consequences.** Entity IDs as P7 intends: `sensor.kuche_klima_temperatur`, `sensor.kuche_fenster_zustand`. Friendly
 names carry no room („Klima Temperatur"); Home Assistant shows the area as context, and dashboards group by room
 anyway (accepted 2026-10-13). Entity IDs never follow later area changes (rule 1).
+
+## ADR-008: Minimum Home Assistant version 2026.10 (2026-10-14)
+
+**Context.** N6 asks for an exact minimum. The approved UI alone needs 2025.10: config subentries (2025.3), the
+sortable entity selector (2025.8) and menu option descriptions (2025.10). Later core changes matter more. Since 2026.6
+Home Assistant puts the area in front of new entity IDs, and since 2026.8 the pattern is a user setting
+(`entity_id_parts`). ADR-007 relies on both; before 2026.6 every room would get `sensor.klima_temperatur` with a number
+suffix. Since 2026.9 core validates with `probatio` instead of `voluptuous`, and the integration imports `probatio`
+directly. Supporting anything older would need a second naming rule and a second schema import that no current
+installation runs, plus a test job on Python 3.13. There are no users yet.
+
+**Decision.** The minimum is Home Assistant 2026.10.0, the release the tests pin. It is declared in `hacs.json`
+(`homeassistant`), so HACS refuses to install on older releases; `manifest.json` has no such field. The minimum rises
+only when a feature needs a newer release, never because a new release exists, and each rise amends this ADR. Once the
+test pin moves past the minimum, CI tests both.
+
+**Consequences.** Code uses current APIs (`probatio`, subentries, `entity_id_parts`) without version checks or
+fallbacks. A manual install on an older release fails at import with a log error; there is no extra guard. Since 2026.8
+a device belongs to one config entry and at most one subentry, so every room, region and window device belongs to its
+own subentry only, as S5 already planned.
