@@ -17,14 +17,14 @@ reference and is never merged.
 
 ## Next
 
-1. **Rest of the click review on DEV** (Felix, optional): §7 items 3 (markdown table), 5 (success
-   text), 10 (area per picker row). Item 2 (phone) is skipped by choice. DEV has a few mirrored entities assigned to
-   areas as test fixtures (list and undo in the private local notes). Must happen before M1 reaches DEV, because the
-   first M1 deploy replaces the spike.
-2. **Build M1** (rooms and outdoor sides) on branch `build/m1-rooms`, steps 1–13 of `docs/integration.md` §15, one
-   Sonnet implementer per step. Then M2 (windows) and M3 (repairs).
-3. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
-4. Remove the spike from DEV: part of M1 step 13.
+1. **Felix: click review of M1 on DEV** (step 13): first setup S1–S4, add/edit a room and an outdoor side (S6, S7),
+   options (S9), house plan (S10), entities and attributes, area cards. M1 is deployed; the spike entry and files are
+   gone from DEV. Findings go back into the build, then M1 merges into `main`.
+2. **Test devices on DEV** (proposal, not decided): DEV's mirrored entities have no devices, so R6 tiers, device
+   grouping and "follow" cannot be exercised there. Proposal: Mosquitto app plus MQTT discovery for a handful of virtual
+   devices fed by a DEV automation that republishes the mirrored values; availability topics simulate outages.
+3. After M1: M2 (windows), M3 (repairs), then CI (pytest, ruff, hassfest, HACS; `hacs.json` with 2026.10.0). A PROD test
+   is possible once a stable stand exists, only with Felix's explicit go.
 
 ## Open decisions
 
@@ -32,6 +32,12 @@ reference and is never merged.
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-14: M1 step 12 (hub flow S1–S4, options S9, house plan S10 with preview) built; stand-ins removed; 643
+  tests green. M1 deployed to DEV (spike entry and files removed). DEV showed a real gap: its mirrored sensors have no
+  device, so R6 offered no room and the first setup was a dead end. Fixed with an R6 last resort (device-less, then
+  derived values when an area has nothing better; Felix agreed). Verified on DEV: partly (S1/S2 through the flow API;
+  UI click review pending).
 
 - 2026-10-14: M1 steps 1–11 built on `build/m1-rooms` (Sonnet implementers, each reviewed and committed separately):
   package skeleton with coalesced reload, shared test fixture house, pure `logic/model.py` and `logic/engine.py` (whole
