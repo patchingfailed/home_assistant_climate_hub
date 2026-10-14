@@ -373,3 +373,31 @@ def test_propose_rooms_floor_order_and_filter():
     proposal = propose_rooms(areas, entities, frozenset())
     assert [a for a, _ in proposal] == ["a", "c", "d", "b", "e"]
     assert [p for _, p in proposal] == [True, True, True, True, False]
+
+
+@pytest.mark.parametrize(
+    ("entities", "expected"),
+    [
+        # Only a sensor without a device: pre-filled as the last resort.
+        (NO_DEVICE, ("sensor.nodev_t",)),
+        # A real source wins; the device-less sensor stays excluded.
+        ([*CLIMATE_SENSOR, *NO_DEVICE], ("sensor.cs_t",)),
+        # Without a device: device-less first, then derived values.
+        ([*SETPOINT, *NO_DEVICE], ("sensor.nodev_t", "sensor.setpoint")),
+        # Implausible and diagnostic values never give way.
+        ([temp("sensor.nodev_fridge", device=None, value=6.0)], ()),
+        (PLUG, ()),
+        # A device-less thermostat comes last.
+        (
+            [ent("climate.nodev", device=None), *NO_DEVICE],
+            ("sensor.nodev_t", "climate.nodev"),
+        ),
+    ],
+)
+def test_last_resort_without_device(entities, expected):
+    assert suggest_sources(KITCHEN, entities, T, Scope.ROOM).sources == expected
+
+
+def test_last_resort_skips_climate_in_regions():
+    entities = [ent("climate.nodev", device=None)]
+    assert suggest_sources(KITCHEN, entities, T, Scope.REGION).sources == ()

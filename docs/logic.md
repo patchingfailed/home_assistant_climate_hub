@@ -912,6 +912,10 @@ matching rule decides:
 Rules:
 - Pre-filled: entities whose effective area is the object's area, in tier order, then by name, then by entity ID.
   Entities without an area are offered in the picker (U6) but never pre-filled.
+- **Last resort (2026-10-14):** if no candidate of the area reaches a tier, candidates excluded only as `no_device` or
+  `helper` are pre-filled after the plausibility check: device-less ones first, then derived values, `climate`
+  entities last (rooms only). Diagnostic, implausible and secondary values never give way. Without this, an
+  installation whose sensors have no device (MQTT in YAML, REST, mirrors) could not finish the first setup.
 - Regions use the same rules with the region range and without tier 3 (a `climate` entity in an outdoor area is
   excluded as `secondary`).
 - Humidity and pressure candidates use rules 1–4 and 6–8, plausible ranges 0–100 % and 800–1100 hPa, tier 1 for

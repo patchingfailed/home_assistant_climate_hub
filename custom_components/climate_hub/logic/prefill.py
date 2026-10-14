@@ -194,6 +194,10 @@ def classify(
     return Tier.CLIMATE_GRADE if _has_sensor(pool, companion) else Tier.SINGLE_VALUE
 
 
+# Exclusions that give way when an area has no other source (R6 last resort)
+_WEAK = (Exclusion.NO_DEVICE, Exclusion.HELPER)
+
+
 def _by_device(entities: Sequence[EntityInfo]) -> dict[str, list[EntityInfo]]:
     grouped: dict[str, list[EntityInfo]] = defaultdict(list)
     for entity in entities:
@@ -210,6 +214,7 @@ def suggest_sources(
     tiered: list[tuple[Tier, EntityInfo]] = []
     excluded: list[EntityInfo] = []
     reasons: dict[str, Exclusion] = {}
+    weak_order: dict[str, int] = {}
     for entity in entities:
         if entity.area_id != area_id:
             continue
@@ -220,7 +225,30 @@ def suggest_sources(
         elif result is not None:
             excluded.append(entity)
             reasons[entity.entity_id] = result
-    tiered.sort(key=lambda t: (t[0], t[1].name.casefold(), t[1].entity_id))
+    if not tiered:
+        # Last resort (R6): an area without any other source pre-fills plausible
+        # entities without a device, then derived values.
+        for entity in list(excluded):
+            reason = reasons[entity.entity_id]
+            if reason not in _WEAK or _implausible(entity, metric, scope):
+                continue
+            if entity.domain == "climate" and scope is Scope.REGION:
+                continue
+            tier = (
+                Tier.CLIMATE_ENTITY if entity.domain == "climate" else Tier.SINGLE_VALUE
+            )
+            tiered.append((tier, entity))
+            excluded.remove(entity)
+            del reasons[entity.entity_id]
+            weak_order[entity.entity_id] = _WEAK.index(reason)
+    tiered.sort(
+        key=lambda t: (
+            t[0],
+            weak_order.get(t[1].entity_id, 0),
+            t[1].name.casefold(),
+            t[1].entity_id,
+        )
+    )
     excluded.sort(key=lambda e: (e.name.casefold(), e.entity_id))
     return Suggestion(
         sources=tuple(e.entity_id for _, e in tiered),
