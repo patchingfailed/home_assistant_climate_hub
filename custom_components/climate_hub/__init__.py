@@ -6,10 +6,13 @@ from homeassistant.helpers.event import async_call_later
 
 from .const import RELOAD_DELAY
 from .coordinator import ClimateHubConfigEntry, ClimateHubCoordinator, ClimateHubData
+from .entity import async_remove_stale_entities, async_sync_devices
+from .number import NUMBERS
 from .registry import build_model
+from .sensor import SENSORS
 from .store import ClimateHubStore
 
-PLATFORMS: list[Platform] = []
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.NUMBER]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ClimateHubConfigEntry) -> bool:
@@ -20,7 +23,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ClimateHubConfigEntry) -
         hass, entry, model, store, await store.async_load(model)
     )
     entry.runtime_data = ClimateHubData(coordinator, store)
+    async_sync_devices(hass, entry, coordinator)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    async_remove_stale_entities(hass, entry, (*SENSORS, *NUMBERS))
 
     pending: CALLBACK_TYPE | None = None
 

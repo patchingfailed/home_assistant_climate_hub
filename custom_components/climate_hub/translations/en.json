@@ -9,5 +9,440 @@
     "evaluation_failed": {
       "message": "Every room, outdoor side and window failed to evaluate."
     }
+  },
+  "entity": {
+    "sensor": {
+      "temperature": {
+        "name": "Temperature",
+        "state_attributes": {
+          "source": {
+            "name": "Source"
+          },
+          "stage": {
+            "name": "Stage",
+            "state": {
+              "primary": "primary source",
+              "fallback": "fallback source",
+              "neighbour": "neighbouring side",
+              "opposite": "opposite side",
+              "weather": "weather service",
+              "none": "no value"
+            }
+          },
+          "regions": {
+            "name": "Outdoor sides"
+          },
+          "reason": {
+            "name": "Reason",
+            "state": {
+              "ok": "ok",
+              "unavailable": "unavailable",
+              "unknown": "unknown",
+              "not_numeric": "not numeric",
+              "unit": "wrong unit",
+              "missing": "missing",
+              "stale": "stale",
+              "no_side": "no outdoor side",
+              "no_pair": "no matching pair",
+              "no_data": "no data"
+            }
+          },
+          "offset": {
+            "name": "Offset"
+          }
+        }
+      },
+      "humidity": {
+        "name": "Humidity",
+        "state_attributes": {
+          "source": {
+            "name": "Source"
+          },
+          "stage": {
+            "name": "Stage",
+            "state": {
+              "primary": "primary source",
+              "fallback": "fallback source",
+              "neighbour": "neighbouring side",
+              "opposite": "opposite side",
+              "weather": "weather service",
+              "none": "no value"
+            }
+          },
+          "regions": {
+            "name": "Outdoor sides"
+          },
+          "reason": {
+            "name": "Reason",
+            "state": {
+              "ok": "ok",
+              "unavailable": "unavailable",
+              "unknown": "unknown",
+              "not_numeric": "not numeric",
+              "unit": "wrong unit",
+              "missing": "missing",
+              "stale": "stale",
+              "no_side": "no outdoor side",
+              "no_pair": "no matching pair",
+              "no_data": "no data"
+            }
+          },
+          "offset": {
+            "name": "Offset"
+          }
+        }
+      },
+      "pressure": {
+        "name": "Pressure",
+        "state_attributes": {
+          "source": {
+            "name": "Source"
+          },
+          "stage": {
+            "name": "Stage",
+            "state": {
+              "primary": "primary source",
+              "fallback": "fallback source",
+              "neighbour": "neighbouring side",
+              "opposite": "opposite side",
+              "weather": "weather service",
+              "none": "no value"
+            }
+          },
+          "regions": {
+            "name": "Outdoor sides"
+          },
+          "reason": {
+            "name": "Reason",
+            "state": {
+              "ok": "ok",
+              "unavailable": "unavailable",
+              "unknown": "unknown",
+              "not_numeric": "not numeric",
+              "unit": "wrong unit",
+              "missing": "missing",
+              "stale": "stale",
+              "no_side": "no outdoor side",
+              "no_pair": "no matching pair",
+              "no_data": "no data"
+            }
+          },
+          "offset": {
+            "name": "Offset"
+          }
+        }
+      },
+      "absolute_humidity": {
+        "name": "Absolute humidity",
+        "state_attributes": {
+          "source": {
+            "name": "Source"
+          },
+          "stage": {
+            "name": "Stage",
+            "state": {
+              "primary": "primary source",
+              "fallback": "fallback source",
+              "neighbour": "neighbouring side",
+              "opposite": "opposite side",
+              "weather": "weather service",
+              "none": "no value"
+            }
+          },
+          "regions": {
+            "name": "Outdoor sides"
+          },
+          "reason": {
+            "name": "Reason",
+            "state": {
+              "ok": "ok",
+              "unavailable": "unavailable",
+              "unknown": "unknown",
+              "not_numeric": "not numeric",
+              "unit": "wrong unit",
+              "missing": "missing",
+              "stale": "stale",
+              "no_side": "no outdoor side",
+              "no_pair": "no matching pair",
+              "no_data": "no data"
+            }
+          },
+          "offset": {
+            "name": "Offset"
+          }
+        }
+      },
+      "dew_point": {
+        "name": "Dew point",
+        "state_attributes": {
+          "source": {
+            "name": "Source"
+          },
+          "stage": {
+            "name": "Stage",
+            "state": {
+              "primary": "primary source",
+              "fallback": "fallback source",
+              "neighbour": "neighbouring side",
+              "opposite": "opposite side",
+              "weather": "weather service",
+              "none": "no value"
+            }
+          },
+          "regions": {
+            "name": "Outdoor sides"
+          },
+          "reason": {
+            "name": "Reason",
+            "state": {
+              "ok": "ok",
+              "unavailable": "unavailable",
+              "unknown": "unknown",
+              "not_numeric": "not numeric",
+              "unit": "wrong unit",
+              "missing": "missing",
+              "stale": "stale",
+              "no_side": "no outdoor side",
+              "no_pair": "no matching pair",
+              "no_data": "no data"
+            }
+          },
+          "offset": {
+            "name": "Offset"
+          }
+        }
+      },
+      "outside_temperature": {
+        "name": "Outside temperature",
+        "state_attributes": {
+          "source": {
+            "name": "Source"
+          },
+          "stage": {
+            "name": "Stage",
+            "state": {
+              "primary": "primary source",
+              "fallback": "fallback source",
+              "neighbour": "neighbouring side",
+              "opposite": "opposite side",
+              "weather": "weather service",
+              "none": "no value"
+            }
+          },
+          "regions": {
+            "name": "Outdoor sides"
+          },
+          "reason": {
+            "name": "Reason",
+            "state": {
+              "ok": "ok",
+              "unavailable": "unavailable",
+              "unknown": "unknown",
+              "not_numeric": "not numeric",
+              "unit": "wrong unit",
+              "missing": "missing",
+              "stale": "stale",
+              "no_side": "no outdoor side",
+              "no_pair": "no matching pair",
+              "no_data": "no data"
+            }
+          },
+          "offset": {
+            "name": "Offset"
+          }
+        }
+      },
+      "outside_humidity": {
+        "name": "Outside humidity",
+        "state_attributes": {
+          "source": {
+            "name": "Source"
+          },
+          "stage": {
+            "name": "Stage",
+            "state": {
+              "primary": "primary source",
+              "fallback": "fallback source",
+              "neighbour": "neighbouring side",
+              "opposite": "opposite side",
+              "weather": "weather service",
+              "none": "no value"
+            }
+          },
+          "regions": {
+            "name": "Outdoor sides"
+          },
+          "reason": {
+            "name": "Reason",
+            "state": {
+              "ok": "ok",
+              "unavailable": "unavailable",
+              "unknown": "unknown",
+              "not_numeric": "not numeric",
+              "unit": "wrong unit",
+              "missing": "missing",
+              "stale": "stale",
+              "no_side": "no outdoor side",
+              "no_pair": "no matching pair",
+              "no_data": "no data"
+            }
+          },
+          "offset": {
+            "name": "Offset"
+          }
+        }
+      },
+      "temperature_difference": {
+        "name": "Outside temperature difference"
+      },
+      "humidity_difference": {
+        "name": "Outside humidity difference",
+        "state_attributes": {
+          "humidity_after_ventilating": {
+            "name": "Humidity after ventilating"
+          }
+        }
+      },
+      "outside": {
+        "name": "Outside",
+        "state": {
+          "warmer": "warmer",
+          "colder": "colder",
+          "similar": "similar"
+        }
+      },
+      "comfort": {
+        "name": "Comfort range",
+        "state": {
+          "below": "below",
+          "within": "within",
+          "above": "above"
+        }
+      },
+      "trend": {
+        "name": "Trend",
+        "state": {
+          "rising": "rising",
+          "steady": "steady",
+          "falling": "falling"
+        }
+      },
+      "recommendation": {
+        "name": "Recommendation",
+        "state": {
+          "open": "open",
+          "keep_open": "keep open",
+          "close": "close",
+          "keep_closed": "keep closed",
+          "none": "none"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Reason",
+            "state": {
+              "cool_room": "cool the room",
+              "pre_cool": "pre-cool",
+              "warm_room": "warm the room",
+              "dry_room": "dry the room",
+              "burst_dry": "burst ventilation to dry",
+              "burst_done": "burst ventilation done",
+              "outside_colder": "outside colder",
+              "outside_warmer": "outside warmer",
+              "outside_humid": "outside more humid",
+              "in_range": "within the comfort range",
+              "no_benefit": "no benefit",
+              "no_data": "no data",
+              "comfort_range_invalid": "comfort range invalid"
+            }
+          }
+        }
+      },
+      "strategy": {
+        "name": "Daily strategy",
+        "state": {
+          "prevent_heat_up": "Prevent heating up",
+          "prevent_cool_down": "Prevent cooling down",
+          "neutral": "neutral"
+        },
+        "state_attributes": {
+          "forecast_max": {
+            "name": "Forecast maximum"
+          },
+          "forecast_min": {
+            "name": "Forecast minimum"
+          },
+          "corrected_max": {
+            "name": "Corrected forecast maximum"
+          },
+          "corrected_min": {
+            "name": "Corrected forecast minimum"
+          },
+          "bias_max": {
+            "name": "Forecast bias maximum"
+          },
+          "bias_min": {
+            "name": "Forecast bias minimum"
+          }
+        }
+      },
+      "indoor_average": {
+        "name": "Indoor average",
+        "state_attributes": {
+          "minimum": {
+            "name": "Minimum"
+          },
+          "maximum": {
+            "name": "Maximum"
+          }
+        }
+      },
+      "outdoor": {
+        "name": "Outdoor",
+        "state_attributes": {
+          "stage": {
+            "name": "Stage",
+            "state": {
+              "primary": "primary source",
+              "fallback": "fallback source",
+              "neighbour": "neighbouring side",
+              "opposite": "opposite side",
+              "weather": "weather service",
+              "none": "no value"
+            }
+          },
+          "minimum": {
+            "name": "Minimum"
+          },
+          "maximum": {
+            "name": "Maximum"
+          },
+          "per_region": {
+            "name": "Per outdoor side"
+          }
+        }
+      }
+    },
+    "number": {
+      "comfort_min": {
+        "name": "Comfort temperature min"
+      },
+      "comfort_max": {
+        "name": "Comfort temperature max"
+      },
+      "threshold": {
+        "name": "Threshold"
+      }
+    }
+  },
+  "device": {
+    "hub": {
+      "name": "Home climate"
+    },
+    "climate": {
+      "name": "Climate"
+    },
+    "climate_area": {
+      "name": "{area} climate"
+    }
   }
 }

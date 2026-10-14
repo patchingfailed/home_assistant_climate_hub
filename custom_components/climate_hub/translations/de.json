@@ -9,5 +9,440 @@
     "evaluation_failed": {
       "message": "Die Auswertung ist für jeden Raum, jede Außenseite und jedes Fenster fehlgeschlagen."
     }
+  },
+  "entity": {
+    "sensor": {
+      "temperature": {
+        "name": "Temperatur",
+        "state_attributes": {
+          "source": {
+            "name": "Quelle"
+          },
+          "stage": {
+            "name": "Stufe",
+            "state": {
+              "primary": "Hauptquelle",
+              "fallback": "Ersatzquelle",
+              "neighbour": "Nachbarseite",
+              "opposite": "Gegenseite",
+              "weather": "Wetterdienst",
+              "none": "kein Wert"
+            }
+          },
+          "regions": {
+            "name": "Außenseiten"
+          },
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "ok": "in Ordnung",
+              "unavailable": "nicht verfügbar",
+              "unknown": "unbekannt",
+              "not_numeric": "kein Zahlenwert",
+              "unit": "falsche Einheit",
+              "missing": "fehlt",
+              "stale": "veraltet",
+              "no_side": "keine Außenseite",
+              "no_pair": "kein Messpaar",
+              "no_data": "keine Daten"
+            }
+          },
+          "offset": {
+            "name": "Abweichung"
+          }
+        }
+      },
+      "humidity": {
+        "name": "Luftfeuchtigkeit",
+        "state_attributes": {
+          "source": {
+            "name": "Quelle"
+          },
+          "stage": {
+            "name": "Stufe",
+            "state": {
+              "primary": "Hauptquelle",
+              "fallback": "Ersatzquelle",
+              "neighbour": "Nachbarseite",
+              "opposite": "Gegenseite",
+              "weather": "Wetterdienst",
+              "none": "kein Wert"
+            }
+          },
+          "regions": {
+            "name": "Außenseiten"
+          },
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "ok": "in Ordnung",
+              "unavailable": "nicht verfügbar",
+              "unknown": "unbekannt",
+              "not_numeric": "kein Zahlenwert",
+              "unit": "falsche Einheit",
+              "missing": "fehlt",
+              "stale": "veraltet",
+              "no_side": "keine Außenseite",
+              "no_pair": "kein Messpaar",
+              "no_data": "keine Daten"
+            }
+          },
+          "offset": {
+            "name": "Abweichung"
+          }
+        }
+      },
+      "pressure": {
+        "name": "Luftdruck",
+        "state_attributes": {
+          "source": {
+            "name": "Quelle"
+          },
+          "stage": {
+            "name": "Stufe",
+            "state": {
+              "primary": "Hauptquelle",
+              "fallback": "Ersatzquelle",
+              "neighbour": "Nachbarseite",
+              "opposite": "Gegenseite",
+              "weather": "Wetterdienst",
+              "none": "kein Wert"
+            }
+          },
+          "regions": {
+            "name": "Außenseiten"
+          },
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "ok": "in Ordnung",
+              "unavailable": "nicht verfügbar",
+              "unknown": "unbekannt",
+              "not_numeric": "kein Zahlenwert",
+              "unit": "falsche Einheit",
+              "missing": "fehlt",
+              "stale": "veraltet",
+              "no_side": "keine Außenseite",
+              "no_pair": "kein Messpaar",
+              "no_data": "keine Daten"
+            }
+          },
+          "offset": {
+            "name": "Abweichung"
+          }
+        }
+      },
+      "absolute_humidity": {
+        "name": "Absolute Feuchte",
+        "state_attributes": {
+          "source": {
+            "name": "Quelle"
+          },
+          "stage": {
+            "name": "Stufe",
+            "state": {
+              "primary": "Hauptquelle",
+              "fallback": "Ersatzquelle",
+              "neighbour": "Nachbarseite",
+              "opposite": "Gegenseite",
+              "weather": "Wetterdienst",
+              "none": "kein Wert"
+            }
+          },
+          "regions": {
+            "name": "Außenseiten"
+          },
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "ok": "in Ordnung",
+              "unavailable": "nicht verfügbar",
+              "unknown": "unbekannt",
+              "not_numeric": "kein Zahlenwert",
+              "unit": "falsche Einheit",
+              "missing": "fehlt",
+              "stale": "veraltet",
+              "no_side": "keine Außenseite",
+              "no_pair": "kein Messpaar",
+              "no_data": "keine Daten"
+            }
+          },
+          "offset": {
+            "name": "Abweichung"
+          }
+        }
+      },
+      "dew_point": {
+        "name": "Taupunkt",
+        "state_attributes": {
+          "source": {
+            "name": "Quelle"
+          },
+          "stage": {
+            "name": "Stufe",
+            "state": {
+              "primary": "Hauptquelle",
+              "fallback": "Ersatzquelle",
+              "neighbour": "Nachbarseite",
+              "opposite": "Gegenseite",
+              "weather": "Wetterdienst",
+              "none": "kein Wert"
+            }
+          },
+          "regions": {
+            "name": "Außenseiten"
+          },
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "ok": "in Ordnung",
+              "unavailable": "nicht verfügbar",
+              "unknown": "unbekannt",
+              "not_numeric": "kein Zahlenwert",
+              "unit": "falsche Einheit",
+              "missing": "fehlt",
+              "stale": "veraltet",
+              "no_side": "keine Außenseite",
+              "no_pair": "kein Messpaar",
+              "no_data": "keine Daten"
+            }
+          },
+          "offset": {
+            "name": "Abweichung"
+          }
+        }
+      },
+      "outside_temperature": {
+        "name": "Außentemperatur",
+        "state_attributes": {
+          "source": {
+            "name": "Quelle"
+          },
+          "stage": {
+            "name": "Stufe",
+            "state": {
+              "primary": "Hauptquelle",
+              "fallback": "Ersatzquelle",
+              "neighbour": "Nachbarseite",
+              "opposite": "Gegenseite",
+              "weather": "Wetterdienst",
+              "none": "kein Wert"
+            }
+          },
+          "regions": {
+            "name": "Außenseiten"
+          },
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "ok": "in Ordnung",
+              "unavailable": "nicht verfügbar",
+              "unknown": "unbekannt",
+              "not_numeric": "kein Zahlenwert",
+              "unit": "falsche Einheit",
+              "missing": "fehlt",
+              "stale": "veraltet",
+              "no_side": "keine Außenseite",
+              "no_pair": "kein Messpaar",
+              "no_data": "keine Daten"
+            }
+          },
+          "offset": {
+            "name": "Abweichung"
+          }
+        }
+      },
+      "outside_humidity": {
+        "name": "Außenfeuchte",
+        "state_attributes": {
+          "source": {
+            "name": "Quelle"
+          },
+          "stage": {
+            "name": "Stufe",
+            "state": {
+              "primary": "Hauptquelle",
+              "fallback": "Ersatzquelle",
+              "neighbour": "Nachbarseite",
+              "opposite": "Gegenseite",
+              "weather": "Wetterdienst",
+              "none": "kein Wert"
+            }
+          },
+          "regions": {
+            "name": "Außenseiten"
+          },
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "ok": "in Ordnung",
+              "unavailable": "nicht verfügbar",
+              "unknown": "unbekannt",
+              "not_numeric": "kein Zahlenwert",
+              "unit": "falsche Einheit",
+              "missing": "fehlt",
+              "stale": "veraltet",
+              "no_side": "keine Außenseite",
+              "no_pair": "kein Messpaar",
+              "no_data": "keine Daten"
+            }
+          },
+          "offset": {
+            "name": "Abweichung"
+          }
+        }
+      },
+      "temperature_difference": {
+        "name": "Temperaturdifferenz außen"
+      },
+      "humidity_difference": {
+        "name": "Feuchtedifferenz außen",
+        "state_attributes": {
+          "humidity_after_ventilating": {
+            "name": "Feuchte nach dem Lüften"
+          }
+        }
+      },
+      "outside": {
+        "name": "Außen",
+        "state": {
+          "warmer": "wärmer",
+          "colder": "kälter",
+          "similar": "gleich"
+        }
+      },
+      "comfort": {
+        "name": "Wunschbereich",
+        "state": {
+          "below": "darunter",
+          "within": "im Bereich",
+          "above": "darüber"
+        }
+      },
+      "trend": {
+        "name": "Trend",
+        "state": {
+          "rising": "steigend",
+          "steady": "stabil",
+          "falling": "fallend"
+        }
+      },
+      "recommendation": {
+        "name": "Empfehlung",
+        "state": {
+          "open": "öffnen",
+          "keep_open": "offen lassen",
+          "close": "schließen",
+          "keep_closed": "geschlossen lassen",
+          "none": "keine"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "cool_room": "Raum kühlen",
+              "pre_cool": "Vorkühlen",
+              "warm_room": "Raum wärmen",
+              "dry_room": "Raum entfeuchten",
+              "burst_dry": "Stoßlüften zum Entfeuchten",
+              "burst_done": "Stoßlüften beendet",
+              "outside_colder": "Außen kälter",
+              "outside_warmer": "Außen wärmer",
+              "outside_humid": "Außen feuchter",
+              "in_range": "im Wunschbereich",
+              "no_benefit": "kein Nutzen",
+              "no_data": "keine Daten",
+              "comfort_range_invalid": "Wunschbereich ungültig"
+            }
+          }
+        }
+      },
+      "strategy": {
+        "name": "Tagesstrategie",
+        "state": {
+          "prevent_heat_up": "Aufheizen verhindern",
+          "prevent_cool_down": "Auskühlen verhindern",
+          "neutral": "neutral"
+        },
+        "state_attributes": {
+          "forecast_max": {
+            "name": "Prognose Maximum"
+          },
+          "forecast_min": {
+            "name": "Prognose Minimum"
+          },
+          "corrected_max": {
+            "name": "Prognose Maximum korrigiert"
+          },
+          "corrected_min": {
+            "name": "Prognose Minimum korrigiert"
+          },
+          "bias_max": {
+            "name": "Prognosekorrektur Maximum"
+          },
+          "bias_min": {
+            "name": "Prognosekorrektur Minimum"
+          }
+        }
+      },
+      "indoor_average": {
+        "name": "Innen Durchschnitt",
+        "state_attributes": {
+          "minimum": {
+            "name": "Minimum"
+          },
+          "maximum": {
+            "name": "Maximum"
+          }
+        }
+      },
+      "outdoor": {
+        "name": "Außen",
+        "state_attributes": {
+          "stage": {
+            "name": "Stufe",
+            "state": {
+              "primary": "Hauptquelle",
+              "fallback": "Ersatzquelle",
+              "neighbour": "Nachbarseite",
+              "opposite": "Gegenseite",
+              "weather": "Wetterdienst",
+              "none": "kein Wert"
+            }
+          },
+          "minimum": {
+            "name": "Minimum"
+          },
+          "maximum": {
+            "name": "Maximum"
+          },
+          "per_region": {
+            "name": "je Außenseite"
+          }
+        }
+      }
+    },
+    "number": {
+      "comfort_min": {
+        "name": "Wunschtemperatur min"
+      },
+      "comfort_max": {
+        "name": "Wunschtemperatur max"
+      },
+      "threshold": {
+        "name": "Schwelle"
+      }
+    }
+  },
+  "device": {
+    "hub": {
+      "name": "Hausklima"
+    },
+    "climate": {
+      "name": "Klima"
+    },
+    "climate_area": {
+      "name": "{area} Klima"
+    }
   }
 }
