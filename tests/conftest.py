@@ -13,6 +13,10 @@ import sys
 
 import pytest
 import pytest_socket
+from homeassistant.core import HomeAssistant
+from homeassistant.util.unit_system import METRIC_SYSTEM
+
+from .house import House, build_house
 
 if sys.platform == "win32":
 
@@ -25,3 +29,13 @@ if sys.platform == "win32":
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations):
     yield
+
+
+@pytest.fixture
+async def house(hass: HomeAssistant) -> House:
+    """The shared fixture house on a German, metric instance."""
+    hass.config.language = "de"
+    hass.config.units = METRIC_SYSTEM
+    hass.config.latitude = 52.5
+    hass.config.longitude = 13.4
+    return await build_house(hass)
