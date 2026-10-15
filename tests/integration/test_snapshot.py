@@ -249,6 +249,7 @@ def _model(house: House, weather: str | None = None) -> m.HouseModel:
         {
             m.CONF_AREA: house.living_room,
             m.CONF_TYPE: m.WINDOW_DOUBLE,
+            m.CONF_NAME: "Fenster",
             m.CONF_LEAF_LEFT: house.living_leaf_1,
             m.CONF_LEAF_RIGHT: house.living_leaf_2,
             m.CONF_TILT: house.living_bottom,
@@ -260,6 +261,7 @@ def _model(house: House, weather: str | None = None) -> m.HouseModel:
         {
             m.CONF_AREA: house.kitchen,
             m.CONF_TYPE: m.WINDOW_PASS_THROUGH,
+            m.CONF_NAME: "Fenster",
             m.CONF_INNER: house.kitchen_contact,
             m.CONF_OUTER: house.conservatory_window,
         },

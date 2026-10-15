@@ -420,6 +420,69 @@
             "name": "Per outdoor side"
           }
         }
+      },
+      "window": {
+        "name": "Window",
+        "state": {
+          "closed": "closed",
+          "ajar": "ajar",
+          "tilted": "tilted",
+          "open": "open"
+        }
+      },
+      "window_open_since": {
+        "name": "Window open since"
+      },
+      "state": {
+        "name": "State",
+        "state": {
+          "closed": "closed",
+          "ajar": "ajar",
+          "tilted": "tilted",
+          "open": "open"
+        },
+        "state_attributes": {
+          "open_leaves": {
+            "name": "Open leaves",
+            "state": {
+              "none": "none",
+              "left": "left",
+              "right": "right",
+              "both": "both",
+              "unknown": "unknown"
+            }
+          }
+        }
+      },
+      "open_since": {
+        "name": "Open since"
+      },
+      "cover": {
+        "name": "Cover",
+        "state": {
+          "close": "close",
+          "keep_closed": "keep closed",
+          "open": "open",
+          "keep_open": "keep open",
+          "none": "none"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Reason",
+            "state": {
+              "sun_heat": "sun on the window, keep heat out",
+              "heat_barrier": "hotter outside, keep heat out",
+              "insulate": "cold at night, keep warmth in",
+              "solar_gain": "solar warmth welcome",
+              "no_heat_risk": "sun, no overheating",
+              "no_sun": "no sun on the window",
+              "night": "night, no reason to close",
+              "window_open": "window open",
+              "no_data": "no data",
+              "no_room": "no room"
+            }
+          }
+        }
       }
     },
     "number": {
@@ -432,6 +495,34 @@
       "threshold": {
         "name": "Threshold"
       }
+    },
+    "binary_sensor": {
+      "cooling_down": {
+        "name": "Cooling down"
+      },
+      "heating_up": {
+        "name": "Heating up"
+      },
+      "open_while_conditioning": {
+        "name": "Open while heating/cooling"
+      },
+      "any_cooling_down": {
+        "name": "Anywhere cooling down"
+      },
+      "any_heating_up": {
+        "name": "Anywhere heating up"
+      },
+      "any_open_while_conditioning": {
+        "name": "Anywhere open while heating/cooling"
+      },
+      "any_cover_to_close": {
+        "name": "Anywhere cover to close",
+        "state_attributes": {
+          "windows": {
+            "name": "Windows"
+          }
+        }
+      }
     }
   },
   "device": {
@@ -443,6 +534,9 @@
     },
     "climate_area": {
       "name": "{area} climate"
+    },
+    "window_area": {
+      "name": "{area} {name}"
     }
   },
   "config": {

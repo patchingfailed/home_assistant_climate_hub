@@ -98,6 +98,7 @@ class RegionModel:
 @dataclass(frozen=True, slots=True)
 class WindowModel:
     id: str
+    name: str
     area_id: str
     room_id: str | None  # None: no room for this area (W11)
     config: WindowConfig
@@ -220,6 +221,7 @@ def parse_window(window_id: str, data: Mapping[str, Any]) -> WindowModel:
     own = None if facing == FACING_ROOM else Direction(facing)
     return WindowModel(
         id=window_id,
+        name=data[CONF_NAME],
         area_id=data[CONF_AREA],
         room_id=None,
         config=config,

@@ -13,19 +13,22 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
+from homeassistant.helpers.entity_registry import RegistryEntryDisabler
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import ClimateHubConfigEntry, ClimateHubCoordinator
-from .logic.model import HouseModel, RegionModel, RoomModel
+from .logic.model import HouseModel, RegionModel, RoomModel, WindowModel
 
 PARALLEL_UPDATES = 0
 
 DEVICE_HUB = "hub"
 DEVICE_CLIMATE = "climate"
 DEVICE_CLIMATE_AREA = "climate_area"
+DEVICE_WINDOW_AREA = "window_area"
+COVER_KEY = "cover"  # key of the window cover sensor
 
-type Subject = RoomModel | RegionModel | None
+type Subject = RoomModel | RegionModel | WindowModel | None
 type ExistsFn = Callable[[HouseModel, Subject], bool]
 
 
@@ -34,6 +37,7 @@ class Scope(StrEnum):
 
     ROOM = "room"
     REGION = "region"
+    WINDOW = "window"
     HUB = "hub"
 
 
@@ -50,6 +54,18 @@ def always(_model: HouseModel, _subject: Subject) -> bool:
     return True
 
 
+def has_windows(_model: HouseModel, room: Subject) -> bool:
+    """Existence predicate of the room entities that need windows."""
+    assert isinstance(room, RoomModel)
+    return bool(room.window_ids)
+
+
+def conditioned_windows(_model: HouseModel, room: Subject) -> bool:
+    """Existence predicate of rooms with windows and climate devices."""
+    assert isinstance(room, RoomModel)
+    return bool(room.window_ids and room.climate_devices)
+
+
 def planned[D: ClimateHubDescription](
     model: HouseModel, descriptions: Iterable[D]
 ) -> Iterator[tuple[D, Subject]]:
@@ -61,6 +77,8 @@ def planned[D: ClimateHubDescription](
             subjects = model.rooms.values()
         elif description.scope is Scope.REGION:
             subjects = model.regions.values()
+        elif description.scope is Scope.WINDOW:
+            subjects = model.windows.values()
         else:
             subjects = (None,)
         for subject in subjects:
@@ -69,7 +87,7 @@ def planned[D: ClimateHubDescription](
 
 
 def owner_id(entry: ClimateHubConfigEntry, subject: Subject) -> str:
-    """Subentry ID of a room or region, the entry ID for hub entities."""
+    """Subentry ID of a room, region or window, the entry ID for hub entities."""
     return entry.entry_id if subject is None else subject.id
 
 
@@ -113,6 +131,8 @@ class ClimateHubEntity(CoordinatorEntity[ClimateHubCoordinator]):
             return data.rooms.get(self._subject_id)
         if scope is Scope.REGION:
             return data.regions.get(self._subject_id)
+        if scope is Scope.WINDOW:
+            return data.windows.get(self._subject_id)
         return data.house
 
     @property
@@ -131,7 +151,7 @@ def async_sync_devices(
     entry: ClimateHubConfigEntry,
     coordinator: ClimateHubCoordinator,
 ) -> None:
-    """Create or update the hub, room and region devices (§8.1, I15)."""
+    """Create or update the hub, room, region and window devices (§8.1, I15)."""
     devices = dr.async_get(hass)
     devices.async_get_or_create(
         config_entry_id=entry.entry_id,
@@ -144,15 +164,28 @@ def async_sync_devices(
     for subject in (
         *coordinator.model.rooms.values(),
         *coordinator.model.regions.values(),
+        *coordinator.model.windows.values(),
     ):
+        area = _area_name(hass, subject.area_id) if with_area else None
+        if isinstance(subject, WindowModel):
+            naming: dict[str, Any] = (
+                {
+                    "translation_key": DEVICE_WINDOW_AREA,
+                    "translation_placeholders": {"area": area, "name": subject.name},
+                }
+                if with_area
+                else {"name": subject.name}
+            )
+        else:
+            naming = {
+                "translation_key": DEVICE_CLIMATE_AREA if with_area else DEVICE_CLIMATE,
+                "translation_placeholders": {"area": area} if with_area else None,
+            }
         device = devices.async_get_or_create(
             config_entry_id=entry.entry_id,
             config_subentry_id=subject.id,
             identifiers={(DOMAIN, subject.id)},
-            translation_key=DEVICE_CLIMATE_AREA if with_area else DEVICE_CLIMATE,
-            translation_placeholders=(
-                {"area": _area_name(hass, subject.area_id)} if with_area else None
-            ),
+            **naming,
         )
         if coordinator.device_areas.get(subject.id) != subject.area_id:
             if device.area_id != subject.area_id:
@@ -186,3 +219,22 @@ def rounded(value: float | None, digits: int) -> float | None:
 def present(attributes: Mapping[str, Any]) -> dict[str, Any]:
     """Drop attributes without a value."""
     return {key: value for key, value in attributes.items() if value is not None}
+
+
+def async_enable_cover_entities(
+    hass: HomeAssistant, entry: ClimateHubConfigEntry
+) -> None:
+    """Enable the `cover` sensor of every window with a cover that the integration
+    disabled by default (I6); a window without a cover changes nothing."""
+    registry = er.async_get(hass)
+    for window in entry.runtime_data.coordinator.model.windows.values():
+        entity_id = registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{window.id}_{COVER_KEY}"
+        )
+        registry_entry = None if entity_id is None else registry.async_get(entity_id)
+        if (
+            window.cover is not None
+            and registry_entry is not None
+            and registry_entry.disabled_by is RegistryEntryDisabler.INTEGRATION
+        ):
+            registry.async_update_entity(entity_id, disabled_by=None)

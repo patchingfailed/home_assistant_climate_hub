@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
@@ -23,26 +24,30 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
-from .coordinator import ClimateHubConfigEntry
-from .entity import PARALLEL_UPDATES as PARALLEL_UPDATES
+from .coordinator import ClimateHubConfigEntry, ClimateHubCoordinator
 from .entity import (
+    COVER_KEY,
     ClimateHubDescription,
     ClimateHubEntity,
     Scope,
     Subject,
     always,
+    has_windows,
     planned,
     present,
     rounded,
 )
+from .entity import PARALLEL_UPDATES as PARALLEL_UPDATES
 from .logic.comfort import Position, Relation, Trend
-from .logic.engine import RoomResult
+from .logic.cover import CoverAdvice
+from .logic.engine import RoomResult, WindowResult
 from .logic.house import HouseValue
-from .logic.model import HouseModel, RoomModel
+from .logic.model import HouseModel, RoomModel, WindowModel
 from .logic.outdoor import HouseOutdoor, OutdoorValue
 from .logic.recommendation import Recommendation
 from .logic.sources import Metric, Resolution, Stage
 from .logic.strategy import Strategy, StrategyResult
+from .logic.window import Level
 
 _TEMPERATURE = SensorDeviceClass.TEMPERATURE
 _HUMIDITY = SensorDeviceClass.HUMIDITY
@@ -52,12 +57,20 @@ _HUMIDITY = SensorDeviceClass.HUMIDITY
 class ClimateHubSensorDescription(SensorEntityDescription, ClimateHubDescription):
     """A sensor: how to read its value and attributes from the object's result."""
 
-    value_fn: Callable[[Any], StateType]
+    value_fn: Callable[[Any], StateType | datetime]
     attrs_fn: Callable[[Any], Mapping[str, Any]] | None = None
 
 
 def _value(item: StrEnum | None) -> str | None:
     return None if item is None else item.value
+
+
+def _level(level: Level | None) -> str | None:
+    """Raw state of a window level: `closed` / `ajar` / `tilted` / `open`."""
+    return None if level is None else level.name.lower()
+
+
+_LEVELS = [level.name.lower() for level in Level]
 
 
 # Attributes (E6)
@@ -128,10 +141,10 @@ def _any_room(model: HouseModel, _subject: Subject) -> bool:
     return bool(model.rooms)
 
 
-def _enum(
+def _options_enum(
     key: str,
     scope: Scope,
-    enum: type[StrEnum],
+    options: Sequence[str],
     value_fn: Callable[[Any], StateType],
     *,
     attrs_fn: Callable[[Any], Mapping[str, Any]] | None = None,
@@ -141,9 +154,43 @@ def _enum(
         key=key,
         scope=scope,
         device_class=SensorDeviceClass.ENUM,
-        options=[item.value for item in enum],
+        options=list(options),
         value_fn=value_fn,
         attrs_fn=attrs_fn,
+        exists_fn=exists_fn,
+    )
+
+
+def _enum(
+    key: str,
+    scope: Scope,
+    enum: type[StrEnum],
+    value_fn: Callable[[Any], StateType],
+    *,
+    attrs_fn: Callable[[Any], Mapping[str, Any]] | None = None,
+    exists_fn: Callable[[HouseModel, Subject], bool] = always,
+) -> ClimateHubSensorDescription:
+    return _options_enum(
+        key,
+        scope,
+        [item.value for item in enum],
+        value_fn,
+        attrs_fn=attrs_fn,
+        exists_fn=exists_fn,
+    )
+
+
+def _timestamp(
+    key: str,
+    scope: Scope,
+    value_fn: Callable[[Any], datetime | None],
+    exists_fn: Callable[[HouseModel, Subject], bool] = always,
+) -> ClimateHubSensorDescription:
+    return ClimateHubSensorDescription(
+        key=key,
+        scope=scope,
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=value_fn,
         exists_fn=exists_fn,
     )
 
@@ -181,6 +228,7 @@ _HPA = UnitOfPressure.HPA
 _ROOM = Scope.ROOM
 _REGION = Scope.REGION
 _HUB = Scope.HUB
+_WINDOW = Scope.WINDOW
 
 
 def _room_outdoor(
@@ -255,6 +303,11 @@ def _room_humidity_difference_attrs(room: RoomResult) -> dict[str, Any]:
     return present(
         {"humidity_after_ventilating": rounded(room.humidity_after_ventilating, 1)}
     )
+
+
+def _window_attrs(window: WindowResult) -> dict[str, Any]:
+    """`open_leaves` exists only for a double leaf, the engine leaves it empty else."""
+    return present({"open_leaves": _value(window.level.open_leaves)})
 
 
 def _recommendation_attrs(room: RoomResult) -> dict[str, Any]:
@@ -383,6 +436,35 @@ SENSORS: tuple[ClimateHubSensorDescription, ...] = (
         lambda r: r.recommendation.recommendation.value,
         attrs_fn=_recommendation_attrs,
     ),
+    _options_enum(
+        "window",
+        _ROOM,
+        _LEVELS,
+        lambda r: _level(r.windows.level),
+        exists_fn=has_windows,
+    ),
+    _timestamp(
+        "window_open_since",
+        _ROOM,
+        lambda r: r.windows.open_since,
+        exists_fn=has_windows,
+    ),
+    # Window
+    _options_enum(
+        "state",
+        _WINDOW,
+        _LEVELS,
+        lambda w: _level(w.state.level),
+        attrs_fn=_window_attrs,
+    ),
+    _timestamp("open_since", _WINDOW, lambda w: w.state.open_since),
+    _enum(
+        COVER_KEY,
+        _WINDOW,
+        CoverAdvice,
+        lambda w: w.cover.advice.value,
+        attrs_fn=lambda w: {"reason": w.cover.reason.value},
+    ),
     # Region
     _region("temperature", _TEMPERATURE, _CELSIUS, 2, 1, "temperature", "temperature"),
     _region("humidity", _HUMIDITY, PERCENTAGE, 1, 0, "humidity", "humidity"),
@@ -428,7 +510,7 @@ async def async_setup_entry(
     entry: ClimateHubConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the sensors of every room, region and the hub, per subentry."""
+    """Add the sensors of every room, region, window and the hub, per subentry."""
     coordinator = entry.runtime_data.coordinator
     by_subentry: dict[str | None, list[ClimateHubSensor]] = {}
     for description, subject in planned(coordinator.model, SENSORS):
@@ -445,8 +527,19 @@ class ClimateHubSensor(ClimateHubEntity, SensorEntity):
 
     entity_description: ClimateHubSensorDescription
 
+    def __init__(
+        self,
+        coordinator: ClimateHubCoordinator,
+        description: ClimateHubSensorDescription,
+        subject: Subject,
+    ) -> None:
+        super().__init__(coordinator, description, subject)
+        if description.key == COVER_KEY and isinstance(subject, WindowModel):
+            # Per entity: only a window with a cover shows its advice at once (I6).
+            self._attr_entity_registry_enabled_default = subject.cover is not None
+
     @property
-    def native_value(self) -> StateType:
+    def native_value(self) -> StateType | datetime:
         result = self.subject_result
         return None if result is None else self.entity_description.value_fn(result)
 

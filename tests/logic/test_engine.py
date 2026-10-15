@@ -102,6 +102,7 @@ def window(window_id: str, in_room: str | None, **data) -> WindowModel:
         {
             "area": f"area_{in_room}" if in_room else "area_nowhere",
             "type": "single",
+            "name": "Fenster",
             "leaf": f"binary_sensor.{window_id}",
             **data,
         },

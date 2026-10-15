@@ -11,6 +11,11 @@ from typing import Any
 
 import pytest
 
+from custom_components.climate_hub.binary_sensor import BINARY_SENSORS
+from custom_components.climate_hub.logic.cover import CoverReason
+from custom_components.climate_hub.logic.window import OpenLeaves
+from custom_components.climate_hub.sensor import SENSORS
+
 COMPONENT = Path(__file__).parent.parent / "custom_components" / "climate_hub"
 LANGUAGES = ("en", "de")
 
@@ -164,3 +169,31 @@ def test_step_ids_in_code_are_translated(language: str) -> None:
 def test_outside_words_are_a_word_list(language: str) -> None:
     words = [w.strip() for w in _load(language)["common"]["outside_words"].split(",")]
     assert len(words) > 3 and all(words)
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_entity_descriptions_are_translated(language: str) -> None:
+    """Every description has a name, every enum option a state (step 14 included)."""
+    entity = _load(language)["entity"]
+    for description in SENSORS:
+        translation = entity["sensor"][description.key]
+        assert translation["name"], description.key
+        for option in description.options or []:
+            assert translation["state"][option], (description.key, option)
+    for description in BINARY_SENSORS:
+        assert entity["binary_sensor"][description.key]["name"], description.key
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_window_attribute_values_and_device_are_translated(language: str) -> None:
+    data = _load(language)
+    sensors = data["entity"]["sensor"]
+    reasons = sensors["cover"]["state_attributes"]["reason"]["state"]
+    assert set(reasons) == {reason.value for reason in CoverReason}
+    leaves = sensors["state"]["state_attributes"]["open_leaves"]["state"]
+    assert set(leaves) == {leaf.value for leaf in OpenLeaves}
+    assert data["entity"]["binary_sensor"]["any_cover_to_close"]["state_attributes"]
+    assert set(re.findall(r"\{(\w+)\}", data["device"]["window_area"]["name"])) == {
+        "area",
+        "name",
+    }

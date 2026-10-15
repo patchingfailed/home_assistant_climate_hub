@@ -420,6 +420,69 @@
             "name": "je Außenseite"
           }
         }
+      },
+      "window": {
+        "name": "Fenster",
+        "state": {
+          "closed": "zu",
+          "ajar": "angelehnt",
+          "tilted": "gekippt",
+          "open": "offen"
+        }
+      },
+      "window_open_since": {
+        "name": "Fenster offen seit"
+      },
+      "state": {
+        "name": "Zustand",
+        "state": {
+          "closed": "zu",
+          "ajar": "angelehnt",
+          "tilted": "gekippt",
+          "open": "offen"
+        },
+        "state_attributes": {
+          "open_leaves": {
+            "name": "Offene Flügel",
+            "state": {
+              "none": "keiner",
+              "left": "links",
+              "right": "rechts",
+              "both": "beide",
+              "unknown": "unbekannt"
+            }
+          }
+        }
+      },
+      "open_since": {
+        "name": "Offen seit"
+      },
+      "cover": {
+        "name": "Rollladen",
+        "state": {
+          "close": "schließen",
+          "keep_closed": "geschlossen lassen",
+          "open": "öffnen",
+          "keep_open": "offen lassen",
+          "none": "keine"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "sun_heat": "Sonne auf dem Fenster, Hitze draußen halten",
+              "heat_barrier": "Draußen heißer, Hitze draußen halten",
+              "insulate": "Nachts kalt, Wärme drinnen halten",
+              "solar_gain": "Sonnenwärme willkommen",
+              "no_heat_risk": "Sonne, keine Überhitzung",
+              "no_sun": "keine Sonne auf dem Fenster",
+              "night": "Nacht, kein Grund zum Schließen",
+              "window_open": "Fenster offen",
+              "no_data": "keine Daten",
+              "no_room": "kein Raum"
+            }
+          }
+        }
       }
     },
     "number": {
@@ -432,6 +495,34 @@
       "threshold": {
         "name": "Schwelle"
       }
+    },
+    "binary_sensor": {
+      "cooling_down": {
+        "name": "Auskühlen"
+      },
+      "heating_up": {
+        "name": "Aufheizen"
+      },
+      "open_while_conditioning": {
+        "name": "Offen bei Heizen/Kühlen"
+      },
+      "any_cooling_down": {
+        "name": "Irgendwo Auskühlen"
+      },
+      "any_heating_up": {
+        "name": "Irgendwo Aufheizen"
+      },
+      "any_open_while_conditioning": {
+        "name": "Irgendwo offen bei Heizen/Kühlen"
+      },
+      "any_cover_to_close": {
+        "name": "Irgendwo Rollladen schließen",
+        "state_attributes": {
+          "windows": {
+            "name": "Fenster"
+          }
+        }
+      }
     }
   },
   "device": {
@@ -443,6 +534,9 @@
     },
     "climate_area": {
       "name": "{area} Klima"
+    },
+    "window_area": {
+      "name": "{area} {name}"
     }
   },
   "config": {

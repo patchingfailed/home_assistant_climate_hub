@@ -166,6 +166,7 @@ SINGLE = {
 
 def test_parse_window_single_defaults():
     window = parse_window("w1", SINGLE)
+    assert window.name == "Window"
     assert window.config == FrameConfig(leaves=("binary_sensor.leaf",))
     assert window.kinds == {"binary_sensor.leaf": ContactKind.BINARY}
     assert window.mappings == {}
@@ -180,6 +181,7 @@ def test_parse_window_double_with_refiners():
         {
             "area": "a1",
             "type": "double",
+            "name": "Fenster",
             "leaf_left": "binary_sensor.l",
             "leaf_right": "binary_sensor.r",
             "tilt": "sensor.tilt",
@@ -213,6 +215,7 @@ def test_parse_window_pass_through():
         {
             "area": "a1",
             "type": "pass_through",
+            "name": "Fenster",
             "inner": "binary_sensor.door",
             "outer": "binary_sensor.window",
             "min_level": "ajar",
@@ -231,6 +234,7 @@ def test_parse_window_text_mapping():
         {
             "area": "a1",
             "type": "single",
+            "name": "Fenster",
             "leaf": "sensor.sash",
             "mappings": {
                 "sensor.sash": {

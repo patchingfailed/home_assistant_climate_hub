@@ -236,6 +236,7 @@ def _subentries(house: House) -> list[ConfigSubentryData]:
             {
                 m.CONF_AREA: house.living_room,
                 m.CONF_TYPE: m.WINDOW_SINGLE,
+                m.CONF_NAME: "Fenster",
                 m.CONF_LEAF: house.living_leaf_1,
             },
         ),
@@ -245,6 +246,7 @@ def _subentries(house: House) -> list[ConfigSubentryData]:
             {
                 m.CONF_AREA: house.conservatory,
                 m.CONF_TYPE: m.WINDOW_SINGLE,
+                m.CONF_NAME: "Fenster",
                 m.CONF_LEAF: house.conservatory_window,
                 m.CONF_FACING: "e",
             },

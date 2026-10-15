@@ -5,15 +5,20 @@ from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later
 
 from .area_sync import async_clear_recorded, async_sync_after_first_evaluation
+from .binary_sensor import BINARY_SENSORS
 from .const import RELOAD_DELAY
 from .coordinator import ClimateHubConfigEntry, ClimateHubCoordinator, ClimateHubData
-from .entity import async_remove_stale_entities, async_sync_devices
+from .entity import (
+    async_enable_cover_entities,
+    async_remove_stale_entities,
+    async_sync_devices,
+)
 from .number import NUMBERS
 from .registry import build_model
 from .sensor import SENSORS
 from .store import ClimateHubStore
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.NUMBER]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.NUMBER]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ClimateHubConfigEntry) -> bool:
@@ -25,8 +30,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ClimateHubConfigEntry) -
     )
     entry.runtime_data = ClimateHubData(coordinator, store)
     async_sync_devices(hass, entry, coordinator)
+    async_enable_cover_entities(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    async_remove_stale_entities(hass, entry, (*SENSORS, *NUMBERS))
+    async_remove_stale_entities(hass, entry, (*SENSORS, *BINARY_SENSORS, *NUMBERS))
 
     async_sync_after_first_evaluation(hass, entry, coordinator)
 
