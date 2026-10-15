@@ -24,7 +24,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from .const import DOMAIN, SUBENTRY_REGION, SUBENTRY_ROOM
+from .const import DOMAIN, SUBENTRY_REGION, SUBENTRY_ROOM, SUBENTRY_WINDOW
 from .flows.hub import (
     CONF_OUTDOOR,
     CONF_ROOMS,
@@ -59,6 +59,7 @@ from .flows.preview import (
 )
 from .flows.region import RegionSubentryFlow
 from .flows.room import RoomSubentryFlow
+from .flows.window import WindowSubentryFlow
 from .logic import model as m
 from .registry import area_infos, entity_infos
 
@@ -84,8 +85,12 @@ class ClimateHubConfigFlow(ConfigFlow, domain=DOMAIN):
     def async_get_supported_subentry_types(
         cls, config_entry: ConfigEntry
     ) -> dict[str, type[ConfigSubentryFlow]]:
-        """Order of the add items in the ⋮ menu (window follows in M2)."""
-        return {SUBENTRY_ROOM: RoomSubentryFlow, SUBENTRY_REGION: RegionSubentryFlow}
+        """Order of the add items in the ⋮ menu."""
+        return {
+            SUBENTRY_ROOM: RoomSubentryFlow,
+            SUBENTRY_REGION: RegionSubentryFlow,
+            SUBENTRY_WINDOW: WindowSubentryFlow,
+        }
 
     @staticmethod
     @callback

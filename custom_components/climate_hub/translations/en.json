@@ -863,6 +863,191 @@
         "is_room": "{area} is a room.",
         "no_temperature": "Select at least one temperature source."
       }
+    },
+    "window": {
+      "entry_type": "Window",
+      "initiate_flow": {
+        "user": "Add window",
+        "reconfigure": "Reconfigure window"
+      },
+      "step": {
+        "window_room": {
+          "title": "Add window",
+          "description": "Which room is the window in?",
+          "data": {
+            "area": "Room"
+          }
+        },
+        "window_type": {
+          "title": "Add window: {area}",
+          "description": "What kind of window is it?",
+          "menu_options": {
+            "window_single": "Single window or door",
+            "window_double": "Double leaf",
+            "window_pass_through": "Pass-through"
+          },
+          "menu_option_descriptions": {
+            "window_single": "One sash, one contact reports open or closed.",
+            "window_double": "Two sashes in one frame, one contact each.",
+            "window_pass_through": "Ventilating only works when two openings in a row are open, e.g. the door to the conservatory and the conservatory window."
+          }
+        },
+        "window_single": {
+          "title": "Single window: {area}",
+          "description": "{shown}",
+          "data": {
+            "area": "Room",
+            "leaf": "Contact",
+            "show_all": "Show all contacts",
+            "name": "Name"
+          },
+          "data_description": {
+            "name": "Leave empty for a name based on the room, e.g. {area} Window."
+          },
+          "sections": {
+            "extra_contacts": {
+              "name": "Extra contacts",
+              "data": {
+                "tilt": "Tilt detection",
+                "handle": "Handle contact"
+              },
+              "data_description": {
+                "tilt": "A second contact on the sash, usually at the bottom. It only reports “open” when the sash is turned fully open.",
+                "handle": "Reports whether the handle is turned. With the sash closed and the handle turned, the window counts as ajar."
+              }
+            },
+            "cover": {
+              "name": "Cover",
+              "description": "Then there is a recommendation when the cover should be closed: by day against sun and heat, at night against the cold. Moving it is up to your automation.",
+              "data": {
+                "cover": "Cover"
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "facing": "Facing",
+                "facing_degrees": "Exact facing in degrees",
+                "min_level": "Counts as ventilating from"
+              },
+              "data_description": {
+                "facing": "Where the window points. This decides which outdoor side and which sun apply.",
+                "facing_degrees": "Optional, for windows that point at an angle. North is 0, east 90, south 180, west 270.",
+                "min_level": "From which position the window counts as ventilating."
+              }
+            }
+          }
+        },
+        "window_double": {
+          "title": "Double leaf: {area}",
+          "description": "{shown}",
+          "data": {
+            "area": "Room",
+            "leaf_left": "Left leaf",
+            "leaf_right": "Right leaf",
+            "tilt": "Contact between the leaves (optional)",
+            "show_all": "Show all contacts",
+            "name": "Name"
+          },
+          "data_description": {
+            "tilt": "Usually sits at the bottom between the leaves and only reports “open” when a leaf is turned fully open. This tells tilted from open.",
+            "name": "Leave empty for a name based on the room."
+          },
+          "sections": {
+            "extra_contacts": {
+              "name": "Extra contacts",
+              "data": {
+                "handle": "Handle contact"
+              },
+              "data_description": {
+                "handle": "Reports whether the handle is turned. With the sash closed and the handle turned, the window counts as ajar."
+              }
+            },
+            "cover": {
+              "name": "Cover",
+              "description": "Then there is a recommendation when the cover should be closed: by day against sun and heat, at night against the cold. Moving it is up to your automation.",
+              "data": {
+                "cover": "Cover"
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "facing": "Facing",
+                "facing_degrees": "Exact facing in degrees",
+                "min_level": "Counts as ventilating from"
+              },
+              "data_description": {
+                "facing": "Where the window points. This decides which outdoor side and which sun apply.",
+                "facing_degrees": "Optional, for windows that point at an angle. North is 0, east 90, south 180, west 270.",
+                "min_level": "From which position the window counts as ventilating."
+              }
+            }
+          }
+        },
+        "window_pass_through": {
+          "title": "Pass-through: {area}",
+          "description": "{shown}",
+          "data": {
+            "area": "Room",
+            "inner": "Inner opening",
+            "show_all": "Show all contacts",
+            "outer": "Outer opening",
+            "name": "Name"
+          },
+          "data_description": {
+            "inner": "The opening in this room.",
+            "outer": "The opening to the outside. All contacts are listed, because it usually lies in another area. A contact may also belong to another window.",
+            "name": "Leave empty for a name based on the room, e.g. {area} Passage."
+          },
+          "sections": {
+            "cover": {
+              "name": "Cover",
+              "description": "Then there is a recommendation when the cover should be closed: by day against sun and heat, at night against the cold. Moving it is up to your automation.",
+              "data": {
+                "cover": "Cover"
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "facing": "Facing",
+                "facing_degrees": "Exact facing in degrees",
+                "min_level": "Counts as ventilating from"
+              },
+              "data_description": {
+                "facing": "Where the window points. This decides which outdoor side and which sun apply.",
+                "facing_degrees": "Optional, for windows that point at an angle. North is 0, east 90, south 180, west 270.",
+                "min_level": "From which position the window counts as ventilating."
+              }
+            }
+          }
+        },
+        "window_mapping": {
+          "title": "Assign states",
+          "description": "{sensor} reports text. Which text means which position? Pre-filled from past values and common words. Missing texts can be typed in.",
+          "data": {
+            "closed": "closed",
+            "ajar": "ajar",
+            "tilted": "tilted",
+            "open": "open"
+          }
+        },
+        "window_preview": {
+          "title": "Preview",
+          "description": "**{title}**\n\n{preview}",
+          "menu_options": {
+            "window_save": "Save",
+            "window_adjust": "Adjust",
+            "window_retype": "Change type"
+          }
+        }
+      },
+      "error": {
+        "is_region": "{area} is an outdoor side.",
+        "no_contact": "A contact is missing for the window.",
+        "same_contact": "A contact can only have one role in a window."
+      }
     }
   },
   "options": {
@@ -907,6 +1092,22 @@
         "e": "East",
         "s": "South",
         "w": "West"
+      }
+    },
+    "facing": {
+      "options": {
+        "room": "Like the room",
+        "n": "North",
+        "e": "East",
+        "s": "South",
+        "w": "West"
+      }
+    },
+    "min_level": {
+      "options": {
+        "ajar": "Ajar",
+        "tilted": "Tilted",
+        "open": "Open"
       }
     }
   },
@@ -973,6 +1174,63 @@
     "plan_side_none": "No side.",
     "plan_no_side": "{direction}: no outdoor side, the weather service steps in.",
     "plan_no_side_no_weather": "{direction}: no outdoor side.",
-    "plan_closing": "You change sources and their order later per room."
+    "plan_closing": "You change sources and their order later per room.",
+    "words_closed": "closed",
+    "words_ajar": "ajar",
+    "words_tilted": "tilted, tilt",
+    "words_open": "open",
+    "window_name": "Window",
+    "pass_through_name": "Passage",
+    "window_title": "{area} {name}",
+    "shown_area": "Shown: area {area} and contacts without an area.",
+    "shown_all": "Shown: all contacts.",
+    "preview_name": "Name: {title}, named after the room.",
+    "facing_own": "Facing: {direction}.",
+    "facing_like_room": "Facing: {direction}, like the room.",
+    "facing_none": "Facing: none, the room has no main side.",
+    "facing_degrees": "Exactly {degrees}°.",
+    "level_closed": "closed",
+    "level_ajar": "ajar",
+    "level_tilted": "tilted",
+    "level_open": "open",
+    "leaves_left": "left leaf",
+    "leaves_right": "right leaf",
+    "leaves_both": "both leaves",
+    "preview_window_state": "Currently **{level}**{leaves}{since}.",
+    "preview_window_leaves": "({leaves})",
+    "preview_window_since": "for {minutes} min",
+    "preview_window_since_short": "for less than 1 min",
+    "preview_window_unknown": "Currently unknown: No contact reports a known value.",
+    "preview_room": "Room {area}: **{recommendation}**.",
+    "preview_room_no_recommendation": "Room {area}: no recommendation yet, values are missing.",
+    "recommendation_open": "open",
+    "recommendation_keep_open": "keep open",
+    "recommendation_close": "close",
+    "recommendation_keep_closed": "keep closed",
+    "preview_outside_colder": "Outside it is {difference} °C colder",
+    "preview_outside_warmer": "Outside it is {difference} °C warmer",
+    "preview_outside_equal": "Outside it is just as warm",
+    "preview_strategy": "daily strategy: {strategy}",
+    "strategy_prevent_heat_up": "prevent heat-up",
+    "strategy_prevent_cool_down": "prevent cool-down",
+    "strategy_neutral": "neutral",
+    "preview_cover": "Cover: **{advice}**, {reason}.",
+    "preview_cover_none": "Cover: no recommendation, {reason}.",
+    "cover_close": "close",
+    "cover_keep_closed": "keep closed",
+    "cover_open": "open",
+    "cover_keep_open": "keep open",
+    "cover_reason_sun_heat": "sun on the window, keep the heat out",
+    "cover_reason_heat_barrier": "hotter outside, keep the heat out",
+    "cover_reason_insulate": "cold at night, keep the warmth in",
+    "cover_reason_solar_gain": "solar warmth is welcome",
+    "cover_reason_no_heat_risk": "sunny, but no risk of overheating",
+    "cover_reason_no_sun": "no sun on the window",
+    "cover_reason_night": "night, no reason to close",
+    "cover_reason_window_open": "window is open",
+    "cover_reason_no_data": "values are missing",
+    "cover_reason_no_room": "window without a room",
+    "preview_room_created": "Room {area} is created along, sources: {sources}.",
+    "preview_room_created_bare": "Room {area} is created along, with no sources yet."
   }
 }

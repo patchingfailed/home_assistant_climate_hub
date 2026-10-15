@@ -6,6 +6,7 @@ does not know the user's language (I16).
 
 from collections.abc import Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
@@ -18,10 +19,20 @@ from homeassistant.util import dt as dt_util
 from ..const import DOMAIN
 from ..logic import const as logic_const
 from ..logic import model as m
-from ..logic.engine import Comfort, EngineResult, EngineState, evaluate
+from ..logic.cover import CoverAdvice, CoverResult
+from ..logic.engine import (
+    Comfort,
+    EngineResult,
+    EngineState,
+    WindowResult,
+    evaluate,
+)
 from ..logic.outdoor import Direction, fallback_chain
 from ..logic.prefill import Exclusion
+from ..logic.recommendation import Recommendation
 from ..logic.sources import Candidate, Metric, Resolution, Stage, Status
+from ..logic.strategy import Strategy
+from ..logic.window import Level, OpenLeaves
 from ..registry import build_model_from
 from ..snapshot import async_fetch_forecast, build_snapshot
 
@@ -154,8 +165,12 @@ async def async_run_preview(
     subentry_id: str | None,
     subentry_type: str,
     data: Mapping[str, Any],
+    extra: Iterable[PlanItem] = (),
 ) -> PreviewRun:
-    """One engine run with the pending data applied to the model."""
+    """One engine run with the pending data applied to the model.
+
+    `extra` are pending objects that would be created along (a window's room).
+    """
     pending_id = subentry_id or PENDING_ID
     triples = [
         (sub.subentry_id, sub.subentry_type, sub.data)
@@ -163,6 +178,7 @@ async def async_run_preview(
         if sub.subentry_id != subentry_id
     ]
     triples.append((pending_id, subentry_type, data))
+    triples.extend((i.subentry_id, i.subentry_type, i.data) for i in extra)
     model, result = await _async_evaluate(hass, entry, entry.options, triples)
     return PreviewRun(pending_id, model, result)
 
@@ -539,3 +555,159 @@ def plan_markdown(
             texts("plan_closing"),
         ]
     )
+
+
+# Window preview (S8)
+
+_LEVEL_KEYS = {
+    Level.CLOSED: "level_closed",
+    Level.AJAR: "level_ajar",
+    Level.TILTED: "level_tilted",
+    Level.OPEN: "level_open",
+}
+_LEAVES_KEYS = {
+    OpenLeaves.LEFT: "leaves_left",
+    OpenLeaves.RIGHT: "leaves_right",
+    OpenLeaves.BOTH: "leaves_both",
+}
+_RECOMMENDATION_KEYS = {
+    Recommendation.OPEN: "recommendation_open",
+    Recommendation.KEEP_OPEN: "recommendation_keep_open",
+    Recommendation.CLOSE: "recommendation_close",
+    Recommendation.KEEP_CLOSED: "recommendation_keep_closed",
+}
+_STRATEGY_KEYS = {
+    Strategy.PREVENT_HEAT_UP: "strategy_prevent_heat_up",
+    Strategy.PREVENT_COOL_DOWN: "strategy_prevent_cool_down",
+    Strategy.NEUTRAL: "strategy_neutral",
+}
+_COVER_KEYS = {
+    CoverAdvice.CLOSE: "cover_close",
+    CoverAdvice.KEEP_CLOSED: "cover_keep_closed",
+    CoverAdvice.OPEN: "cover_open",
+    CoverAdvice.KEEP_OPEN: "cover_keep_open",
+}
+
+
+def _facing_line(texts: Texts, window: m.WindowModel) -> str:
+    """ "Ausrichtung: Norden, wie der Raum." and its variants."""
+    degrees = (
+        ""
+        if window.facing_degrees is None
+        else " "
+        + texts("facing_degrees", degrees=texts.number(window.facing_degrees, 0))
+    )
+    if window.direction is None:
+        return texts("facing_none") + degrees
+    key = "facing_like_room" if window.facing is None else "facing_own"
+    return texts(key, direction=texts.direction(window.direction)) + degrees
+
+
+def _state_line(texts: Texts, result: WindowResult, now: datetime) -> str:
+    state = result.state
+    if state.level is None:
+        return texts("preview_window_unknown")
+    leaves = ""
+    if state.level >= Level.TILTED and result.level.open_leaves in _LEAVES_KEYS:
+        leaves = " " + texts(
+            "preview_window_leaves",
+            leaves=texts(_LEAVES_KEYS[result.level.open_leaves]),
+        )
+    since = ""
+    if state.open_since is not None:
+        minutes = int((now - state.open_since).total_seconds() // 60)
+        since = ", " + (
+            texts("preview_window_since", minutes=minutes)
+            if minutes >= 1
+            else texts("preview_window_since_short")
+        )
+    return texts(
+        "preview_window_state",
+        level=texts(_LEVEL_KEYS[state.level]),
+        leaves=leaves,
+        since=since,
+    )
+
+
+def _room_line(hass: HomeAssistant, texts: Texts, run: PreviewRun, room_id: str) -> str:
+    room = run.model.rooms[room_id]
+    result = run.result.rooms.get(room_id)
+    area = area_name(hass, room.area_id)
+    if result is None:
+        return texts("preview_unavailable")
+    key = _RECOMMENDATION_KEYS.get(result.recommendation.recommendation)
+    if key is None:
+        return texts("preview_room_no_recommendation", area=area)
+    parts = []
+    difference = result.temperature_difference
+    if difference is not None:
+        if round(difference, 1) == 0:
+            parts.append(texts("preview_outside_equal"))
+        else:
+            parts.append(
+                texts(
+                    "preview_outside_warmer"
+                    if difference > 0
+                    else "preview_outside_colder",
+                    difference=texts.number(abs(difference)),
+                )
+            )
+    strategy = run.result.house.strategy.strategy if run.result.house else None
+    if strategy is not None:
+        parts.append(
+            texts("preview_strategy", strategy=texts(_STRATEGY_KEYS[strategy]))
+        )
+    head = texts("preview_room", area=area, recommendation=texts(key))
+    return head + (" " + COMMA_SEPARATOR.join(parts) + "." if parts else "")
+
+
+def _cover_line(texts: Texts, cover: CoverResult) -> str:
+    reason = texts(f"cover_reason_{cover.reason.value}")
+    key = _COVER_KEYS.get(cover.advice)
+    if key is None:
+        return texts("preview_cover_none", reason=reason)
+    return texts("preview_cover", advice=texts(key), reason=reason)
+
+
+def window_markdown(
+    hass: HomeAssistant,
+    texts: Texts,
+    run: PreviewRun,
+    *,
+    title: str | None,
+    new_room: PlanItem | None,
+) -> str:
+    """Screen S8 preview. `title` is given when the name was left empty."""
+    window = run.model.windows[run.subentry_id]
+    result = run.result.windows.get(run.subentry_id)
+    if result is None or window.room_id is None:
+        return texts("preview_unavailable")
+    lines = []
+    if title is not None:
+        lines.append(texts("preview_name", title=title))
+    lines.append(_facing_line(texts, window))
+    lines.append(_state_line(texts, result, dt_util.now()))
+    lines.append(_room_line(hass, texts, run, window.room_id))
+    if window.cover:
+        lines.append(_cover_line(texts, result.cover))
+    if new_room is not None:
+        sources = [
+            entity_name(hass, entity_id)
+            for entity_id in dict.fromkeys(
+                [
+                    *new_room.data.get(m.CONF_TEMPERATURE, ()),
+                    *new_room.data.get(m.CONF_CLIMATE_DEVICES, ()),
+                ]
+            )
+        ]
+        area = area_name(hass, new_room.area_id)
+        lines.append(
+            texts(
+                "preview_room_created",
+                area=area,
+                sources=COMMA_SEPARATOR.join(sources),
+            )
+            if sources
+            else texts("preview_room_created_bare", area=area)
+        )
+    return _BLOCK.join(lines)

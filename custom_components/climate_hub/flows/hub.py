@@ -41,6 +41,7 @@ from ..logic.prefill import (
 from ..logic.sources import Metric
 from ..registry import area_infos
 from .common import (
+    is_text_sensor,
     region_by_direction,
     region_title,
     region_unique_id,
@@ -111,22 +112,6 @@ async def async_outside_words(hass: HomeAssistant) -> list[str]:
     return list(dict.fromkeys(words))
 
 
-def _is_text_sensor(hass: HomeAssistant, info: EntityInfo) -> bool:
-    """A sensor with a non-numeric state, no unit and no device class (§9.1)."""
-    if info.domain != "sensor" or info.device_class is not None:
-        return False
-    state = hass.states.get(info.entity_id)
-    if state is None or state.attributes.get("unit_of_measurement"):
-        return False
-    if state.state in ("unknown", "unavailable"):
-        return False
-    try:
-        float(state.state)
-    except ValueError:
-        return True
-    return False
-
-
 def count_contacts(hass: HomeAssistant, infos: Sequence[EntityInfo]) -> int:
     """Window and door contacts: binary sensors of the contact classes, text sensors."""
     return sum(
@@ -135,7 +120,7 @@ def count_contacts(hass: HomeAssistant, infos: Sequence[EntityInfo]) -> int:
         if info.category is None
         and (
             (info.domain == "binary_sensor" and info.device_class in CONTACT_CLASSES)
-            or _is_text_sensor(hass, info)
+            or is_text_sensor(hass, info)
         )
     )
 

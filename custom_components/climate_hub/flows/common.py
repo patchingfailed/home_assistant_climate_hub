@@ -36,6 +36,7 @@ from ..const import SUBENTRY_REGION
 from ..logic import model as m
 from ..logic.outdoor import Direction
 from ..logic.prefill import (
+    CONTACT_CLASSES,
     OWN_PLATFORM,
     EntityInfo,
     Scope,
@@ -122,6 +123,49 @@ def climate_choices(
         i for i in infos if i.domain == "climate" and i.platform != OWN_PLATFORM
     ]
     return _context_filter(climates, area_id, chosen)
+
+
+def is_text_sensor(hass: HomeAssistant, info: EntityInfo) -> bool:
+    """A sensor with a non-numeric state, no unit and no device class (§9.1)."""
+    if info.domain != "sensor" or info.device_class is not None:
+        return False
+    state = hass.states.get(info.entity_id)
+    if state is None or state.attributes.get("unit_of_measurement"):
+        return False
+    if state.state in ("unknown", "unavailable"):
+        return False
+    try:
+        float(state.state)
+    except ValueError:
+        return True
+    return False
+
+
+def contact_choices(
+    hass: HomeAssistant,
+    infos: Sequence[EntityInfo],
+    area_id: str | None,
+    chosen: Sequence[str],
+) -> list[str]:
+    """Window contacts: binary sensors of the contact classes and text sensors.
+
+    With an area: its contacts plus those without an area plus the chosen ones (U6),
+    the area filter lifted when it finds nothing. Without an area: all contacts.
+    Entities of this integration are never offered.
+    """
+    contacts = [
+        info
+        for info in infos
+        if info.category is None
+        and info.platform != OWN_PLATFORM
+        and (
+            (info.domain == "binary_sensor" and info.device_class in CONTACT_CLASSES)
+            or is_text_sensor(hass, info)
+        )
+    ]
+    if area_id is None:
+        return sorted({*(c.entity_id for c in contacts), *chosen})
+    return _context_filter(contacts, area_id, chosen)
 
 
 # Ids and titles of the subentries (docs/integration.md §3.2)

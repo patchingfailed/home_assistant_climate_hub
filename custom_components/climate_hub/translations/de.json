@@ -863,6 +863,191 @@
         "is_room": "{area} ist ein Raum.",
         "no_temperature": "Wähle mindestens eine Temperaturquelle."
       }
+    },
+    "window": {
+      "entry_type": "Fenster",
+      "initiate_flow": {
+        "user": "Fenster hinzufügen",
+        "reconfigure": "Fenster rekonfigurieren"
+      },
+      "step": {
+        "window_room": {
+          "title": "Fenster hinzufügen",
+          "description": "In welchem Raum ist das Fenster?",
+          "data": {
+            "area": "Raum"
+          }
+        },
+        "window_type": {
+          "title": "Fenster hinzufügen: {area}",
+          "description": "Was für ein Fenster ist es?",
+          "menu_options": {
+            "window_single": "Einfaches Fenster oder Tür",
+            "window_double": "Doppelflügel",
+            "window_pass_through": "Durchgang"
+          },
+          "menu_option_descriptions": {
+            "window_single": "Ein Flügel, ein Kontakt meldet offen oder zu.",
+            "window_double": "Zwei Flügel in einem Rahmen, je ein Kontakt.",
+            "window_pass_through": "Lüften geht nur, wenn zwei Öffnungen hintereinander offen sind, z. B. Tür zum Wintergarten und Wintergartenfenster."
+          }
+        },
+        "window_single": {
+          "title": "Einfaches Fenster: {area}",
+          "description": "{shown}",
+          "data": {
+            "area": "Raum",
+            "leaf": "Kontakt",
+            "show_all": "Alle Kontakte zeigen",
+            "name": "Name"
+          },
+          "data_description": {
+            "name": "Leer lassen: Name nach dem Raum, z. B. {area} Fenster."
+          },
+          "sections": {
+            "extra_contacts": {
+              "name": "Zusatzkontakte",
+              "data": {
+                "tilt": "Kipp-Erkennung",
+                "handle": "Griffkontakt"
+              },
+              "data_description": {
+                "tilt": "Zweiter Kontakt am Flügel, meist unten. Er meldet nur „offen“, wenn der Flügel ganz aufgedreht ist.",
+                "handle": "Meldet, ob der Griff gedreht ist. Bei geschlossenem Flügel und gedrehtem Griff gilt das Fenster als angelehnt."
+              }
+            },
+            "cover": {
+              "name": "Rollladen",
+              "description": "Dann gibt es eine Empfehlung, wann der Rollladen zu sein sollte: tagsüber gegen Sonne und Hitze, nachts gegen Kälte. Bewegen tut ihn deine Automation.",
+              "data": {
+                "cover": "Rollladen"
+              }
+            },
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "facing": "Ausrichtung",
+                "facing_degrees": "Genaue Ausrichtung in Grad",
+                "min_level": "Lüftet ab"
+              },
+              "data_description": {
+                "facing": "Wohin das Fenster zeigt. Das entscheidet, welche Außenseite und welche Sonne gelten.",
+                "facing_degrees": "Optional, für Fenster, die schräg zeigen. Norden ist 0, Osten 90, Süden 180, Westen 270.",
+                "min_level": "Ab welcher Stellung das Fenster als gelüftet zählt."
+              }
+            }
+          }
+        },
+        "window_double": {
+          "title": "Doppelflügel: {area}",
+          "description": "{shown}",
+          "data": {
+            "area": "Raum",
+            "leaf_left": "Linker Flügel",
+            "leaf_right": "Rechter Flügel",
+            "tilt": "Kontakt zwischen den Flügeln (optional)",
+            "show_all": "Alle Kontakte zeigen",
+            "name": "Name"
+          },
+          "data_description": {
+            "tilt": "Sitzt meist unten zwischen den Flügeln und meldet nur „offen“, wenn ein Flügel ganz aufgedreht ist. So lassen sich gekippt und offen unterscheiden.",
+            "name": "Leer lassen: Name nach dem Raum."
+          },
+          "sections": {
+            "extra_contacts": {
+              "name": "Zusatzkontakte",
+              "data": {
+                "handle": "Griffkontakt"
+              },
+              "data_description": {
+                "handle": "Meldet, ob der Griff gedreht ist. Bei geschlossenem Flügel und gedrehtem Griff gilt das Fenster als angelehnt."
+              }
+            },
+            "cover": {
+              "name": "Rollladen",
+              "description": "Dann gibt es eine Empfehlung, wann der Rollladen zu sein sollte: tagsüber gegen Sonne und Hitze, nachts gegen Kälte. Bewegen tut ihn deine Automation.",
+              "data": {
+                "cover": "Rollladen"
+              }
+            },
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "facing": "Ausrichtung",
+                "facing_degrees": "Genaue Ausrichtung in Grad",
+                "min_level": "Lüftet ab"
+              },
+              "data_description": {
+                "facing": "Wohin das Fenster zeigt. Das entscheidet, welche Außenseite und welche Sonne gelten.",
+                "facing_degrees": "Optional, für Fenster, die schräg zeigen. Norden ist 0, Osten 90, Süden 180, Westen 270.",
+                "min_level": "Ab welcher Stellung das Fenster als gelüftet zählt."
+              }
+            }
+          }
+        },
+        "window_pass_through": {
+          "title": "Durchgang: {area}",
+          "description": "{shown}",
+          "data": {
+            "area": "Raum",
+            "inner": "Innere Öffnung",
+            "show_all": "Alle Kontakte zeigen",
+            "outer": "Äußere Öffnung",
+            "name": "Name"
+          },
+          "data_description": {
+            "inner": "Die Öffnung in diesem Raum.",
+            "outer": "Die Öffnung nach draußen. Hier stehen alle Kontakte, denn sie liegt meist in einem anderen Bereich. Ein Kontakt darf auch zu einem anderen Fenster gehören.",
+            "name": "Leer lassen: Name nach dem Raum, z. B. {area} Durchgang."
+          },
+          "sections": {
+            "cover": {
+              "name": "Rollladen",
+              "description": "Dann gibt es eine Empfehlung, wann der Rollladen zu sein sollte: tagsüber gegen Sonne und Hitze, nachts gegen Kälte. Bewegen tut ihn deine Automation.",
+              "data": {
+                "cover": "Rollladen"
+              }
+            },
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "facing": "Ausrichtung",
+                "facing_degrees": "Genaue Ausrichtung in Grad",
+                "min_level": "Lüftet ab"
+              },
+              "data_description": {
+                "facing": "Wohin das Fenster zeigt. Das entscheidet, welche Außenseite und welche Sonne gelten.",
+                "facing_degrees": "Optional, für Fenster, die schräg zeigen. Norden ist 0, Osten 90, Süden 180, Westen 270.",
+                "min_level": "Ab welcher Stellung das Fenster als gelüftet zählt."
+              }
+            }
+          }
+        },
+        "window_mapping": {
+          "title": "Zustände zuordnen",
+          "description": "{sensor} meldet Text. Welcher Text bedeutet welche Stellung? Vorbelegt aus bisherigen Werten und üblichen Wörtern. Fehlende Texte kannst du eintippen.",
+          "data": {
+            "closed": "zu",
+            "ajar": "angelehnt",
+            "tilted": "gekippt",
+            "open": "offen"
+          }
+        },
+        "window_preview": {
+          "title": "Vorschau",
+          "description": "**{title}**\n\n{preview}",
+          "menu_options": {
+            "window_save": "Speichern",
+            "window_adjust": "Anpassen",
+            "window_retype": "Typ ändern"
+          }
+        }
+      },
+      "error": {
+        "is_region": "{area} ist eine Außenseite.",
+        "no_contact": "Für das Fenster fehlt ein Kontakt.",
+        "same_contact": "Ein Kontakt darf in einem Fenster nur eine Aufgabe haben."
+      }
     }
   },
   "options": {
@@ -907,6 +1092,22 @@
         "e": "Osten",
         "s": "Süden",
         "w": "Westen"
+      }
+    },
+    "facing": {
+      "options": {
+        "room": "Wie der Raum",
+        "n": "Norden",
+        "e": "Osten",
+        "s": "Süden",
+        "w": "Westen"
+      }
+    },
+    "min_level": {
+      "options": {
+        "ajar": "angelehnt",
+        "tilted": "gekippt",
+        "open": "offen"
       }
     }
   },
@@ -973,6 +1174,63 @@
     "plan_side_none": "Keine Seite.",
     "plan_no_side": "{direction}: keine Außenseite, Wetterdienst springt ein.",
     "plan_no_side_no_weather": "{direction}: keine Außenseite.",
-    "plan_closing": "Quellen und Reihenfolge änderst du später pro Raum."
+    "plan_closing": "Quellen und Reihenfolge änderst du später pro Raum.",
+    "words_closed": "zu, geschlossen",
+    "words_ajar": "angelehnt",
+    "words_tilted": "gekippt, kipp",
+    "words_open": "offen, geöffnet",
+    "window_name": "Fenster",
+    "pass_through_name": "Durchgang",
+    "window_title": "{area} {name}",
+    "shown_area": "Gezeigt: Bereich {area} und Kontakte ohne Bereich.",
+    "shown_all": "Gezeigt: alle Kontakte.",
+    "preview_name": "Name: {title}, nach dem Raum benannt.",
+    "facing_own": "Ausrichtung: {direction}.",
+    "facing_like_room": "Ausrichtung: {direction}, wie der Raum.",
+    "facing_none": "Ausrichtung: keine, der Raum hat keine Hauptseite.",
+    "facing_degrees": "Genau {degrees}°.",
+    "level_closed": "zu",
+    "level_ajar": "angelehnt",
+    "level_tilted": "gekippt",
+    "level_open": "offen",
+    "leaves_left": "linker Flügel",
+    "leaves_right": "rechter Flügel",
+    "leaves_both": "beide Flügel",
+    "preview_window_state": "Gerade **{level}**{leaves}{since}.",
+    "preview_window_leaves": "({leaves})",
+    "preview_window_since": "seit {minutes} min",
+    "preview_window_since_short": "seit weniger als 1 min",
+    "preview_window_unknown": "Gerade unbekannt: Kein Kontakt meldet einen bekannten Wert.",
+    "preview_room": "Raum {area}: **{recommendation}**.",
+    "preview_room_no_recommendation": "Raum {area}: noch keine Empfehlung, es fehlen Werte.",
+    "recommendation_open": "öffnen",
+    "recommendation_keep_open": "offen lassen",
+    "recommendation_close": "schließen",
+    "recommendation_keep_closed": "geschlossen lassen",
+    "preview_outside_colder": "Draußen ist es {difference} °C kälter",
+    "preview_outside_warmer": "Draußen ist es {difference} °C wärmer",
+    "preview_outside_equal": "Draußen ist es ebenso warm",
+    "preview_strategy": "Tagesstrategie: {strategy}",
+    "strategy_prevent_heat_up": "Aufheizen verhindern",
+    "strategy_prevent_cool_down": "Auskühlen verhindern",
+    "strategy_neutral": "neutral",
+    "preview_cover": "Rollladen: **{advice}**, {reason}.",
+    "preview_cover_none": "Rollladen: keine Empfehlung, {reason}.",
+    "cover_close": "schließen",
+    "cover_keep_closed": "geschlossen lassen",
+    "cover_open": "öffnen",
+    "cover_keep_open": "offen lassen",
+    "cover_reason_sun_heat": "Sonne auf dem Fenster, Hitze draußen halten",
+    "cover_reason_heat_barrier": "draußen heißer, Hitze draußen halten",
+    "cover_reason_insulate": "nachts kalt, Wärme drinnen halten",
+    "cover_reason_solar_gain": "Sonnenwärme ist willkommen",
+    "cover_reason_no_heat_risk": "Sonne, aber keine Überhitzung",
+    "cover_reason_no_sun": "keine Sonne auf dem Fenster",
+    "cover_reason_night": "Nacht, kein Grund zum Schließen",
+    "cover_reason_window_open": "Fenster ist offen",
+    "cover_reason_no_data": "Werte fehlen",
+    "cover_reason_no_room": "Fenster ohne Raum",
+    "preview_room_created": "Raum {area} wird mit angelegt, Quellen: {sources}.",
+    "preview_room_created_bare": "Raum {area} wird mit angelegt, Quellen gibt es dort noch keine."
   }
 }
