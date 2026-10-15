@@ -4,27 +4,25 @@ Updated 2026-10-14. The only place for project status.
 
 ## Now
 
-UI mockups are approved (2026-10-13). The native-UI spike ran on DEV (branch `spike/native-ui`, never merged):
-results in `docs/ui_mockups.md` §7. Its code stays deployed on DEV, without a hub entry, for Felix's click review.
-The logic spec `docs/logic.md` is approved (2026-10-13, D1–D16 except the replaced D13) and **built**: the ten pure
-modules in `custom_components/climate_hub/logic/` with 393 table tests. Felix approved the logic and the build
-decisions (2026-10-13). Minimum Home Assistant version is 2026.10.0 (ADR-008, 2026-10-14). No Home Assistant glue
-exists yet (no manifest, no entities, no flows). The integration spec and build plan `docs/integration.md` is approved
-(2026-10-14, I1–I17). Build of milestone M1 runs on branch `build/m1-rooms`.
+Milestone M1 (rooms and outdoor sides) is built, verified on DEV by Felix and merged into `main` (2026-10-15): pure
+engine, coordinator, Store, entities for rooms, regions and hub, area sync, diagnostics, and the flows S1–S4, S6, S7,
+S9, S10. 643 tests green. Plan and build order: `docs/integration.md`. No windows and no repairs yet (M2, M3).
 
-Branches (CLAUDE.md rule 14): `main` is the current line, on GitHub too. `spike/native-ui` stays local as a
-reference and is never merged.
+Branches (CLAUDE.md rule 14): `main` is the current line, pushed. `spike/native-ui` stays local as a reference and is
+never merged.
 
 ## Next
 
-1. **Felix: click review of M1 on DEV** (step 13): first setup S1–S4, add/edit a room and an outdoor side (S6, S7),
-   options (S9), house plan (S10), entities and attributes, area cards. M1 is deployed; the spike entry and files are
-   gone from DEV. Findings go back into the build, then M1 merges into `main`.
-2. **Test devices on DEV** (proposal, not decided): DEV's mirrored entities have no devices, so R6 tiers, device
-   grouping and "follow" cannot be exercised there. Proposal: Mosquitto app plus MQTT discovery for a handful of virtual
-   devices fed by a DEV automation that republishes the mirrored values; availability topics simulate outages.
-3. After M1: M2 (windows), M3 (repairs), then CI (pytest, ruff, hassfest, HACS; `hacs.json` with 2026.10.0). A PROD test
-   is possible once a stable stand exists, only with Felix's explicit go.
+1. **M2 windows** on a new branch `build/m2-windows`: `docs/integration.md` §15 steps 14–17 plus 16a (weather status
+   line in S4 and check step in S9, agreed 2026-10-15). DEV's mirrored contacts (leaves, text sensor, handle) work
+   without devices, so M2 can be tested there.
+2. **M3 repairs** (steps 18–20). Proposal for then: MQTT test devices on DEV (Mosquitto plus discovery, values
+   republished from the mirror, availability topics for outages), because DEV's mirrored entities have no devices.
+3. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
+4. **PROD trial** after M2, area sync off for the first run, only with Felix's explicit go.
+
+DEV notes: the only real weather entity on DEV is `weather.forecast_home` (met.no); `weather.openweathermap` and
+`weather.mannheim` are mirrors without a forecast service, so the daily strategy stays unknown with them.
 
 ## Open decisions
 
@@ -32,6 +30,11 @@ reference and is never merged.
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-15: M1 click review on DEV by Felix: rooms good. Outdoor humidity and pressure were unknown because the chosen
+  weather entity was a dead mirror; with a working one the weather stage fills them. Mirrored weather entities cannot
+  deliver forecasts, which led to the agreed weather status line (S4) and check step (S9). M1 merged into `main` and
+  pushed; `build/m1-rooms` deleted. Verified on DEV: yes.
 
 - 2026-10-14: M1 step 12 (hub flow S1–S4, options S9, house plan S10 with preview) built; stand-ins removed; 643
   tests green. M1 deployed to DEV (spike entry and files removed). DEV showed a real gap: its mirrored sensors have no
