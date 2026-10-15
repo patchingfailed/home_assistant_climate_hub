@@ -23,6 +23,7 @@ from homeassistant.helpers.selector import (
 from ..logic import model as m
 from .common import max_age_selector
 from .hub import DEFAULT_TIMING, SECTION_TIMING
+from .preview import WeatherKind, async_texts, async_weather_status, weather_line
 
 _TIMING_KEYS = tuple(DEFAULT_TIMING)
 
@@ -91,16 +92,47 @@ def nest_options(options: Mapping[str, Any]) -> dict[str, Any]:
 
 
 class ClimateHubOptionsFlow(OptionsFlow):
-    """S9: weather, area sync and the timing section."""
+    """S9: weather, area sync and the timing section; a check for a weak weather."""
+
+    _pending: dict[str, Any] | None = None  # the form input held for the check
+    _status = ""  # the weather line of the check
+
+    def _form(self, values: Mapping[str, Any]) -> ConfigFlowResult:
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(options_schema(), values),
+        )
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        if user_input is not None:
+        if user_input is None:
+            return self._form(nest_options(self.config_entry.options))
+        status = await async_weather_status(self.hass, user_input.get(m.CONF_WEATHER))
+        if status.kind not in (WeatherKind.UNAVAILABLE, WeatherKind.NO_FORECAST):
             return self.async_create_entry(data=flatten_options(user_input))
-        return self.async_show_form(
-            step_id="init",
-            data_schema=self.add_suggested_values_to_schema(
-                options_schema(), nest_options(self.config_entry.options)
-            ),
+        self._pending = user_input
+        self._status = weather_line(await async_texts(self.hass), status)
+        return await self.async_step_weather_check()
+
+    async def async_step_weather_check(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Unavailable weather or no forecast: save anyway or adjust."""
+        return self.async_show_menu(
+            step_id="weather_check",
+            menu_options=["weather_keep", "weather_adjust"],
+            description_placeholders={"status": self._status},
         )
+
+    async def async_step_weather_keep(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        assert self._pending is not None
+        return self.async_create_entry(data=flatten_options(self._pending))
+
+    async def async_step_weather_adjust(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        assert self._pending is not None
+        return self._form(self._pending)

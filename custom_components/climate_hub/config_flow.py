@@ -5,7 +5,9 @@ house plan with the preview of new or changed outdoor sides (I17). The options f
 (S9) is in `flows/options.py`, the room and region flows are the subentry flows.
 """
 
+from collections.abc import Mapping
 from typing import Any
+from uuid import uuid4
 
 import probatio
 from homeassistant.config_entries import (
@@ -52,14 +54,18 @@ from .flows.hub import (
 )
 from .flows.options import ClimateHubOptionsFlow
 from .flows.preview import (
+    PENDING_ID,
+    PlanItem,
+    PreviewRun,
     async_run_house,
     async_texts,
+    async_weather_status,
     plan_markdown,
     regions_markdown,
 )
 from .flows.region import RegionSubentryFlow
 from .flows.room import RoomSubentryFlow
-from .flows.window import WindowSubentryFlow
+from .flows.window import WindowSteps, WindowSubentryFlow
 from .logic import model as m
 from .registry import area_infos, entity_infos
 
@@ -67,8 +73,8 @@ ENTRY_TITLE = "Climate Hub"
 CREATED = "created"
 
 
-class ClimateHubConfigFlow(ConfigFlow, domain=DOMAIN):
-    """First setup and the house plan reconfigure of the single hub entry."""
+class ClimateHubConfigFlow(WindowSteps, ConfigFlow, domain=DOMAIN):
+    """First setup (with the window steps) and the house plan reconfigure."""
 
     VERSION = 1
     MINOR_VERSION = 1
@@ -79,6 +85,7 @@ class ClimateHubConfigFlow(ConfigFlow, domain=DOMAIN):
         self._rooms: list[str] | None = None  # area IDs
         self._plan: Plan = empty_plan()
         self._change: PlanChange | None = None
+        self._windows: list[PlanItem] = []  # added in this setup
 
     @classmethod
     @callback
@@ -174,6 +181,7 @@ class ClimateHubConfigFlow(ConfigFlow, domain=DOMAIN):
     def _drop_stale_plan_entries(self) -> None:
         """Rooms that are no longer rooms leave the plan; so do new rooms as outdoor."""
         rooms = set(self._rooms or ())
+        self._windows = [w for w in self._windows if w.area_id in rooms]
         for side in self._plan.values():
             side[CONF_ROOMS] = [r for r in side[CONF_ROOMS] if r in rooms]
             if side[CONF_OUTDOOR] in rooms:
@@ -234,21 +242,29 @@ class ClimateHubConfigFlow(ConfigFlow, domain=DOMAIN):
     def _options(self) -> dict[str, Any]:
         return default_options(self._weather, self._area_sync)
 
+    def _setup_items(self) -> tuple[list[PlanItem], list[PlanItem]]:
+        return build_items(entity_infos(self.hass), self._rooms or [], self._plan)
+
     async def async_step_preview(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        rooms, regions = build_items(
-            entity_infos(self.hass), self._rooms or [], self._plan
-        )
+        rooms, regions = self._setup_items()
+        weather = await async_weather_status(self.hass, self._weather)
         run = await async_run_house(
-            self.hass, None, self._options(), [*rooms, *regions]
+            self.hass,
+            None,
+            self._options(),
+            [*rooms, *regions, *self._windows],
+            weather,
         )
         texts = await async_texts(self.hass)
         return self.async_show_menu(
             step_id="preview",
-            menu_options=["create", "rooms", "plan"],
+            menu_options=["create", "add_window", "rooms", "plan"],
             description_placeholders={
-                "preview": plan_markdown(self.hass, texts, run, rooms, regions)
+                "preview": plan_markdown(
+                    self.hass, texts, run, rooms, regions, self._windows, weather
+                )
             },
         )
 
@@ -256,16 +272,62 @@ class ClimateHubConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         texts = await async_texts(self.hass)
-        rooms, regions = build_items(
-            entity_infos(self.hass), self._rooms or [], self._plan
-        )
+        rooms, regions = self._setup_items()
         return self.async_create_entry(
             title=ENTRY_TITLE,
             data={},
             options=self._options(),
-            subentries=[subentry_data(self.hass, texts, i) for i in (*rooms, *regions)],
+            subentries=[
+                subentry_data(self.hass, texts, i)
+                for i in (*rooms, *regions, *self._windows)
+            ],
             description=CREATED,
         )
+
+    # S8 in the first setup: the hooks of the window steps
+
+    async def async_step_add_window(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return await self.async_step_window_room()
+
+    def _window_room_selector(self) -> SelectSelector:
+        return SelectSelector(
+            SelectSelectorConfig(
+                options=area_options(self.hass, self._rooms or []),
+                mode=SelectSelectorMode.DROPDOWN,
+            )
+        )
+
+    def _window_room_problem(self, area_id: str) -> str | None:
+        return None  # only the rooms of this setup are offered
+
+    def _window_names_in(self, area_id: str) -> list[str]:
+        return [w.data[m.CONF_NAME] for w in self._windows if w.area_id == area_id]
+
+    def _window_has_room(self, area_id: str) -> bool:
+        return True  # the rooms of this setup are created together
+
+    async def _async_window_preview_run(
+        self, data: Mapping[str, Any], extra: list[PlanItem]
+    ) -> PreviewRun:
+        rooms, regions = self._setup_items()
+        pending = PlanItem(PENDING_ID, SUBENTRY_WINDOW, data[m.CONF_AREA], data, ())
+        run = await async_run_house(
+            self.hass,
+            None,
+            self._options(),
+            [*rooms, *regions, *self._windows, pending],
+        )
+        return PreviewRun(PENDING_ID, run.model, run.result)
+
+    async def _async_window_finish(
+        self, data: dict[str, Any], title: str
+    ) -> ConfigFlowResult:
+        self._windows.append(
+            PlanItem(uuid4().hex, SUBENTRY_WINDOW, data[m.CONF_AREA], data, ())
+        )
+        return await self.async_step_preview()
 
     # S10
 

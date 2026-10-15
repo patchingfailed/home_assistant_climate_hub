@@ -12,8 +12,11 @@ from typing import Any
 import pytest
 
 from custom_components.climate_hub.binary_sensor import BINARY_SENSORS
-from custom_components.climate_hub.logic.cover import CoverReason
-from custom_components.climate_hub.logic.window import OpenLeaves
+from custom_components.climate_hub.flows.preview import WeatherKind
+from custom_components.climate_hub.logic.cover import CoverAdvice, CoverReason
+from custom_components.climate_hub.logic.recommendation import Recommendation
+from custom_components.climate_hub.logic.strategy import Strategy
+from custom_components.climate_hub.logic.window import Level, OpenLeaves
 from custom_components.climate_hub.sensor import SENSORS
 
 COMPONENT = Path(__file__).parent.parent / "custom_components" / "climate_hub"
@@ -94,6 +97,15 @@ CONFIG_FORMS = {
     "plan": set(),
     "reconfigure": set(),
 }
+WINDOW_STEPS = {
+    "window_room",
+    "window_type",
+    "window_single",
+    "window_double",
+    "window_pass_through",
+    "window_mapping",
+    "window_preview",
+}
 PLACEHOLDERS = {
     ("config", "step", "user", "description"): {
         "rooms",
@@ -117,7 +129,7 @@ def _at(data: dict[str, Any], path: tuple[str, ...]) -> Any:
 def test_config_flow_strings(language: str) -> None:
     config = _load(language)["config"]
     steps = config["step"]
-    assert set(steps) == {*CONFIG_FORMS, "preview", "plan_preview"}
+    assert set(steps) == {*CONFIG_FORMS, *WINDOW_STEPS, "preview", "plan_preview"}
     for step in steps.values():
         assert step["title"]
     for step, fields in CONFIG_FORMS.items():
@@ -126,9 +138,20 @@ def test_config_flow_strings(language: str) -> None:
         sections = steps[step]["sections"]
         assert {k: set(v["data"]) for k, v in sections.items()} == SIDE_SECTIONS
         assert all(v["name"] for v in sections.values())
-    assert set(steps["preview"]["menu_options"]) == {"create", "rooms", "plan"}
+    assert set(steps["preview"]["menu_options"]) == {
+        "create",
+        "add_window",
+        "rooms",
+        "plan",
+    }
     assert set(steps["plan_preview"]["menu_options"]) == {"plan_save", "plan_adjust"}
-    assert set(config["error"]) == {"no_rooms", "room_two_sides", "outdoor_twice"}
+    assert set(config["error"]) == {
+        "no_rooms",
+        "room_two_sides",
+        "outdoor_twice",
+        "no_contact",
+        "same_contact",
+    }
     assert config["create_entry"]["created"]
 
 
@@ -197,3 +220,54 @@ def test_window_attribute_values_and_device_are_translated(language: str) -> Non
         "area",
         "name",
     }
+
+
+def _step_ids(file: Path) -> set[str]:
+    return set(re.findall(r'step_id="(\w+)"', file.read_text(encoding="utf-8")))
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_window_steps_are_translated_in_both_flows(language: str) -> None:
+    """The mixin runs in the subentry flow and in the first setup."""
+    data = _load(language)
+    used = _step_ids(COMPONENT / "flows" / "window.py")
+    assert used and used <= WINDOW_STEPS
+    for steps in (data["config"]["step"], data["config_subentries"]["window"]["step"]):
+        assert sorted(WINDOW_STEPS - steps.keys()) == []
+        assert steps["window_type"]["menu_option_descriptions"].keys() == {
+            "window_single",
+            "window_double",
+            "window_pass_through",
+        }
+    assert set(data["options"]["step"]) == {"init", "weather_check"}
+    assert set(data["options"]["step"]["weather_check"]["menu_options"]) == {
+        "weather_keep",
+        "weather_adjust",
+    }
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_composed_common_keys_cover_the_logic_enums(language: str) -> None:
+    """Preview fragments built from enum values (`texts(f"...")`)."""
+    common = _load(language)["common"]
+    expected = {f"level_{level.name.lower()}" for level in Level}
+    expected |= {f"leaves_{leaf}" for leaf in ("left", "right", "both")}
+    expected |= {
+        f"recommendation_{r.value}"
+        for r in Recommendation
+        if r is not Recommendation.NONE
+    }
+    expected |= {f"strategy_{s.value}" for s in Strategy}
+    expected |= {f"cover_{a.value}" for a in CoverAdvice if a is not CoverAdvice.NONE}
+    expected |= {f"cover_reason_{r.value}" for r in CoverReason}
+    expected |= {f"weather_{kind.value}" for kind in WeatherKind}
+    expected |= {"weather_values", "weather_values_temperature"}
+    assert sorted(expected - common.keys()) == []
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_level_words_are_word_lists(language: str) -> None:
+    common = _load(language)["common"]
+    for level in Level:
+        words = [w.strip() for w in common[f"words_{level.name.lower()}"].split(",")]
+        assert words and all(words)

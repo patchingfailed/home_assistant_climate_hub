@@ -26,7 +26,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from ..const import DOMAIN, SUBENTRY_REGION, SUBENTRY_ROOM
+from ..const import DOMAIN, SUBENTRY_REGION, SUBENTRY_ROOM, SUBENTRY_WINDOW
 from ..logic import const as logic_const
 from ..logic import model as m
 from ..logic.outdoor import Direction
@@ -338,7 +338,14 @@ def build_items(
 def subentry_data(
     hass: HomeAssistant, texts: Texts, item: PlanItem
 ) -> ConfigSubentryData:
-    if item.subentry_type == SUBENTRY_ROOM:
+    if item.subentry_type == SUBENTRY_WINDOW:  # several per room: no unique ID
+        title = texts(
+            "window_title",
+            area=area_name(hass, item.area_id),
+            name=item.data[m.CONF_NAME],
+        )
+        unique_id = None
+    elif item.subentry_type == SUBENTRY_ROOM:
         title, unique_id = area_name(hass, item.area_id), room_unique_id(item.area_id)
     else:
         direction = item.data[m.CONF_DIRECTION]

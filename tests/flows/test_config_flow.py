@@ -164,7 +164,7 @@ async def test_preview_lists_rooms_sides_and_what_was_not_taken(
     result = await _to_preview(hass, house)
     assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "preview"
-    assert result["menu_options"] == ["create", "rooms", "plan"]
+    assert result["menu_options"] == ["create", "add_window", "rooms", "plan"]
     preview = result["description_placeholders"]["preview"]
     assert "**Räume**" in preview
     assert "**Wohnzimmer** 21,4 °C · 48 % aus Klimasensor Temperatur" in preview

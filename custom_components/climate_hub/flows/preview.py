@@ -7,6 +7,7 @@ does not know the user's language (I16).
 from collections.abc import Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
@@ -24,6 +25,7 @@ from ..logic.engine import (
     Comfort,
     EngineResult,
     EngineState,
+    Forecast,
     WindowResult,
     evaluate,
 )
@@ -34,7 +36,7 @@ from ..logic.sources import Candidate, Metric, Resolution, Stage, Status
 from ..logic.strategy import Strategy
 from ..logic.window import Level, OpenLeaves
 from ..registry import build_model_from
-from ..snapshot import async_fetch_forecast, build_snapshot
+from ..snapshot import async_fetch_forecast, build_snapshot, read_weather
 
 PENDING_ID = "pending"
 _BLOCK = "\n\n"
@@ -126,15 +128,79 @@ class PlanItem:
     not_taken: tuple[NotTaken, ...]
 
 
+class WeatherKind(StrEnum):
+    NONE = "none"  # no weather entity chosen
+    UNAVAILABLE = "unavailable"  # no state, unavailable or without a temperature
+    NO_FORECAST = "no_forecast"  # values, but no forecast (a mirrored entity)
+    HOURLY = "hourly"
+    DAILY = "daily"
+
+
+@dataclass(frozen=True, slots=True)
+class WeatherStatus:
+    """What the chosen weather entity delivers right now (S4, S9)."""
+
+    kind: WeatherKind
+    temperature: float | None = None
+    humidity: float | None = None
+    forecast: Forecast | None = None  # the test fetch, reused by the house run
+
+
+async def async_weather_status(
+    hass: HomeAssistant, weather_id: str | None
+) -> WeatherStatus:
+    """The current values and one test fetch of the forecast."""
+    if not weather_id:
+        return WeatherStatus(WeatherKind.NONE)
+    readings, _ = read_weather(hass, weather_id)
+    if readings is None or readings.temperature.value is None:
+        return WeatherStatus(WeatherKind.UNAVAILABLE)
+    forecast = await async_fetch_forecast(hass, weather_id)
+    kind = (
+        WeatherKind.NO_FORECAST
+        if forecast is None
+        else WeatherKind.HOURLY
+        if forecast.hourly
+        else WeatherKind.DAILY
+    )
+    return WeatherStatus(
+        kind, readings.temperature.value, readings.humidity.value, forecast
+    )
+
+
+def weather_line(texts: Texts, status: WeatherStatus) -> str:
+    """ "Wetterdienst: 12,5 °C · 89 %, Vorhersage stündlich." and its variants."""
+    if status.kind is WeatherKind.NONE:
+        return texts("weather_none")
+    if status.kind is WeatherKind.UNAVAILABLE or status.temperature is None:
+        return texts("weather_unavailable")
+    temperature = texts.number(status.temperature)
+    values = (
+        texts("weather_values_temperature", temperature=temperature)
+        if status.humidity is None
+        else texts(
+            "weather_values",
+            temperature=temperature,
+            humidity=texts.number(status.humidity, 0),
+        )
+    )
+    if status.kind is WeatherKind.NO_FORECAST:
+        return texts("weather_no_forecast", values=values)
+    if status.kind is WeatherKind.HOURLY:
+        return texts("weather_hourly", values=values)
+    return texts("weather_daily", values=values)
+
+
 async def _async_evaluate(
     hass: HomeAssistant,
     entry: ConfigEntry | None,
     options: Mapping[str, Any],
     triples: Iterable[tuple[str, str, Mapping[str, Any]]],
+    weather: WeatherStatus | None = None,
 ) -> tuple[m.HouseModel, EngineResult]:
     """One engine run. A loaded hub lends its state, comfort values and forecast;
     otherwise (first setup) the state is empty, the comfort values are the defaults and
-    the forecast is fetched once.
+    the forecast is fetched once, or taken from the `weather` status that fetched it.
     """
     model = build_model_from(hass, options, triples)
     if entry is not None and entry.state is ConfigEntryState.LOADED:
@@ -151,9 +217,14 @@ async def _async_evaluate(
             logic_const.DEFAULT_COMFORT_MAX,
             logic_const.DEFAULT_STRATEGY_THRESHOLD,
         )
-        forecast = (
-            await async_fetch_forecast(hass, model.weather) if model.weather else None
-        )
+        if weather is not None:
+            forecast = weather.forecast
+        else:
+            forecast = (
+                await async_fetch_forecast(hass, model.weather)
+                if model.weather
+                else None
+            )
     snapshot = build_snapshot(hass, model, forecast)
     result, _ = evaluate(model, snapshot, state, comfort, dt_util.now())
     return model, result
@@ -188,10 +259,11 @@ async def async_run_house(
     entry: ConfigEntry | None,
     options: Mapping[str, Any],
     items: Iterable[PlanItem],
+    weather: WeatherStatus | None = None,
 ) -> HouseRun:
-    """One engine run over pending rooms and outdoor sides."""
+    """One engine run over pending rooms, outdoor sides and windows."""
     triples = [(i.subentry_id, i.subentry_type, i.data) for i in items]
-    model, result = await _async_evaluate(hass, entry, options, triples)
+    model, result = await _async_evaluate(hass, entry, options, triples, weather)
     return HouseRun(model, result)
 
 
@@ -540,18 +612,48 @@ def regions_markdown(
     return _BLOCK.join([texts("plan_regions_head"), "\n".join(lines)])
 
 
+def windows_markdown(
+    hass: HomeAssistant, texts: Texts, run: HouseRun, items: Sequence[PlanItem]
+) -> str:
+    """The windows part of screen S4: each added window with its current state."""
+    lines = []
+    for item in items:
+        result = run.result.windows.get(item.subentry_id)
+        level = None if result is None else result.state.level
+        lines.append(
+            "- "
+            + texts(
+                "plan_window_item",
+                title=texts(
+                    "window_title",
+                    area=area_name(hass, item.area_id),
+                    name=item.data[m.CONF_NAME],
+                ),
+                state=texts("plan_window_unknown")
+                if level is None
+                else texts(_LEVEL_KEYS[level]),
+            )
+        )
+    body = "\n".join(lines) if lines else "- " + texts("plan_windows_none")
+    return _BLOCK.join([texts("plan_windows_head"), body])
+
+
 def plan_markdown(
     hass: HomeAssistant,
     texts: Texts,
     run: HouseRun,
     rooms: Sequence[PlanItem],
     regions: Sequence[PlanItem],
+    windows: Sequence[PlanItem],
+    weather: WeatherStatus,
 ) -> str:
-    """Screen S4 (the windows part comes with milestone M2)."""
+    """Screen S4: rooms, outdoor sides, the weather line, windows."""
     return _BLOCK.join(
         [
             rooms_markdown(hass, texts, run, rooms),
             regions_markdown(hass, texts, run, regions, missing_sides=True),
+            weather_line(texts, weather),
+            windows_markdown(hass, texts, run, windows),
             texts("plan_closing"),
         ]
     )
