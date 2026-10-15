@@ -208,6 +208,21 @@ async def test_show_all_reopens_the_form_with_all_contacts(
     assert result["step_id"] == "window_preview"
 
 
+async def test_text_sensors_need_a_window_word_unless_show_all(
+    hass: HomeAssistant, house: House, hub: MockConfigEntry
+) -> None:
+    hass.states.async_set("sensor.wlan_ssid", "Heimnetz")
+    hass.states.async_set("sensor.kontakt_mit_optionen", "x", {"options": ["Offen"]})
+    result = await _to_form(hass, hub, house.kitchen, "window_single")
+    near = _choices(result, "leaf")
+    assert "sensor.wlan_ssid" not in near
+    assert "sensor.kontakt_mit_optionen" in near
+    result = await _configure(
+        hass, result, _form(house.kitchen, show_all=True, leaf=house.kitchen_contact)
+    )
+    assert "sensor.wlan_ssid" in _choices(result, "leaf")
+
+
 async def test_room_change_reopens_the_form_with_that_rooms_contacts(
     hass: HomeAssistant, house: House, hub: MockConfigEntry
 ) -> None:

@@ -21,6 +21,7 @@ from homeassistant.config_entries import (
 from homeassistant.const import UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import section
+from homeassistant.helpers import translation
 from homeassistant.helpers.selector import (
     EntitySelector,
     EntitySelectorConfig,
@@ -32,7 +33,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from ..const import SUBENTRY_REGION
+from ..const import DOMAIN, SUBENTRY_REGION
 from ..logic import model as m
 from ..logic.outdoor import Direction
 from ..logic.prefill import (
@@ -46,6 +47,7 @@ from ..logic.prefill import (
     suggest_sources,
 )
 from ..logic.sources import Metric
+from ..logic.window import Level
 from ..registry import entity_infos
 from .preview import (
     DOT_SEPARATOR,
@@ -125,8 +127,13 @@ def climate_choices(
     return _context_filter(climates, area_id, chosen)
 
 
-def is_text_sensor(hass: HomeAssistant, info: EntityInfo) -> bool:
-    """A sensor with a non-numeric state, no unit and no device class (§9.1)."""
+def is_text_sensor(
+    hass: HomeAssistant, info: EntityInfo, words: frozenset[str] | None = None
+) -> bool:
+    """A sensor with a non-numeric state, no unit and no device class (§9.1).
+
+    With `words`, only one whose state or `options` name a window position.
+    """
     if info.domain != "sensor" or info.device_class is not None:
         return False
     state = hass.states.get(info.entity_id)
@@ -137,8 +144,30 @@ def is_text_sensor(hass: HomeAssistant, info: EntityInfo) -> bool:
     try:
         float(state.state)
     except ValueError:
-        return True
+        return words is None or any(
+            isinstance(text, str) and text.strip().casefold() in words
+            for text in (state.state, *state.attributes.get("options", ()))
+        )
     return False
+
+
+async def async_level_words(hass: HomeAssistant) -> dict[Level, frozenset[str]]:
+    """Default words per level, instance language and English merged."""
+    words: dict[Level, set[str]] = {level: set() for level in Level}
+    for language in dict.fromkeys((hass.config.language, "en")):
+        strings = await translation.async_get_translations(
+            hass, language, "common", {DOMAIN}
+        )
+        for level in Level:
+            raw = strings.get(f"component.{DOMAIN}.common.words_{level.name.lower()}")
+            words[level].update(w.strip() for w in (raw or "").split(",") if w.strip())
+    return {level: frozenset(found) for level, found in words.items()}
+
+
+async def async_window_words(hass: HomeAssistant) -> frozenset[str]:
+    """Every default position word, casefolded: what marks a text contact."""
+    levels = await async_level_words(hass)
+    return frozenset(word.casefold() for words in levels.values() for word in words)
 
 
 def contact_choices(
@@ -146,8 +175,10 @@ def contact_choices(
     infos: Sequence[EntityInfo],
     area_id: str | None,
     chosen: Sequence[str],
+    words: frozenset[str] | None,
 ) -> list[str]:
-    """Window contacts: binary sensors of the contact classes and text sensors.
+    """Window contacts: binary sensors of the contact classes and text sensors
+    (with `words`, only those naming a window position).
 
     With an area: its contacts plus those without an area plus the chosen ones (U6),
     the area filter lifted when it finds nothing. Without an area: all contacts.
@@ -160,7 +191,7 @@ def contact_choices(
         and info.platform != OWN_PLATFORM
         and (
             (info.domain == "binary_sensor" and info.device_class in CONTACT_CLASSES)
-            or is_text_sensor(hass, info)
+            or is_text_sensor(hass, info, words)
         )
     ]
     if area_id is None:

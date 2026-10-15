@@ -16,7 +16,6 @@ import probatio
 from homeassistant.config_entries import SOURCE_RECONFIGURE, ConfigSubentryFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import section
-from homeassistant.helpers import translation
 from homeassistant.helpers.selector import (
     AreaSelector,
     BooleanSelector,
@@ -33,11 +32,17 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.util import dt as dt_util
 
-from ..const import DOMAIN, SUBENTRY_REGION, SUBENTRY_ROOM, SUBENTRY_WINDOW
+from ..const import SUBENTRY_REGION, SUBENTRY_ROOM, SUBENTRY_WINDOW
 from ..logic import model as m
 from ..logic.window import Level, suggest_text_mapping
 from ..registry import entity_infos
-from .common import contact_choices, option_selector, subentry_by_area
+from .common import (
+    async_level_words,
+    async_window_words,
+    contact_choices,
+    option_selector,
+    subentry_by_area,
+)
 from .hub import build_items, empty_plan, new_subentry
 from .preview import (
     PlanItem,
@@ -175,19 +180,6 @@ async def async_known_texts(hass: HomeAssistant, entity_id: str) -> list[str]:
         for text in dict.fromkeys(texts)
         if isinstance(text, str) and text not in ("", "unknown", "unavailable")
     ]
-
-
-async def async_level_words(hass: HomeAssistant) -> dict[Level, frozenset[str]]:
-    """Default words per level, instance language and English merged."""
-    words: dict[Level, set[str]] = {level: set() for level in Level}
-    for language in dict.fromkeys((hass.config.language, "en")):
-        strings = await translation.async_get_translations(
-            hass, language, "common", {DOMAIN}
-        )
-        for level in Level:
-            raw = strings.get(f"component.{DOMAIN}.common.words_{level.name.lower()}")
-            words[level].update(w.strip() for w in (raw or "").split(",") if w.strip())
-    return {level: frozenset(found) for level, found in words.items()}
 
 
 class WindowSteps:
@@ -359,17 +351,24 @@ class WindowSteps:
     def _contact_selector(self, choices: list[str]) -> EntitySelector:
         return EntitySelector(EntitySelectorConfig(include_entities=choices))
 
-    def _window_schema(self, window_type: str) -> probatio.Schema:
+    def _window_schema(
+        self, window_type: str, words: frozenset[str] | None
+    ) -> probatio.Schema:
+        """`words`: text sensors must name a window position; None lists all."""
         draft, values = self._draft, self._draft.values
         infos = entity_infos(self.hass)
         chosen = [values[k] for k in CONTACTS[window_type] if values.get(k)]
         near = self._contact_selector(
             contact_choices(
-                self.hass, infos, None if draft.show_all else draft.listed_for, chosen
+                self.hass,
+                infos,
+                None if draft.show_all else draft.listed_for,
+                chosen,
+                words,
             )
         )
         everywhere = self._contact_selector(
-            contact_choices(self.hass, infos, None, chosen)
+            contact_choices(self.hass, infos, None, chosen, words)
         )
         extra = EXTRA_CONTACTS[window_type]
         fields: dict[Any, Any] = {
@@ -447,7 +446,10 @@ class WindowSteps:
         return self.async_show_form(
             step_id=step_id(window_type),
             data_schema=self.add_suggested_values_to_schema(
-                self._window_schema(window_type),
+                self._window_schema(
+                    window_type,
+                    None if draft.show_all else await async_window_words(self.hass),
+                ),
                 nest(window_type, draft.values, draft.show_all),
             ),
             errors=errors or {},

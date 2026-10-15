@@ -41,6 +41,7 @@ from ..logic.prefill import (
 from ..logic.sources import Metric
 from ..registry import area_infos
 from .common import (
+    async_window_words,
     is_text_sensor,
     region_by_direction,
     region_title,
@@ -112,15 +113,18 @@ async def async_outside_words(hass: HomeAssistant) -> list[str]:
     return list(dict.fromkeys(words))
 
 
-def count_contacts(hass: HomeAssistant, infos: Sequence[EntityInfo]) -> int:
-    """Window and door contacts: binary sensors of the contact classes, text sensors."""
+def count_contacts(
+    hass: HomeAssistant, infos: Sequence[EntityInfo], words: frozenset[str]
+) -> int:
+    """Window and door contacts: binary sensors of the contact classes, text
+    sensors naming a window position."""
     return sum(
         1
         for info in infos
         if info.category is None
         and (
             (info.domain == "binary_sensor" and info.device_class in CONTACT_CLASSES)
-            or is_text_sensor(hass, info)
+            or is_text_sensor(hass, info, words)
         )
     )
 
@@ -138,7 +142,7 @@ async def async_scan(hass: HomeAssistant, infos: Sequence[EntityInfo]) -> Scan:
     return Scan(
         rooms=sum(1 for _, checked in proposal if checked),
         outdoor=sum(1 for _, checked in proposal if not checked),
-        contacts=count_contacts(hass, infos),
+        contacts=count_contacts(hass, infos, await async_window_words(hass)),
         weather=len(hass.states.async_entity_ids("weather")),
     )
 

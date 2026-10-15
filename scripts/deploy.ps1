@@ -35,7 +35,9 @@ $Headers = @{ Authorization = "Bearer $Token"; "Content-Type" = "application/jso
 
 if ($Logs) {
   if (-not $Token) { throw "No token configured." }
-  $log = Invoke-RestMethod -Uri "$BaseUrl/api/error_log" -Headers $Headers -Method Get
+  # /api/error_log is gone on HA OS 2026.10; the Supervisor proxy serves the core log.
+  $resp = Invoke-WebRequest -Uri "$BaseUrl/api/hassio/core/logs?lines=5000" -Headers $Headers -UseBasicParsing
+  $log = [System.Text.Encoding]::UTF8.GetString($resp.RawContentStream.ToArray())
   $log -split "`n" | Where-Object { $_ -match "climate_hub" } | Select-Object -Last 50
   exit 0
 }

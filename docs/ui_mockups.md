@@ -505,8 +505,9 @@ Field rules:
   the preview says „Raum {area} wird mit angelegt" and lists its suggested sources (U4, P1). Error: „{area} ist eine
   Außenseite." Changing the room in the form re-opens it with the new room's contacts.
 - Contacts: entity selectors for binary sensors with device class window, door, opening or garage door, plus sensors
-  with a text state, limited to the room's area plus entities without an area (U6; agreed 2026-10-13, second
-  prototype review). „Alle Kontakte zeigen" re-opens the form with all contacts of these types (not live, §2.4);
+  with a text state that names a window position (a word of the S8d lists in its state or `options`; agreed
+  2026-10-16), limited to the room's area plus entities without an area (U6; agreed 2026-10-13, second
+  prototype review). „Alle Kontakte zeigen" re-opens the form with all contacts of these types and every text sensor (not live, §2.4);
   chosen contacts always stay visible. The outer opening of a pass-through always lists all contacts, because it
   usually lies in another area (W5). Picker rows show „area ▸ device", and typing a room name narrows the list.
 - Name: optional. Empty means „Fenster" (pass-through: „Durchgang"), numbered from the second one in the same room.

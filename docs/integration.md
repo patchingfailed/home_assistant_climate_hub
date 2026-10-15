@@ -571,7 +571,9 @@ collapsed groups, `suggested_value` instead of `default` for clearable fields, `
 
 - Choice lists from `registry.entity_infos(hass)`: source candidates per metric and scope (`prefill.classify` not
   `None`), contacts (binary sensors of the contact classes plus text sensors: a non-numeric state without unit and
-  device class), climate devices, candidate areas (S2), outdoor area candidates (S3).
+  device class whose state or `options` name a window position from the S8d word lists; „Alle Kontakte zeigen" lists
+  every text sensor; agreed 2026-10-16 after DEV listed SSIDs and app versions), climate devices, candidate areas
+  (S2), outdoor area candidates (S3).
 - Suggestions: `prefill.suggest_sources`, `suggest_metric_list`, `suggest_climate_devices`, `propose_rooms`.
 - **Previews are one-shot engine runs** (I1): the pending change is applied to the model (`build_model` on the edited
   data), a snapshot is read, and `engine.evaluate` runs with the coordinator's current state (learned offsets, trend,
