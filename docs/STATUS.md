@@ -1,21 +1,20 @@
 # Status
 
-Updated 2026-10-14. The only place for project status.
+Updated 2026-10-16. The only place for project status.
 
 ## Now
 
-Milestone M1 (rooms and outdoor sides) is built, verified on DEV by Felix and merged into `main` (2026-10-15): pure
-engine, coordinator, Store, entities for rooms, regions and hub, area sync, diagnostics, and the flows S1–S4, S6, S7,
-S9, S10. 643 tests green. Plan and build order: `docs/integration.md`. No windows and no repairs yet (M2, M3).
+Milestone M2 (windows) is built on `build/m2-windows` (steps 14–16a) and deployed to DEV; Felix's click review
+(step 17) is pending, then merge. M1 (rooms and outdoor sides) is on `main`. 711 tests green. Plan and build order:
+`docs/integration.md`. No repairs yet (M3).
 
-Branches (CLAUDE.md rule 14): `main` is the current line, pushed. `spike/native-ui` stays local as a reference and is
-never merged.
+Branches (CLAUDE.md rule 14): `main` is the current line, pushed. `build/m2-windows` is local, not pushed.
+`spike/native-ui` stays local as a reference and is never merged.
 
 ## Next
 
-1. **M2 windows** on a new branch `build/m2-windows`: `docs/integration.md` §15 steps 14–17 plus 16a (weather status
-   line in S4 and check step in S9, agreed 2026-10-15). DEV's mirrored contacts (leaves, text sensor, handle) work
-   without devices, so M2 can be tested there.
+1. **M2 click review on DEV** (step 17): window flow (add, edit, retype, S8d with `sensor.badfenster_schliesszustand`),
+   window states with real contacts, the first-setup window loop and weather line, the S9 weather check. Then merge.
 2. **M3 repairs** (steps 18–20). Proposal for then: MQTT test devices on DEV (Mosquitto plus discovery, values
    republished from the mirror, availability topics for outages), because DEV's mirrored entities have no devices.
 3. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
@@ -30,6 +29,16 @@ DEV notes: the only real weather entity on DEV is `weather.forecast_home` (met.n
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-16: M2 steps 14–16a built (Sonnet implementers, each reviewed and committed separately): window devices
+  and entities, room window entities, hub any-flags, cover enable rule (I6); window subentry flow S8–S8d with preview
+  and room creation (mixin `WindowSteps`); the window loop and windows part in the first setup; weather status line
+  in S4 and check step in S9 (adds the daily variant „Vorhersage täglich"). DEV smoke test through the flow API: a
+  kitchen window created, preview as in the mockup, entity IDs as in mockups §6, log clean. Found on DEV: 150+ text
+  sensors (SSIDs, app versions) offered as contacts; text contacts now need a window word in state or options, „Alle
+  Kontakte zeigen" lists all (Felix agreed). `deploy.ps1 -Logs` reads the log through the Supervisor proxy. Success
+  text says „⋮ beim Eintrag Climate Hub" (the entry's real title) instead of the mockup's „Hausklima". Verified on
+  DEV: partly (flow API; click review pending).
 
 - 2026-10-15: M1 click review on DEV by Felix: rooms good. Outdoor humidity and pressure were unknown because the chosen
   weather entity was a dead mirror; with a working one the weather stage fills them. Mirrored weather entities cannot
