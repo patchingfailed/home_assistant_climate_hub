@@ -4,21 +4,19 @@ Updated 2026-10-16. The only place for project status.
 
 ## Now
 
-Milestone M2 (windows) is built on `build/m2-windows` (steps 14–16a) and deployed to DEV; Felix's click review
-(step 17) is pending, then merge. M1 (rooms and outdoor sides) is on `main`. 711 tests green. Plan and build order:
-`docs/integration.md`. No repairs yet (M3).
+Milestones M1 (rooms and outdoor sides) and M2 (windows) are built, verified on DEV by Felix and merged into `main`
+(M2 on 2026-10-16): window devices and entities, the window flow S8–S8d, windows in the first setup, the weather
+status in S4 and S9. 711 tests green. Plan and build order: `docs/integration.md`. No repairs yet (M3).
 
-Branches (CLAUDE.md rule 14): `main` is the current line, pushed. `build/m2-windows` is local, not pushed.
-`spike/native-ui` stays local as a reference and is never merged.
+Branches (CLAUDE.md rule 14): `main` is the current line; the M2 commits are not pushed yet. `spike/native-ui` stays
+local as a reference and is never merged.
 
 ## Next
 
-1. **M2 click review on DEV** (step 17): window flow (add, edit, retype, S8d with `sensor.badfenster_schliesszustand`),
-   window states with real contacts, the first-setup window loop and weather line, the S9 weather check. Then merge.
-2. **M3 repairs** (steps 18–20). Proposal for then: MQTT test devices on DEV (Mosquitto plus discovery, values
+1. **M3 repairs** (steps 18–20). Proposal for then: MQTT test devices on DEV (Mosquitto plus discovery, values
    republished from the mirror, availability topics for outages), because DEV's mirrored entities have no devices.
-3. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
-4. **PROD trial** after M2, area sync off for the first run, only with Felix's explicit go.
+2. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
+3. **PROD trial** after M2, area sync off for the first run, only with Felix's explicit go.
 
 DEV notes: the only real weather entity on DEV is `weather.forecast_home` (met.no); `weather.openweathermap` and
 `weather.mannheim` are mirrors without a forecast service, so the daily strategy stays unknown with them.
@@ -29,6 +27,12 @@ DEV notes: the only real weather entity on DEV is `weather.forecast_home` (met.n
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-16: M2 click review on DEV by Felix: passed. Before it, every window path ran through the flow API on DEV
+  (single, double leaf with two text sensors and S8d pre-filled from recorder history, bath text sensor with handle,
+  pass-through) and the S9 check step appeared for the mirrored weather. Rooms without a main side show no
+  recommendation (`no_side`, M1 behaviour); the window preview says so. M2 merged into `main`; `build/m2-windows`
+  deleted. Verified on DEV: yes.
 
 - 2026-10-16: M2 steps 14–16a built (Sonnet implementers, each reviewed and committed separately): window devices
   and entities, room window entities, hub any-flags, cover enable rule (I6); window subentry flow S8–S8d with preview
