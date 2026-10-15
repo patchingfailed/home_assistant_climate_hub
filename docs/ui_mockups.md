@@ -232,6 +232,11 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
   value), „Nebenwert eines Kontakts" / „eines Bewegungsmelders", „Gerätetemperatur" (diagnostic), „abgeleiteter Wert"
   (helper platform), „mehrere Temperaturen am Gerät".
 - Shows each side's computed fallback chain (ADR-003).
+- **Wetterdienst** line (agreed 2026-10-15), from the current values and one test fetch of the forecast:
+  „Wetterdienst: 12,5 °C · 89 %, Vorhersage stündlich." · „Wetterdienst: 12,5 °C · 89 %, aber keine Vorhersage. Die
+  Tagesstrategie bleibt leer." · „Wetterdienst: nicht verfügbar. Fallen alle Außensensoren aus, fehlen Außenwerte, und
+  die Tagesstrategie bleibt leer." · „Kein Wetterdienst gewählt. Die Tagesstrategie bleibt leer." Mirrored or dead
+  weather entities show up here instead of as unknown values later (found on DEV).
 - **Fenster** lists the windows added so far („Küche Fenster: zu"); without any it says why they help.
 - „Fenster hinzufügen (optional)" runs S8 → S8d → window preview; „Speichern" there returns to this preview.
 - „Anlegen" creates the hub entry with all room, region and window subentries in one step. The success dialog says:
@@ -582,6 +587,10 @@ bottom open means the left leaf is turned open; bottom closed means it is tilted
 ```
 
 The comfort range is not here. It lives on the device „Hausklima" as number entities (ADR-006).
+
+If the chosen weather service is unavailable or delivers no forecast, saving first shows a check step (menu, agreed
+2026-10-15) with the same status line as S4 and the options „Trotzdem speichern" and „Anpassen". A working service
+saves directly.
 
 ### S10 Rekonfigurieren: Hausplan
 

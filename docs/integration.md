@@ -762,6 +762,7 @@ Step 8 note: `binary_sensor.py` arrives in M2, because M1 has no binary sensor (
 | 14 | Window entities | `binary_sensor.py`, window and room-window descriptions in `sensor.py`, hub any-flags, cover enable rule | `test_entities.py` (window parts, I6, I7 cleanup) | suite green |
 | 15 | Window flow | `flows/window.py` (S8, S8a–c, S8d, preview, room creation), window subentry type | `tests/flows/test_window_flow.py` | scenarios 5–8 configurable through the flow |
 | 16 | Windows in the first setup | `config_flow.py`: `add_window` loop and the windows part of S4 | `test_config_flow.py` | suite green |
+| 16a | Weather status | S4 status line and the S9 check step (mockups S4, S9, agreed 2026-10-15): current values plus one test fetch of the forecast | `test_config_flow.py`, `test_options_flow.py` | mirrored, unavailable and missing weather each show their line |
 | 17 | M2 on DEV | fixes only | full suite | click review of the window flow and states with real contacts; merge |
 
 ### Milestone M3: repairs (branch `build/m3-repairs`)
