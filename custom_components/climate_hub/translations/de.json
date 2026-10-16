@@ -1430,7 +1430,7 @@
     "plan_no_side": "{direction}: keine Außenseite, Wetterdienst springt ein.",
     "plan_no_side_no_weather": "{direction}: keine Außenseite.",
     "plan_closing": "Quellen und Reihenfolge änderst du später pro Raum.",
-    "words_closed": "zu, geschlossen",
+    "words_closed": "zu, geschlossen, verriegelt, abgeschlossen",
     "words_ajar": "angelehnt",
     "words_tilted": "gekippt, kipp",
     "words_open": "offen, geöffnet",

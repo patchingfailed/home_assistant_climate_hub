@@ -1430,7 +1430,7 @@
     "plan_no_side": "{direction}: no outdoor side, the weather service steps in.",
     "plan_no_side_no_weather": "{direction}: no outdoor side.",
     "plan_closing": "You change sources and their order later per room.",
-    "words_closed": "closed",
+    "words_closed": "closed, locked",
     "words_ajar": "ajar",
     "words_tilted": "tilted, tilt",
     "words_open": "open",
