@@ -19,7 +19,7 @@ and folded where the last column says.
 | I1 | Engine | The eight-step data flow of logic §2 is a pure module `logic/engine.py`. The coordinator only reads Home Assistant, calls the engine, persists and publishes. | ADR-009 |
 | I2 | Configuration changes | Every subentry or options change reloads the hub entry. Changes in one burst (S10, repair fixes) give one reload. The comfort numbers do not reload, they re-evaluate. | ADR-009 |
 | I3 | Hub settings | All house-level settings live in `entry.options`; `entry.data` stays empty. | ADR-002 |
-| I4 | New sources (R14) | Per room and region, the Store remembers which pre-fillable entities were in the area when the object was last saved ("seen"). Only entities that appear afterwards (new or moved in) raise an issue. | R14 |
+| I4 | New sources (R14) | Per room and region, the Store remembers which sensor and climate entities were in the area when the object was last saved ("seen"). Only entities that appear afterwards (new or moved in) raise an issue. | R14 |
 | I5 | Area sync (R11) | Rooms and outdoor sides. A field is cleared only while it still points to the entity Climate Hub wrote; the previous value is not restored. | R11, S1 |
 | I6 | Cover entity (SH2) | Adding a cover later enables the window's „Rollladen" entity if the integration disabled it. Removing the cover leaves the entity as it is. | SH2 |
 | I7 | Window-dependent entities | Room entities that need windows and the hub's „Irgendwo …" sensors exist only with windows. Entities the configuration no longer produces are removed from the entity registry. | Mockups §6 |
@@ -664,8 +664,10 @@ value). Synced after each evaluation that produced a house result.
 ### 10.2 New sources (R14, I4)
 
 - **Seen set:** at setup, for each room and region whose `fingerprint` (hash of its subentry data) differs from the
-  Store, `seen` becomes every pre-fillable temperature candidate of its area right now. A saved form therefore counts
-  as reviewed, including sources the user removed on purpose.
+  Store, `seen` becomes every sensor and climate entity of its area right now (not only today's candidates). A saved
+  form therefore counts as reviewed, including sources the user removed on purpose. Recording the whole area keeps a
+  start-up race out: setup runs before some integrations write their states, and an entity whose device class only its
+  state carries (DEV's mirror, for example) would otherwise look new once the state arrives (found on DEV 2026-10-16).
 - An issue is raised for each entity from `prefill.new_sources(area, infos, temperature, scope, listed, dismissed)`
   that is not in `seen`. `dismissed` are this domain's `new_source_*` issues the user ignored (`dismissed_version`
   set); such issues are never deleted while the entity qualifies, so "Ignorieren" stays in force. "Pre-fillable"

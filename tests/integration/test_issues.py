@@ -281,6 +281,26 @@ async def test_new_entity_in_the_area_raises_one_issue(
     }
 
 
+async def test_entity_classified_only_after_setup_is_not_new(
+    hass: HomeAssistant, house: House, freezer: FrozenDateTimeFactory
+) -> None:
+    """At start-up a state may come after setup; only its state names the class."""
+    late = _add_sensor(hass, house, "late_bedroom", house.bedroom)
+    hass.states.async_remove(late)
+    er.async_get(hass).async_update_entity(late, original_device_class=None)
+    coordinator = await _start(hass, _entry(house))
+    assert late in coordinator.seen["r_bedroom"].entities
+    hass.states.async_set(
+        late,
+        "20.5",
+        {"device_class": "temperature", "unit_of_measurement": "°C"},
+    )
+    # Any registry change runs the sync; the entity now classifies as a source.
+    er.async_get(hass).async_update_entity(late, name="Spät")
+    await _settle(hass, freezer)
+    assert _all(hass, "new_source_") == {}
+
+
 async def test_entity_moved_into_the_area_raises_one_issue(
     hass: HomeAssistant, house: House, freezer: FrozenDateTimeFactory
 ) -> None:

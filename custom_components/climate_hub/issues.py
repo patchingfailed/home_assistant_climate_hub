@@ -14,7 +14,7 @@ from .const import DOMAIN, SUBENTRY_REGION, SUBENTRY_ROOM
 from .flows.preview import area_name, async_texts, entity_name
 from .logic import model as m
 from .logic.engine import EngineResult
-from .logic.prefill import Scope, new_sources, suggest_sources
+from .logic.prefill import OWN_PLATFORM, Scope, new_sources
 from .logic.sources import Metric, Resolution
 from .registry import entity_infos
 from .store import SeenEntry, fingerprint
@@ -28,6 +28,8 @@ WINDOWS_PREFIX = "windows_without_room_"
 
 _SCOPES = {SUBENTRY_ROOM: Scope.ROOM, SUBENTRY_REGION: Scope.REGION}
 _METRICS = (Metric.TEMPERATURE, Metric.HUMIDITY, Metric.PRESSURE)
+# Domains a temperature source can come from (prefill)
+_SEEN_DOMAINS = frozenset({"sensor", "climate"})
 
 
 def _domain_issues(hass: HomeAssistant, prefix: str) -> set[str]:
@@ -73,22 +75,31 @@ def async_update_seen(
     entry: ClimateHubConfigEntry,
     coordinator: ClimateHubCoordinator,
 ) -> None:
-    """Record the pre-fillable entities of rooms and regions whose data changed (I4)."""
+    """Record what is in the area of rooms and regions whose data changed (I4).
+
+    Every sensor and climate entity of the area counts, not only today's candidates:
+    during a start-up, entities whose device class only their state carries are not
+    classified yet, and must not look new once their state arrives.
+    """
     infos = None
     changed = False
     for subentry in entry.subentries.values():
-        scope = _SCOPES.get(subentry.subentry_type)
-        if scope is None:
+        if subentry.subentry_type not in _SCOPES:
             continue
         fp = fingerprint(subentry.data)
         seen = coordinator.seen.get(subentry.subentry_id)
         if seen is not None and seen.fingerprint == fp:
             continue
         infos = infos if infos is not None else entity_infos(hass)
-        sources = suggest_sources(
-            subentry.data[m.CONF_AREA], infos, Metric.TEMPERATURE, scope
-        ).sources
-        coordinator.seen[subentry.subentry_id] = SeenEntry(fp, tuple(sources))
+        area_id = subentry.data[m.CONF_AREA]
+        present = sorted(
+            info.entity_id
+            for info in infos
+            if info.area_id == area_id
+            and info.domain in _SEEN_DOMAINS
+            and info.platform != OWN_PLATFORM
+        )
+        coordinator.seen[subentry.subentry_id] = SeenEntry(fp, tuple(present))
         changed = True
     if changed:
         coordinator.store.schedule_save(coordinator.store_data)
