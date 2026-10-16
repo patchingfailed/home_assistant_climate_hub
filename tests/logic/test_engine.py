@@ -361,7 +361,7 @@ def test_room_without_side_has_no_outdoor_values():
     assert r1.outdoor.temperature.reason is OutdoorReason.NO_SIDE
     assert r1.temperature_difference is None
     assert r1.relation is None
-    assert r1.recommendation.reason is Reason.NO_DATA
+    assert r1.recommendation.reason is Reason.NO_SIDE
     assert result.house.indoor.value == 21.0
 
 

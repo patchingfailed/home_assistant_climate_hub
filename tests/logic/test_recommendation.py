@@ -49,6 +49,7 @@ def room(
     c_min: float = 20.0,
     c_max: float = 24.0,
     has_windows: bool = True,
+    has_side: bool = True,
     ventilating: bool | None = False,
     ventilating_since: datetime | None = None,
     trend: Trend | None = Trend.STEADY,
@@ -78,6 +79,7 @@ def room(
         trend=trend,
         strategy=strategy,
         has_windows=has_windows,
+        has_side=has_side,
         ventilating=ventilating if has_windows else None,
         ventilating_since=ventilating_since,
         humidity_threshold=60.0,
@@ -328,6 +330,17 @@ def test_case_17_no_data_keeps_goal_state(prev):
     assert (result.recommendation, result.reason) == (R.NONE, Reason.NO_DATA)
     assert result.wanted_open is None
     assert state == (prev or GoalState())
+
+
+@pytest.mark.parametrize("prev", [None, GOAL_COOL])
+def test_room_without_side_has_its_own_reason(prev):
+    """Structural, so it wins over missing values and the comfort range."""
+    for t_out in (19.0, None):
+        inp, _ = room(t_in=22.0, t_out=t_out, rh_out=70, has_side=False)
+        result, state = recommend(inp, prev, at(9, 0))
+        assert (result.recommendation, result.reason) == (R.NONE, Reason.NO_SIDE)
+        assert result.wanted_open is None
+        assert state == (prev or GoalState())
 
 
 def test_case_19_comfort_range_invalid():

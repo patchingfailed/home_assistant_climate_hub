@@ -352,6 +352,7 @@
               "in_range": "within the comfort range",
               "no_benefit": "no benefit",
               "no_data": "no data",
+              "no_side": "no outdoor side",
               "comfort_range_invalid": "comfort range invalid"
             }
           }

@@ -38,6 +38,7 @@ class Reason(StrEnum):
     IN_RANGE = "in_range"
     NO_BENEFIT = "no_benefit"
     NO_DATA = "no_data"
+    NO_SIDE = "no_side"
     COMFORT_RANGE_INVALID = "comfort_range_invalid"
 
 
@@ -76,6 +77,7 @@ class RoomInput:
     trend: Trend | None
     strategy: Strategy | None
     has_windows: bool
+    has_side: bool
     ventilating: bool | None
     ventilating_since: datetime | None
     humidity_threshold: float
@@ -206,6 +208,9 @@ def recommend(
 ) -> tuple[RecommendationResult, GoalState]:
     """Recommendation for one room and the new goal state (steps 1 to 6)."""
     state = prev or GoalState()
+    if not inp.has_side:
+        none = RecommendationResult(Recommendation.NONE, Reason.NO_SIDE, None, None)
+        return none, state
     if inp.t_in is None or inp.t_out is None:
         none = RecommendationResult(Recommendation.NONE, Reason.NO_DATA, None, None)
         return none, state

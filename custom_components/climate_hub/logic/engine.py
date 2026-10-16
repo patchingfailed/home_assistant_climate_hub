@@ -424,6 +424,7 @@ def _evaluate_room(
             trend=trend,
             strategy=strategy,
             has_windows=aggregated is not None,
+            has_side=room.side is not None,
             ventilating=aggregated.ventilating if aggregated else None,
             ventilating_since=aggregated.open_since if aggregated else None,
             humidity_threshold=settings.humidity_threshold,
