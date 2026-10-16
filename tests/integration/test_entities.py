@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigSubentryData
+from homeassistant.const import STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, State
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
@@ -600,6 +601,17 @@ async def test_window_entities_and_states(
     await _publish(hass, freezer, entry)
     assert _state(hass, "sensor.kuche_fenster_zustand").state == "closed"
     assert _state(hass, "sensor.wohnzimmer_fenster_zustand").state == "closed"
+
+
+async def test_window_without_a_usable_contact_is_unknown(
+    hass: HomeAssistant, house: House, freezer: FrozenDateTimeFactory
+) -> None:
+    entry = await _setup_windows(hass, house)
+    set_value(hass, house.kitchen_contact, "unavailable")
+    await hass.async_block_till_done()
+    await _publish(hass, freezer, entry)
+
+    assert _state(hass, "sensor.kuche_fenster_zustand").state == STATE_UNKNOWN
 
 
 async def test_pass_through_window(

@@ -279,6 +279,8 @@ OTHER_CASES = [
     (13, S.NEUTRAL, 20.0, False, 65, 24, 70, None, R.KEEP_CLOSED, Reason.IN_RANGE),
     (14, S.NEUTRAL, 19.9, False, 65, 24, 70, None, R.KEEP_CLOSED, Reason.OUTSIDE_HUMID),
     (18, None, 24.6, False, 50, 19, 70, None, R.OPEN, Reason.COOL_ROOM),
+    # A2: heat-up day, room below the comfort range, outside warmer: warming wanted
+    ("A2", S.PREVENT_HEAT_UP, 19.0, False, 50, 23, 40, None, R.OPEN, Reason.WARM_ROOM),
 ]
 
 

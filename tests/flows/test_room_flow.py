@@ -8,6 +8,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.climate_hub.const import DOMAIN, SUBENTRY_ROOM
+from custom_components.climate_hub.flows.common import sources_selector
 
 from ..house import House
 from .conftest import field, options, suggested
@@ -77,6 +78,20 @@ async def test_add_starts_with_the_area(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
     assert [str(k) for k in result["data_schema"].schema] == ["area"]
+
+
+async def test_sources_are_rankable_in_the_form(
+    hass: HomeAssistant, house: House, hub: MockConfigEntry
+) -> None:
+    """Ranking in the UI (U5) needs `reorder` on every sources selector."""
+    result = await _init(hass, hub)
+    result = await _configure(hass, result, {"area": house.kitchen})
+    assert result["step_id"] == "room_form"
+    for name in ("temperature", "humidity_pressure.humidity"):
+        config = field(result, name)[1].config
+        assert config["multiple"] is True, name
+        assert config["reorder"] is True, name
+    assert sources_selector([]).config["reorder"] is True
 
 
 async def test_add_kitchen_suggests_and_previews(
