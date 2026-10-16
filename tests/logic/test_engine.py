@@ -866,6 +866,25 @@ def test_open_since_starts_from_the_latest_contact_change_after_a_restart():
     assert found.state.open_since == at()
 
 
+def test_restart_hint_ignores_contacts_that_report_closed():
+    model = house(
+        windows=[
+            window(
+                "w",
+                None,
+                type="double",
+                leaf_left="binary_sensor.l",
+                leaf_right="binary_sensor.r",
+            )
+        ]
+    )
+    contacts = {
+        "binary_sensor.l": Contact("on", at(-60)),
+        "binary_sensor.r": Contact("off", at(-30)),
+    }
+    assert window_result(model, contacts).state.open_since == at(-60)
+
+
 def test_the_windows_min_level_reaches_debounce_and_open_since():
     model = house(
         windows=[window("w", None, handle="binary_sensor.handle", min_level="ajar")]

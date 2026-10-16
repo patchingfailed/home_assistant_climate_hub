@@ -70,6 +70,7 @@ from .strategy import (
 )
 from .window import (
     Debounced,
+    Level,
     RoomWindows,
     WindowLevel,
     WindowState,
@@ -331,7 +332,14 @@ def _evaluate_window(
     debounced = debounce(
         level.level, prev.debounced if prev else None, now, window.min_level
     )
-    changed = [c.last_changed for c in contacts.values() if c.last_changed is not None]
+    # after a restart: the latest change among the contacts that report non-closed now
+    changed = [
+        contact.last_changed
+        for entity_id, contact in contacts.items()
+        if contact.last_changed is not None
+        and (known := levels[entity_id]) is not None
+        and known > Level.CLOSED
+    ]
     since = open_since(
         debounced,
         window.min_level,
