@@ -43,10 +43,6 @@ async def test_effective_areas(hass: HomeAssistant, house: House) -> None:
     assert infos[house.living_temp].area_id == house.living_room  # via device
     assert infos[house.bath_window_text].area_id == house.bathroom  # own area
     assert infos[house.template_temp].area_id is None
-    assert registry.effective_area_id(hass, house.living_temp) == house.living_room
-    assert registry.effective_area_id(hass, house.bath_window_text) == house.bathroom
-    assert registry.effective_area_id(hass, house.template_temp) is None
-    assert registry.effective_area_id(hass, "sensor.unknown") is None
 
 
 async def test_entity_fields(hass: HomeAssistant, house: House) -> None:

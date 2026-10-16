@@ -318,11 +318,10 @@ def new_sources(
     metric: Metric,
     scope: Scope,
     listed: Collection[str],
-    dismissed: Collection[str],
 ) -> list[str]:
-    """Pre-fillable entities of the area not listed and not dismissed (R14)."""
+    """Pre-fillable entities of the area not listed yet (R14)."""
     suggestion = suggest_sources(area_id, entities, metric, scope)
-    return [i for i in suggestion.sources if i not in listed and i not in dismissed]
+    return [i for i in suggestion.sources if i not in listed]
 
 
 def propose_rooms(

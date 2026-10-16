@@ -26,12 +26,6 @@ _DEVICE_CLASS_METRICS = {
 }
 
 
-def effective_area_id(hass: HomeAssistant, entity_id: str) -> str | None:
-    """The entity's own area, else its device's (None for state-only entities)."""
-    entry = er.async_get(hass).async_get(entity_id)
-    return None if entry is None else er.async_get_effective_area_id(hass, entry)
-
-
 def _value(
     hass: HomeAssistant, entity_id: str, domain: str, device_class: str | None
 ) -> float | None:

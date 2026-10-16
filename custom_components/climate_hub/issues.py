@@ -166,7 +166,6 @@ def async_sync_new_sources(
             Metric.TEMPERATURE,
             scope,
             listed=subentry.data.get(m.CONF_TEMPERATURE, ()),
-            dismissed=(),
         ):
             if entity_id in known:
                 continue

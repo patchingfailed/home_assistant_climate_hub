@@ -307,12 +307,14 @@ def test_climate_devices():
 
 def test_new_sources():
     base = ["sensor.am_t", "sensor.cs_t", "sensor.probe_t", "climate.thermostat"]
-    assert new_sources(KITCHEN, KITCHEN_SET, T, Scope.ROOM, [], []) == base
-    assert new_sources(
-        KITCHEN, KITCHEN_SET, T, Scope.ROOM, ["sensor.am_t"], ["sensor.probe_t"]
-    ) == ["sensor.cs_t", "climate.thermostat"]
+    assert new_sources(KITCHEN, KITCHEN_SET, T, Scope.ROOM, []) == base
+    assert new_sources(KITCHEN, KITCHEN_SET, T, Scope.ROOM, ["sensor.am_t"]) == [
+        "sensor.cs_t",
+        "sensor.probe_t",
+        "climate.thermostat",
+    ]
     # region scope: no tier 3, the fridge value is plausible outdoors
-    region = new_sources(KITCHEN, KITCHEN_SET, T, Scope.REGION, [], [])
+    region = new_sources(KITCHEN, KITCHEN_SET, T, Scope.REGION, [])
     assert "climate.thermostat" not in region
     assert "sensor.fridge_t" in region
 
