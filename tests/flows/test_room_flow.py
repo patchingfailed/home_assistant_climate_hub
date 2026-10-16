@@ -55,6 +55,7 @@ async def _add_kitchen_preview(
     result = await _init(hass, hub)
     result = await _configure(hass, result, {"area": house.kitchen})
     assert result["step_id"] == "room_form"
+    assert result["description_placeholders"]["area"] == "Küche"
     return await _configure(
         hass,
         result,
@@ -274,6 +275,7 @@ async def test_reconfigure_opens_the_form_and_updates(
     assert suggested(result, "side") == "n"
     assert suggested(result, "climate.climate_devices") == [house.living_thermostat]
     assert result["description_placeholders"]["suggested"] == ""
+    assert result["description_placeholders"]["area"] == "Wohnzimmer"
     assert field(result, "climate")[1].options["collapsed"] is True
 
     result = await _configure(

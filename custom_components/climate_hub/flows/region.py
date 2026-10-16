@@ -79,6 +79,19 @@ class RegionSubentryFlow(SourceFlow):
     def _markdown(self, texts: Texts, run: PreviewRun) -> str:
         return region_markdown(self.hass, texts, run, self._data)
 
+    async def _async_show_form(
+        self,
+        step_id: str,
+        errors: dict[str, str] | None = None,
+        placeholders: Mapping[str, str] | None = None,
+    ) -> SubentryFlowResult:
+        """The form title names the direction."""
+        texts = await async_texts(self.hass)
+        direction = texts.direction(self._data[m.CONF_DIRECTION])
+        return await super()._async_show_form(
+            step_id, errors, {"direction": direction, **(placeholders or {})}
+        )
+
     # Steps
 
     async def async_step_user(

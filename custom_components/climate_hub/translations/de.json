@@ -915,7 +915,7 @@
           }
         },
         "room_form": {
-          "title": "Raum",
+          "title": "Raum: {area}",
           "data": {
             "area": "Bereich",
             "side": "Hauptseite",
@@ -954,7 +954,7 @@
           "description": "{suggested}{sides}"
         },
         "room_form_changed": {
-          "title": "Raum",
+          "title": "Raum: {area}",
           "data": {
             "area": "Bereich",
             "side": "Hauptseite",
@@ -1029,7 +1029,7 @@
           }
         },
         "region_form": {
-          "title": "Außenseite",
+          "title": "Außenseite: {direction}",
           "data": {
             "direction": "Himmelsrichtung",
             "area": "Außenbereich",
@@ -1059,7 +1059,7 @@
           }
         },
         "region_form_changed": {
-          "title": "Außenseite",
+          "title": "Außenseite: {direction}",
           "data": {
             "direction": "Himmelsrichtung",
             "area": "Außenbereich",
@@ -1297,7 +1297,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Optionen",
+        "title": "Climate Hub – Optionen",
         "data": {
           "weather": "Wetterdienst",
           "area_sync": "Bereiche aktuell halten"

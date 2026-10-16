@@ -56,6 +56,7 @@ async def _add_yard_preview(
     result = await _init(hass, hub)
     result = await _configure(hass, result, {"direction": "e", "area": house.yard})
     assert result["step_id"] == "region_form"
+    assert result["description_placeholders"]["direction"] == "Osten"
     return await _configure(hass, result, _form("e", house.yard, [house.yard_temp]))
 
 
@@ -169,6 +170,7 @@ async def test_area_change_reopens_with_new_suggestions(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "region_form_changed"
     assert result["description_placeholders"]["area"] == "Bad"
+    assert result["description_placeholders"]["direction"] == "Osten"
     assert suggested(result, "area") == house.bathroom
     assert suggested(result, "temperature") == [house.bath_temp]
     result = await _configure(
@@ -243,6 +245,7 @@ async def test_reconfigure_updates_data_title_and_unique_id(
     result = await _init(hass, hub, "reconfigure", subentry_id="region_north")
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "region_form"
+    assert result["description_placeholders"]["direction"] == "Norden"
     assert suggested(result, "direction") == "n"
     assert suggested(result, "area") == house.street
     assert suggested(result, "temperature") == [house.street_temp]
