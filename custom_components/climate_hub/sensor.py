@@ -92,6 +92,20 @@ def _resolution_attrs(resolution: Resolution) -> dict[str, Any]:
     )
 
 
+_STAGE_ORDER = (Stage.PRIMARY, Stage.FALLBACK, Stage.NONE)
+
+
+def _derived_attrs(room: RoomResult) -> dict[str, Any]:
+    """Derived room value: the weaker input's attributes (humidity on a tie), no offset.
+
+    An input's offset is not the derived value's offset.
+    """
+    weaker = max(
+        (room.humidity, room.temperature), key=lambda r: _STAGE_ORDER.index(r.stage)
+    )
+    return {k: v for k, v in _resolution_attrs(weaker).items() if k != "offset"}
+
+
 def _outdoor_attrs(
     value: OutdoorValue, source: Resolution | None = None
 ) -> dict[str, Any]:
@@ -376,6 +390,7 @@ SENSORS: tuple[ClimateHubSensorDescription, ...] = (
         2,
         1,
         lambda r: r.absolute_humidity,
+        attrs_fn=_derived_attrs,
         exists_fn=_has(Metric.HUMIDITY),
     ),
     _measurement(
@@ -386,6 +401,7 @@ SENSORS: tuple[ClimateHubSensorDescription, ...] = (
         2,
         1,
         lambda r: r.dew_point,
+        attrs_fn=_derived_attrs,
         exists_fn=_has(Metric.HUMIDITY),
     ),
     _room_outdoor(

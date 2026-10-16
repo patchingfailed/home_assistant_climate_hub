@@ -214,6 +214,28 @@ async def test_attributes_per_stage(hass: HomeAssistant, house: House) -> None:
     assert "reason" not in outside.attributes
 
 
+async def test_derived_room_sensors_carry_the_weaker_input(
+    hass: HomeAssistant, house: House
+) -> None:
+    entry = await _setup(hass, house)
+    for key in ("absolute_humidity", "dew_point"):
+        entity_id = _entity_id(hass, "sensor", f"{LIVING}_{key}")
+        attributes = _state(hass, entity_id).attributes
+        assert attributes["source"] == house.living_hum, key
+        assert attributes["stage"] == "primary", key
+        assert "reason" not in attributes, key
+
+    set_value(hass, house.living_temp, "unavailable")
+    await _refresh(hass, entry)
+    for key in ("absolute_humidity", "dew_point"):
+        entity_id = _entity_id(hass, "sensor", f"{LIVING}_{key}")
+        attributes = _state(hass, entity_id).attributes
+        assert attributes["source"] == house.living_air_temp, key
+        assert attributes["stage"] == "fallback", key
+        assert attributes["reason"] == "unavailable", key
+        assert "offset" not in attributes, key
+
+
 def test_unrecorded_attributes() -> None:
     assert {"offset", "per_region"} <= ClimateHubEntity._unrecorded_attributes
 
