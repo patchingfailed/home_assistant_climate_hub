@@ -1,13 +1,13 @@
-# Integration specification and build plan
+# Integration specification
 
-Status: **approved 2026-10-14**. Covers the Home Assistant layer around the pure logic of `docs/logic.md`:
+Status: **approved 2026-10-14**, **built** (milestones M1 to M3, 2026-10-16). Covers the Home Assistant layer around the pure logic of `docs/logic.md`:
 manifest, hub entry with subentries, engine, snapshot, coordinator, persistence, devices and entities, flows,
-repairs, area sync, translations, diagnostics, tests, and the build order (§15). Requirement IDs refer to
+repairs, area sync, translations, diagnostics, tests, and the build order that was followed (§15). Requirement IDs refer to
 `docs/requirements.md`, ADRs to `docs/architecture.md`, screens to `docs/ui_mockups.md`, logic sections to
 `docs/logic.md`. Targets Home Assistant 2026.10 only (ADR-008).
 
-Interfaces below are sketches: names may be refined during the build, semantics may not. Keys marked **frozen** (data
-keys, unique IDs, Store keys) cannot change after the first release without a migration (rule 1).
+Names and signatures follow the code where they differ from the sketches. Keys marked **frozen** (data keys, unique
+IDs, Store keys) cannot change after the first release without a migration (rule 1).
 
 ## 0. Decisions
 
@@ -23,13 +23,13 @@ and folded where the last column says.
 | I5 | Area sync (R11) | Rooms and outdoor sides. A field is cleared only while it still points to the entity Climate Hub wrote; the previous value is not restored. | R11, S1 |
 | I6 | Cover entity (SH2) | Adding a cover later enables the window's „Rollladen" entity if the integration disabled it. Removing the cover leaves the entity as it is. | SH2 |
 | I7 | Window-dependent entities | Room entities that need windows and the hub's „Irgendwo …" sensors exist only with windows. Entities the configuration no longer produces are removed from the entity registry. | Mockups §6 |
-| I8 | Comfort range | A value that would make minimum ≥ maximum is rejected with a translated error; the old value stays. | H2 |
+| I8 | Comfort range | A value that would make minimum ≥ maximum is rejected with a translated error; the old value stays. A threshold of 0 or less is rejected the same way. | H2 |
 | I9 | Milestones | Three milestones (§15), one short-lived branch each, merged after green tests and Felix's DEV click review. | §15 |
 | I10 | Sun | Sun azimuth and elevation come from `sun.sun`, the standard entity. | §5 |
 | I11 | Forecast | Fetched at start, when the weather entity changes (at most every 15 min), and hourly as a backstop. Providers usually update hourly. | §5 |
 | I12 | Source-dependent entities | I7 extended by the same rule (no empty shells, rule 4): a room's humidity, absolute humidity, dew point and humidity difference need a humidity source, its pressure a pressure source (own list or followed devices). Room outdoor entities and the hub's outdoor sensor need a region or a weather entity; the strategy needs a weather entity. | §8.3, mockups §6 |
 | I13 | Comfort values | Comfort minimum, maximum and threshold are persisted in the Store (not via `RestoreNumber`), so the first evaluation after a start already uses them. | §7 |
-| I14 | First evaluation | During Home Assistant start-up the first evaluation waits until Home Assistant has started; entities are unavailable until then (about a minute). Avoids fake fallbacks, outage timers and recommendation flips while source integrations still load. A reload while running evaluates at once. | §6 |
+| I14 | First evaluation | During Home Assistant start-up the first evaluation waits until Home Assistant has started; entities are unavailable until then (about a minute). Avoids fake fallbacks, outage timers and recommendation flips while source integrations still load. The coordinator is created without an update interval and sets the 60 s tick in its first run after the start, so no tick can run earlier. A reload while running evaluates at once. | §6.1 |
 | I15 | Device area | A device follows its subentry's area only when that area changes. A device the user moved by hand stays where it is. | §8.1 |
 | I16 | Word lists and preview language | Outside words (S2) and state words (S8d) are comma-separated strings in the `common` section of the translations (the only free section hassfest accepts). Previews are assembled in the instance language, because a flow does not know the user's language. | §12 |
 | I17 | S10 preview | Changing or adding an outdoor area in the house plan (S10) suggests sources for it. P1 needs them visible, so S10 gets the regions part of the S4 preview before saving. This is a UI addition (rule 8), approved without a mockup round. | §9.6, mockups S10 |
@@ -64,18 +64,21 @@ custom_components/climate_hub/
   repairs.py         fix flows
   area_sync.py       R11
   diagnostics.py
-  config_flow.py     hub flow S1–S4, reconfigure S10, options S9, subentry type registration
+  config_flow.py     hub flow S1–S4, reconfigure S10 (house plan), subentry type registration
   flows/common.py    choice lists, schema builders, validation helpers
+  flows/hub.py       hub-level parts: first-setup scan, house plan changes, new subentries, default options
+  flows/options.py   S9 options flow with the weather check
   flows/preview.py   markdown previews from one-shot engine results
   flows/room.py, flows/region.py, flows/window.py   subentry flows S6, S7, S8 (window steps as a mixin)
   translations/en.json, translations/de.json
-  icons.json
-  logic/model.py     pure config types and parsers (new)
-  logic/engine.py    pure evaluation (new)
-  logic/codec.py     pure JSON codec of the engine state (new)
+  brand/             icon and logo images (HACS and Home Assistant brand check)
+  logic/model.py     pure config types and parsers
+  logic/engine.py    pure evaluation
+  logic/codec.py     pure JSON codec of the engine state
 ```
 
-Flow modules never import each other except `flows/common.py`, `flows/preview.py` and the window mixin.
+No `icons.json`: no entity defines an icon. Flow modules never import each other except `flows/common.py`,
+`flows/hub.py`, `flows/preview.py` and the window mixin; `repairs.py` also uses `flows/hub.py`.
 
 ## 2. Manifest
 
@@ -83,20 +86,21 @@ Flow modules never import each other except `flows/common.py`, `flows/preview.py
 {
   "domain": "climate_hub",
   "name": "Climate Hub",
-  "codeowners": [],
+  "after_dependencies": ["recorder", "sun", "weather"],
+  "codeowners": ["@<github user>"],
   "config_flow": true,
   "dependencies": ["repairs"],
-  "after_dependencies": ["recorder", "sun", "weather"],
-  "documentation": "https://github.com/<owner>/home_assistant_climate_hub",
+  "documentation": "https://github.com/<github user>/home_assistant_climate_hub",
   "integration_type": "service",
   "iot_class": "calculated",
+  "issue_tracker": "https://github.com/<github user>/home_assistant_climate_hub/issues",
   "single_config_entry": true,
   "version": "0.1.0"
 }
 ```
 
-`integration_type` stays `service` as on the DEV spike. `config_flow` becomes `true` in the step that adds the config
-flow (§15, step 12). `hacs.json`, brand images and CI belong to the CI task (STATUS Next 3), not to this plan.
+Keys after `domain` and `name` are sorted, as hassfest requires. `integration_type` is `service`. `hacs.json`, the
+brand images and the CI workflows (`ci.yml`, `validate.yml`) exist and are not part of this spec.
 `ConfigFlow.VERSION = 1`, `MINOR_VERSION = 1`.
 
 ## 3. Configuration model
@@ -188,12 +192,13 @@ class RegionModel:
 
 @dataclass(frozen=True, slots=True)
 class WindowModel:
-    id: str; area_id: str
+    id: str; name: str; area_id: str
     room_id: str | None                      # None: no room for this area (W11)
     config: WindowConfig                     # FrameConfig or PassThroughConfig (logic §8)
     kinds: Mapping[str, ContactKind]         # binary_sensor → BINARY, else TEXT
     mappings: Mapping[str, Mapping[Level, frozenset[str]]]
     cover: str | None
+    facing: Direction | None                 # the window's own facing, None: like the room
     direction: Direction | None              # facing resolved: own, else the room's side
     facing_degrees: float | None
     min_level: Level
@@ -275,14 +280,15 @@ Every state has a start-up value (`EngineState.empty()`). Objects missing from t
 
 ### 4.3 Steps
 
-The order follows logic §2 and the contract in logic §14.
+The order follows logic §2 and the contract in logic §14. In the code, the strategy and the windows are evaluated before
+the rooms, because the room's recommendation needs both; the results are the same as in the stated order.
 
 1. **Regions.** Per region and metric: `sources.resolve` with the region's `max_age` and bounds `(0, 100)` for
    humidity, else `None` → `RegionOwn`.
 2. **Weather offsets.** `learn_weather_offsets(regions_own, snap.weather, state.hub.weather_offsets, now)`, before any
    `resolve_direction`.
-3. **Directions.** `resolve_direction` for each of N, E, S, W and for `None` (rooms without a side). Region results use
-   their own direction.
+3. **Directions.** `resolve_direction` for each of N, E, S, W and for `None` (rooms without a side: all values `None` with
+   reason `no_side`). Region results use their own direction.
 4. **House outdoor.** `house_outdoor(...)`.
 5. **Rooms.** Per room: resolve the three metrics; absolute humidity and dew point via `psychro`; outdoor values of
    the room's side; differences outside − inside; `comfort_position`, `outside_relation`, `outside_dryness`, `trend`.
@@ -291,7 +297,8 @@ The order follows logic §2 and the contract in logic §14.
 7. **Windows.** Per window: `contact_level` per contact → `window_level` → `debounce(min_level)` → `open_since(min_level,
    startup_hint)`. The start-up hint is the latest `last_changed` of the window's contacts. Then `room_windows` per room.
 8. **Recommendation.** Per room: `recommend`, `warnings` and `open_while_conditioning` (only with windows and devices).
-   `has_windows` means at least one window; `ventilating` is `None` without windows.
+   `has_windows` means at least one window; `has_side` means the room has a main side (a room without one gets `none` /
+   `no_side`, not `no_data`); `ventilating` is `None` without windows.
 9. **Cover.** Per window: `cover(...)` with the window's direction (`facing_azimuth`), the outdoor temperature of that
    direction, and its room's values. Without a room: `none` / `no_room`. Without a direction and without exact degrees:
    `none` / `no_data`.
@@ -379,13 +386,13 @@ service (hourly, daily-only, failing).
 
 ## 6. Coordinator (`coordinator.py`)
 
-`ClimateHubCoordinator(DataUpdateCoordinator[EngineResult])` with `config_entry=entry` and
-`update_interval=60 s` (N1). Stored in `entry.runtime_data` (`type ClimateHubConfigEntry = ConfigEntry[ClimateHubData]`
+`ClimateHubCoordinator(DataUpdateCoordinator[EngineResult])` with `config_entry=entry`. It is created with
+`update_interval=None` and sets the 60 s tick (N1) in its first run (§6.1). Stored in `entry.runtime_data` (`type ClimateHubConfigEntry = ConfigEntry[ClimateHubData]`
 with coordinator, model and store). Adapter timings live in `const.py`:
 
 | Constant | Value | Use |
 |---|---|---|
-| `TICK` | 60 s | `update_interval`: freshness, trend samples, timers |
+| `TICK` | 60 s | `update_interval`, set in the first run: freshness, trend samples, timers |
 | `REFRESH_COOLDOWN` | 2 s | `Debouncer(immediate=True)` for state-change refreshes |
 | `CONTACT_RECHECK` | `CONTACT_DEBOUNCE` + 0.5 s | extra refresh after a contact change, so the debounced level publishes |
 | `FORECAST_MIN_GAP` / `FORECAST_BACKSTOP` | 15 min / 60 min | I11 |
@@ -396,9 +403,12 @@ with coordinator, model and store). Adapter timings live in `const.py`:
 ### 6.1 Lifecycle
 
 - `async_setup_entry`: load the Store, build the model, create devices (§8.1), create the coordinator, forward the
-  platforms, remove stale entities (§8.4), register the update listener. The first refresh runs when Home Assistant has
-  started (`async_at_started`, I14); until then entities are unavailable. Area sync (§11) runs after the first
-  successful refresh.
+  platforms, remove stale entities (§8.4), register the update listener. The first run happens when Home Assistant has
+  started (`async_at_started`, I14): it fetches the forecast, sets `update_interval` to `TICK`, and refreshes. Until
+  then entities are unavailable and no tick runs, because the interval is only scheduled once it is set. Area sync
+  (§11) runs after the first successful refresh.
+- The coordinator registers a no-op listener, because the tick runs only while someone listens. Tick, learning and
+  timers therefore keep running when every entity is disabled.
 - Update listener (I2): on the first call it schedules one reload after `RELOAD_DELAY`; further calls before it fires
   are absorbed. Subentry flows use `async_create_entry` / `async_update_and_abort`, never the reload variants
   (`ha-integration-dev` pitfall). The options flow is a plain `OptionsFlow`.
@@ -408,7 +418,7 @@ with coordinator, model and store). Adapter timings live in `const.py`:
 ### 6.2 Evaluation
 
 `_async_update_data`: `now = dt_util.now()`; build the snapshot; `engine.evaluate(...)`; log new failures once per
-object (warning with the object title) and recoveries (info); keep the new state; `store.async_delay_save`; sync
+object (warning with the object ID) and recoveries (info); keep the new state; `store.async_delay_save`; sync
 outage issues (§10.1); schedule `CONTACT_RECHECK` if any window's raw level differs from its published level. Raise
 `UpdateFailed` only if every object failed.
 
@@ -418,7 +428,8 @@ outage issues (§10.1); schedule `CONTACT_RECHECK` if any window's raw level dif
   followed ones), climate devices, contacts, covers, the weather entity and `sun.sun`. A change requests a debounced
   refresh. A weather change also refetches the forecast if the last fetch is older than `FORECAST_MIN_GAP`.
 - **Forecast backstop:** `async_track_time_interval` every `FORECAST_BACKSTOP`, plus one fetch before the first
-  evaluation.
+  evaluation. A failed fetch (`None`) keeps the previous forecast; the strategy only reads future points, so a short
+  outage of the weather service does not flip it.
 - **Comfort numbers:** `coordinator.async_set_comfort(...)` validates (I8), saves the Store at once and requests a
   refresh.
 
@@ -450,8 +461,8 @@ One `Store` per entry: key `climate_hub.<entry_id>`, version 1, minor version 1 
 
 - `logic/codec.py` (pure) turns `EngineState` into JSON and back: datetimes as ISO 8601 with offset, timedeltas as
   seconds, `StrEnum` by value, `Level` by lower-case name, tuple keys of `WeatherOffsets` as `"n/temperature"`.
-- Loading drops objects whose subentry no longer exists and offsets of entities no longer listed (logic §4 rule 7 does
-  the same at runtime). An object that fails to decode starts fresh (debug log), so one bad record never blocks the
+- Loading drops objects whose subentry no longer exists. Offsets of entities no longer listed are dropped at runtime
+  (logic §4 rule 7). An object that fails to decode starts fresh (debug log), so one bad record never blocks the
   others (N2).
 - Saving: `async_delay_save` after each evaluation; the Store's own final write covers shutdown; unload saves at once.
   Comfort values save at once (I13).
@@ -498,8 +509,8 @@ as `closed` / `ajar` / `tilted` / `open`); the UI translates them (E4).
 | `temperature` | sensor | TEMPERATURE °C, measurement, 1 | `source`, `stage`, `reason`, `offset` | always |
 | `humidity` | sensor | HUMIDITY %, measurement, 0 | same | humidity source |
 | `pressure` | sensor | ATMOSPHERIC_PRESSURE hPa, measurement, 0 | same | pressure source |
-| `absolute_humidity` | sensor | ABSOLUTE_HUMIDITY g/m³, measurement, 1 | – | humidity source |
-| `dew_point` | sensor | TEMPERATURE °C, measurement, 1 | – | humidity source |
+| `absolute_humidity` | sensor | ABSOLUTE_HUMIDITY g/m³, measurement, 1 | `source`, `stage`, `reason` of the weaker input (E6) | humidity source |
+| `dew_point` | sensor | TEMPERATURE °C, measurement, 1 | same | humidity source |
 | `outside_temperature` | sensor | TEMPERATURE °C, measurement, 1 | `stage`, `regions`, `reason`, `offset` | region or weather |
 | `outside_humidity` | sensor | HUMIDITY %, measurement, 0 | same | region or weather |
 | `temperature_difference` | sensor | TEMPERATURE_DELTA °C, measurement, 1 | – | region or weather |
@@ -538,8 +549,10 @@ as `closed` / `ajar` / `tilted` / `open`); the UI translates them (E4).
 | `any_open_while_conditioning` | binary_sensor | – | – | a room with windows and climate devices |
 | `any_cover_to_close` | binary_sensor | – | `windows`: list of `{entity_id, reason}` (the windows' `cover` sensors) | windows |
 
-Attribute rules (E6): `reason` only when not `primary`, `offset` only on a fallback or weather stage. `offset` and
-`per_region` are `_unrecorded_attributes`; the full candidate list lives in diagnostics, never in attributes.
+Attribute rules (E6): `reason` only when not `primary`, `offset` only on a fallback or weather stage. The room's derived
+absolute humidity and dew point take `source`, `stage` and `reason` from the weaker of their two inputs (temperature or
+humidity; stage order primary < fallback < none, a tie goes to humidity) and carry no `offset`, because the offsets
+belong to the inputs. `offset` and `per_region` are `_unrecorded_attributes`; the full candidate list lives in diagnostics, never in attributes.
 Attribute values `stage`, `reason`, `open_leaves` are translated through `state_attributes`.
 
 ### 8.4 Entity lifecycle
@@ -552,7 +565,8 @@ Attribute values `stage`, `reason`, `open_leaves` are translated through `state_
   are removed (I7). History of a returning entity continues because its entity ID is free again.
 - Cover entity (I6): with a cover, if the registry entry is `disabled_by=INTEGRATION`, it is enabled.
 - Number entities validate (I8) and raise `ServiceValidationError(translation_domain=DOMAIN,
-  translation_key="comfort_range_invalid")`.
+  translation_key="comfort_range_invalid")`, or `comfort_threshold_invalid` for a threshold of 0 or less. A coordinator
+  that fails for every object raises `UpdateFailed(translation_key="evaluation_failed")`.
 
 Tests (`tests/integration/test_entities.py`, German instance): entity IDs as in mockups §6
 (`sensor.wohnzimmer_klima_temperatur`, `sensor.kuche_fenster_zustand`, `number.hausklima_wunschtemperatur_max`); the
@@ -588,7 +602,7 @@ collapsed groups, `suggested_value` instead of `default` for clearable fields, `
 | `user` | S1 | `weather` (entity selector, domain weather, suggested: first with a forecast), `area_sync` (default on); scan counts as placeholders | – |
 | `rooms` | S2 | `rooms`: select, multiple, list mode, labels „{floor} · {area}", pre-checked by `propose_rooms` | `no_rooms` |
 | `plan` | S3 | sections `n`, `e`, `s`, `w`, each `outdoor` (select, optional) and `rooms` (select, multiple) | `room_two_sides`, `outdoor_twice` |
-| `preview` | S4 | menu `create`, `add_window`, `rooms`, `plan` | – |
+| `preview` | S4 | menu `create`, `add_window`, `rooms`, `plan`; the preview ends with a weather status line (`async_weather_status`: hourly forecast, daily forecast only, no forecast, unavailable, none chosen) | – |
 
 `create` calls `async_create_entry(title="Climate Hub", data={}, options=..., subentries=[...],
 description="created")` with the rooms (suggested sources, side from the plan), the regions (suggested sources, scope
@@ -610,8 +624,9 @@ data=..., unique_id=...)`. When the sources were just suggested, the preview lis
 
 ### 9.5 Window (`flows/window.py`, S8, M2)
 
-Mixin used by the window subentry flow and by the first setup:
-`user` (room area, add only; error `is_region`) → `window_type` (menu `window_single`, `window_double`,
+Mixin used by the window subentry flow and by the first setup. Its first step is `window_room` (room area, add only;
+error `is_region`); the subentry flow's `user` entry point only delegates to it, and the host flow of the first setup
+keeps its own `user` and `reconfigure` (`add_window` leads to `window_room`). Then `window_type` (menu `window_single`, `window_double`,
 `window_pass_through`, with option descriptions) → type form (fields per §3.2, `show_all` toggle re-opens the form with
 all contacts, a room change re-opens it with that room's contacts) → `window_mapping` once per chosen text sensor (four
 select fields `closed`, `ajar`, `tilted`, `open`, `multiple` + `custom_value`; options are the known texts from the
@@ -624,11 +639,13 @@ roles of one window).
 ### 9.6 Options and house plan
 
 - **Options (S9):** plain `OptionsFlow` (no custom `__init__`): `weather`, `area_sync`, section `timing` with
-  `max_age`, `burst_duration`, `humidity_threshold`, `repair_delay` (number selectors with units). The update listener
-  reloads.
+  `max_age`, `burst_duration`, `humidity_threshold`, `repair_delay` (number selectors with units). If the chosen
+  weather entity is unavailable or has no forecast, the step `weather_check` shows the weather status line with the
+  menu `weather_keep` (save anyway) and `weather_adjust` (back to the form); a working weather saves directly (agreed
+  2026-10-15). The update listener reloads.
 - **House plan (S10):** `reconfigure` on the hub entry shows the S3 form filled from the room and region subentries.
   On submit it updates the rooms' `side`, and creates, updates or removes regions. If an outdoor area changed or was
-  added, a `plan_preview` step shows the suggested sources of those sides first (I17). Then
+  added, a `plan_preview` step (menu `plan_save`, `plan_adjust`) shows the suggested sources of those sides first (I17). Then
   `async_abort(reason="reconfigure_successful")`; the coalesced reload applies everything once.
 
 ### 9.7 Tests (`tests/flows/`)
@@ -668,11 +685,11 @@ value). Synced after each evaluation that produced a house result.
   form therefore counts as reviewed, including sources the user removed on purpose. Recording the whole area keeps a
   start-up race out: setup runs before some integrations write their states, and an entity whose device class only its
   state carries (DEV's mirror, for example) would otherwise look new once the state arrives (found on DEV 2026-10-16).
-- An issue is raised for each entity from `prefill.new_sources(area, infos, temperature, scope, listed, dismissed)`
-  that is not in `seen`. `dismissed` are this domain's `new_source_*` issues the user ignored (`dismissed_version`
-  set); such issues are never deleted while the entity qualifies, so "Ignorieren" stays in force. "Pre-fillable"
-  includes the R6 last resort: an entity without a device or a helper raises the issue only in an area that has
-  nothing better (agreed 2026-10-16; field use will show whether it nags).
+- An issue is raised for each entity from `prefill.new_sources(area, infos, temperature, scope, listed)` that is not
+  in `seen`. Dismissing is the issue registry's job: an issue the user ignored (`dismissed_version` set) is re-created
+  with that version and stays ignored, and it is never deleted while the entity qualifies, so "Ignorieren" stays in
+  force. "Pre-fillable" includes the R6 last resort: an entity without a device or a helper raises the issue only in an
+  area that has nothing better (agreed 2026-10-16; field use will show whether it nags).
 - Fix flow: a menu with the S11 text, „Als Quelle aufnehmen" and „Nicht aufnehmen" (Felix's click review: a bare
   confirm left no way to say no in the dialog). „Nicht aufnehmen" ignores the issue like Home Assistant's own
   „Ignorieren" and ends with a short note on how to undo it. „Als Quelle aufnehmen" appends the entity to the
@@ -712,10 +729,13 @@ a field the user changed is left alone; regions included.
 
 - `translations/en.json` and `de.json` with the same keys (UTF-8, real umlauts). German texts are the approved mockup
   texts; English texts follow them. No first person (copy rule).
-- Sections used: `config` (steps, sections, errors, aborts, `create_entry.created`), `config_subentries` (room,
-  region, window: steps, errors, menu options with descriptions), `options`, `selector` (side, direction, facing,
+- Sections used: `config` (steps, sections, errors, `abort`, `create_entry.created`), `config_subentries` (room,
+  region, window: steps, errors, `abort`, menu options with descriptions), `options`, `selector` (side, direction, facing,
   min_level), `entity` (names, enum states, `state_attributes`), `device` (`hub`, `climate`, `climate_area`,
-  `window_area`), `issues` (texts and fix flows), `exceptions` (`comfort_range_invalid`), `common` (I16).
+  `window_area`), `issues` (texts and fix flows), `exceptions` (`comfort_range_invalid`, `comfort_threshold_invalid`, `evaluation_failed`), `common` (I16).
+- Aborts: Home Assistant does not resolve `[%key:common::...]` references for custom integrations, so the reasons the
+  flows end with have their own strings: `config.abort` and `config_subentries.{room,region,window}.abort` hold
+  `reconfigure_successful` and `single_instance_allowed`. The fix flows of `issues` have their own `abort` blocks.
 - `common` holds the word lists (`outside_words`, `words_closed`, `words_ajar`, `words_tilted`, `words_open`, as
   comma-separated strings), the default window names (`window_name`, `pass_through_name`), direction names for titles,
   `no_floor` („ohne Stockwerk"), and the preview fragments. Python loads them with
@@ -748,13 +768,13 @@ Test: snapshot of the structure on the fixture house.
 - Windows: `python -m pytest` (loads `win_compat`), socket fix in `tests/conftest.py`.
 - A step is done when its named tests and the whole suite pass, `ruff check .` and `ruff format --check .` are clean.
 
-## 15. Build order
+## 15. Build order (followed)
 
-Each step is one Sonnet implementer brief (`dev-workflow:orchestrate` format). The main session writes the brief from
-this plan; a verifier runs the suite after each step. Every step adds its own translations (en and de). A step does not
-start before the previous one is green.
+**Built.** All milestones are done and merged into `main` (M1 2026-10-15, M2 and M3 2026-10-16); the tables record the
+order that was followed. Each step was one implementer brief, every step added its own translations (en and de), and a
+step did not start before the previous one was green.
 
-### Milestone M1: rooms and outdoor sides (branch `build/m1-rooms`)
+### Milestone M1: rooms and outdoor sides (branch `build/m1-rooms`, merged)
 
 | # | Step | Files | Tests | Done when |
 |---|---|---|---|---|
@@ -770,11 +790,11 @@ start before the previous one is green.
 | 10 | Area sync | `area_sync.py` | `tests/integration/test_area_sync.py` | suite green |
 | 11 | Room and region flows | `flows/common.py`, `flows/preview.py`, `flows/room.py`, `flows/region.py` | `tests/flows/test_room_flow.py`, `test_region_flow.py` | every S6 and S7 path tested |
 | 12 | First setup, options, house plan | `config_flow.py` (S1–S4 without `add_window`, S9, S10 with I17), `manifest.json` `config_flow: true` | `tests/flows/test_config_flow.py`, `test_options_flow.py`, `test_reconfigure.py`, `tests/test_translations.py` | suite green |
-| 13 | M1 on DEV | none (fixes only) | full suite | spike folder removed from DEV first (STATUS Next 4), deployed with `-Restart`; smoke test of the project skill passes for rooms and regions; Felix's click review; merge |
+| 13 | M1 on DEV | none (fixes only) | full suite | spike folder removed from DEV first, deployed with `-Restart`; smoke test of the project skill passes for rooms and regions; Felix's click review; merge |
 
 Step 8 note: `binary_sensor.py` arrives in M2, because M1 has no binary sensor (all of them need windows).
 
-### Milestone M2: windows (branch `build/m2-windows`)
+### Milestone M2: windows (branch `build/m2-windows`, merged)
 
 | # | Step | Files | Tests | Done when |
 |---|---|---|---|---|
@@ -784,7 +804,7 @@ Step 8 note: `binary_sensor.py` arrives in M2, because M1 has no binary sensor (
 | 16a | Weather status | S4 status line and the S9 check step (mockups S4, S9, agreed 2026-10-15): current values plus one test fetch of the forecast | `test_config_flow.py`, `test_options_flow.py` | mirrored, unavailable and missing weather each show their line |
 | 17 | M2 on DEV | fixes only | full suite | click review of the window flow and states with real contacts; merge |
 
-### Milestone M3: repairs (branch `build/m3-repairs`)
+### Milestone M3: repairs (branch `build/m3-repairs`, merged)
 
 | # | Step | Files | Tests | Done when |
 |---|---|---|---|---|
@@ -792,9 +812,9 @@ Step 8 note: `binary_sensor.py` arrives in M2, because M1 has no binary sensor (
 | 19 | Fix flows | `repairs.py` | `tests/flows/test_repairs.py` | both fix flows end to end |
 | 20 | M3 on DEV | fixes only | full suite | outage by a state-only test sensor set to `unavailable` (delay 1 h in options; DEV's mirrored sensors also go stale on their own), a mirrored entity moved into a room's area, a room deleted next to its window; merge |
 
-After M3: CI (STATUS Next 3).
+After M3: CI, `hacs.json`, brand images and the first release were added separately; see `docs/STATUS.md`.
 
-## 16. Not in this plan
+## 16. Not in this spec
 
-CI, `hacs.json`, brand images and releases (STATUS Next 3). The deferred requirements of logic §14 (A7–A11, R12, O8–O10,
-SH3). A custom panel (ADR-001).
+CI, `hacs.json`, brand images and releases (done separately, see `docs/STATUS.md`). The deferred requirements of logic
+§14 (A7–A11, R12, O8–O10, SH3). A custom panel (ADR-001).

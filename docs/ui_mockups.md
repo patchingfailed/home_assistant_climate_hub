@@ -1,7 +1,8 @@
 # UI mockups
 
-Status: **approved 2026-10-13** after two prototype reviews. v2 reworked the first draft
-for what native flows can render (§2.4). The DEV spike (§7) may still force changes; they come back here for approval.
+Status: **approved 2026-10-13** after two prototype reviews, **built** and checked on DEV (2026-10-16). v2 reworked the
+first draft for what native flows can render (§2.4). Where the build differs from a screen, the screen has been updated
+to the built text.
 Screens show the German UI strings, because German is the primary language of the reference installation. The English
 strings use the same keys. Requirement IDs refer to `docs/requirements.md`, ADRs to `docs/architecture.md`.
 
@@ -212,7 +213,8 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 │ • …                                                        │
 │ **Außenseiten**                                            │
 │ • **Norden · Straße** 13,0 °C · 71 %                       │
-│   Fällt sie aus: Westen, dann Süden, dann Wetterdienst.    │
+│   Fällt Norden aus, springen Westen (Hof) und Süden        │
+│   (Garten) ein, dann der Wetterdienst.                     │
 │ • **Süden · Garten** 12,5 °C · 76 %                        │
 │ • **Westen · Hof** 14,5 °C · 65 %                          │
 │ • Osten: keine Außenseite, Wetterdienst springt ein.       │
@@ -231,17 +233,18 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 - Shows what was **not** taken and why (P1, R6), with a short reason per entity: „kein Raumwert" (implausible
   value), „Nebenwert eines Kontakts" / „eines Bewegungsmelders", „Gerätetemperatur" (diagnostic), „abgeleiteter Wert"
   (helper platform), „mehrere Temperaturen am Gerät".
-- Shows each side's computed fallback chain (ADR-003).
+- Shows each side's computed fallback chain (ADR-003), in the sentence S7 uses: „Fällt Norden aus, springen Westen (Hof)
+  und Süden (Garten) ein, dann der Wetterdienst."
 - **Wetterdienst** line (agreed 2026-10-15), from the current values and one test fetch of the forecast:
-  „Wetterdienst: 12,5 °C · 89 %, Vorhersage stündlich." · „Wetterdienst: 12,5 °C · 89 %, aber keine Vorhersage. Die
-  Tagesstrategie bleibt leer." · „Wetterdienst: nicht verfügbar. Fallen alle Außensensoren aus, fehlen Außenwerte, und
+  „Wetterdienst: 12,5 °C · 89 %, Vorhersage stündlich." · „Wetterdienst: 12,5 °C · 89 %, Vorhersage täglich." ·
+  „Wetterdienst: 12,5 °C · 89 %, aber keine Vorhersage. Die Tagesstrategie bleibt leer." · „Wetterdienst: nicht verfügbar. Fallen alle Außensensoren aus, fehlen Außenwerte, und
   die Tagesstrategie bleibt leer." · „Kein Wetterdienst gewählt. Die Tagesstrategie bleibt leer." Mirrored or dead
   weather entities show up here instead of as unknown values later (found on DEV).
 - **Fenster** lists the windows added so far („Küche Fenster: zu"); without any it says why they help.
 - „Fenster hinzufügen (optional)" runs S8 → S8d → window preview; „Speichern" there returns to this preview.
 - „Anlegen" creates the hub entry with all room, region and window subentries in one step. The success dialog says:
-  „Fertig. Quellen änderst du pro Raum: ⋮ beim Raum → Rekonfigurieren. Weitere Fenster: ⋮ beim Eintrag Hausklima →
-  Fenster hinzufügen."
+  „Fertig. Quellen änderst du pro Raum: ⋮ beim Raum → Rekonfigurieren. Weitere Fenster: ⋮ beim Eintrag Climate Hub →
+  Fenster hinzufügen." The entry is called „Climate Hub", its device „Hausklima".
 
 ## 4. Screens: objects
 
@@ -327,7 +330,8 @@ Not planned.
 - Description: the first line only when sources were just suggested (add, or after an area change); the side
   assignment always.
 - Main side: select with the static options Norden, Osten, Süden, Westen, Keine. All four directions are always offered
-  (ADR-003, agreed 2026-10-13). Which direction has an outdoor side is in the description, not in the labels (§2.4).
+  (ADR-003, agreed 2026-10-13). Which direction has an outdoor side is in the description, not in the labels (§2.4). A room with „Keine" gets the
+  recommendation „keine" with the reason „keine Außenseite" (A5).
 - Temperature sources: entity selector, `multiple` + `reorder`, limited to temperature sensors and `climate` entities
   of the room's area plus entities without an area (U6). Pre-filled when the sources were suggested (R6).
 - Area: changing it re-opens this form with sources suggested for the new area. Chosen sources without an area stay.
@@ -504,12 +508,17 @@ Field rules:
 - Room: area selector in the room step (add) and in the form (edit), any indoor area. If the area is not a room yet,
   the preview says „Raum {area} wird mit angelegt" and lists its suggested sources (U4, P1). Error: „{area} ist eine
   Außenseite." Changing the room in the form re-opens it with the new room's contacts.
+- „Gezeigt: Bereich Küche und Kontakte ohne Bereich." is part of the form description (not a helper under the field),
+  because a form cannot change a field's helper text live.
 - Contacts: entity selectors for binary sensors with device class window, door, opening or garage door, plus sensors
   with a text state that names a window position (a word of the S8d lists in its state or `options`; agreed
   2026-10-16), limited to the room's area plus entities without an area (U6; agreed 2026-10-13, second
   prototype review). „Alle Kontakte zeigen" re-opens the form with all contacts of these types and every text sensor (not live, §2.4);
   chosen contacts always stay visible. The outer opening of a pass-through always lists all contacts, because it
   usually lies in another area (W5). Picker rows show „area ▸ device", and typing a room name narrows the list.
+- Handle contact: the single leaf and the double leaf have a field „Griffkontakt" (section Zusatzkontakte) with a helper
+  text; „Ausrichtung" and „Lüftet ab" have helper texts too. Errors: „Für das Fenster fehlt ein Kontakt." (no contact)
+  and „Ein Kontakt darf in einem Fenster nur eine Aufgabe haben." (one contact in two roles of one window).
 - Name: optional. Empty means „Fenster" (pass-through: „Durchgang"), numbered from the second one in the same room.
   The integration page shows it with the room („Küche Fenster", „Küche Fenster 2"); the device itself is named
   without the area and sits in it, so the entity IDs read `sensor.kuche_fenster_zustand` (ADR-007). The preview shows
@@ -538,8 +547,8 @@ Field rules:
   `custom_value`, so known texts can be picked and missing ones typed. A text in no field counts as unknown and is
   ignored (W8).
 - Known texts come from the sensor's `options` attribute (enum sensors), its recorded history (distinct states) and
-  its current state. Pre-filled by common words in the instance language and in English (zu/geschlossen/closed,
-  angelehnt/ajar, gekippt/tilted, offen/open).
+  its current state. Pre-filled by the default words of the instance language and English (`docs/logic.md` §8, from
+  `common.words_*`: for example zu/geschlossen/closed, angelehnt/ajar, gekippt/tilted, offen/open).
 - Changed 2026-10-13 after the DEV spike: a template sensor exposes only its current state, so the first design (one
   field per raw value) could not map texts the sensor had not shown yet.
 
@@ -604,46 +613,49 @@ I17).
 ### S11 Reparatur
 
 ```
-Climate Hub: Sensor im Bad meldet sich nicht
-Klimasensor Bad liefert seit 6 Stunden keine Werte. Stattdessen gilt gerade
-„Thermostat Bad", korrigiert um −0,8 °C. Prüfe Batterie oder Verbindung.
+Climate Hub: Sensor für Bad meldet sich nicht
+Klimasensor Bad liefert seit über 6 h keine gültigen Werte. Für Bad gilt gerade
+Thermostat Bad, korrigiert um −0,8 °C. Prüfe Batterie oder Verbindung.
 Die Meldung verschwindet von selbst, sobald der Sensor wieder Werte liefert.
 ```
 
 **New sensor (R14)**, fixable, one issue per entity. Home Assistant's own „Ignorieren" dismisses it for good.
 
 ```
-Climate Hub: Neuer Sensor in der Küche
-Klimasensor Küche 2 misst Temperatur und Feuchte im Bereich Küche.
-Als Quelle für den Raum Küche aufnehmen?
+Climate Hub: Neuer Sensor im Bereich Küche
                                                         [ Reparieren ]
-  → Fix flow: „Klimasensor Küche 2 wird als letzte Quelle aufgenommen.
-    Die Reihenfolge änderst du am Raum."            [ Absenden ]
+  → Fix flow, menu: Klimasensor Küche 2 misst Temperatur im Bereich Küche.
+    Als letzte Quelle für Küche aufnehmen? Hat das Gerät auch Feuchte oder
+    Luftdruck, kommen diese mit. Die Reihenfolge änderst du danach über ⋮
+    bei Küche.
+                     > Als Quelle aufnehmen
+                     > Nicht aufnehmen
 ```
 
 Only what the pre-fill would suggest (R6) raises it; contacts and motion sensors never do, entities without a device
 and helpers only in an area that has nothing better (R6 last resort, agreed 2026-10-16).
 
-Built texts (2026-10-16): a placeholder cannot inflect „im Bad" or „in der Küche", so titles read „Sensor für
-{Raum} meldet sich nicht", „Neuer Sensor im Bereich {Bereich}" and „Fenster im Bereich {Bereich} haben keinen Raum
-mehr". The outage text says „liefert seit über {n} h keine gültigen Werte. Für {Raum} gilt gerade {Quelle},
-korrigiert um {Abweichung}" (without the offset clause when none applies, or „gibt es gerade keinen Ersatz"). The
-fixable issues show their text in the fix flow's first step. „Fenster löschen" gets a confirm step naming the
-windows. The new-sensor dialog is a menu, „Als Quelle aufnehmen" or „Nicht aufnehmen" (the latter ignores the issue),
-instead of a bare confirm.
+Built (2026-10-16): a placeholder cannot inflect „im Bad" or „in der Küche", so titles read „Sensor für {Raum} meldet
+sich nicht", „Neuer Sensor im Bereich {Bereich}" and „Fenster im Bereich {Bereich} haben keinen Raum mehr". The outage
+text says „liefert seit über {n} h keine gültigen Werte. Für {Raum} gilt gerade {Quelle}, korrigiert um {Abweichung}"
+(without the offset clause when none applies, or „gibt es gerade keinen Ersatz"). The fixable issues show their text in
+the fix flow's first step. The new-sensor dialog is a menu, „Als Quelle aufnehmen" or „Nicht aufnehmen" (the latter
+ignores the issue and ends with a note on how to undo it), instead of a bare confirm.
 
 **Windows without a room (W11)**, fixable, one issue per area.
 
 ```
-Climate Hub: Fenster in der Küche haben keinen Raum mehr
-Der Raum Küche wurde gelöscht. Küche Fenster meldet weiter, ob es offen
-ist, aber ohne Raum gibt es keine Empfehlung.
+Climate Hub: Fenster im Bereich Küche haben keinen Raum mehr
                                                         [ Reparieren ]
-  → Fix flow, menu:  > Raum Küche wieder anlegen
-                     > Fenster löschen (Küche Fenster)
+  → Fix flow, menu: Im Bereich Küche gibt es keinen Raum mehr. Betroffen: Küche
+    Fenster. Sie melden weiter, ob sie offen sind, aber ohne Raum gibt es
+    keine Empfehlung.
+                     > Raum wieder anlegen
+                     > Fenster löschen
 ```
 
-„Raum wieder anlegen" shows the room preview with suggested sources (S6) before saving. Both options resolve the issue.
+„Raum wieder anlegen" shows the room preview with suggested sources (S6) before saving. „Fenster löschen" gets a confirm
+step naming the windows. Both options resolve the issue.
 
 ## 6. Entities (what dashboards and automations see)
 
@@ -664,7 +676,7 @@ carry no area (ADR-005, ADR-007). The device column shows the device name and, i
 | | Außen | enum: wärmer / kälter / gleich | |
 | | Wunschbereich | enum: darunter / im Bereich / darüber | |
 | | Trend | enum: steigend / stabil / fallend | |
-| | Empfehlung | enum: öffnen / offen lassen / schließen / geschlossen lassen / keine (+ reason attribute) | `sensor.wohnzimmer_klima_empfehlung` |
+| | Empfehlung | enum: öffnen / offen lassen / schließen / geschlossen lassen / keine (+ reason attribute; a room without a main side shows keine with reason „keine Außenseite", missing values give „keine Daten") | `sensor.wohnzimmer_klima_empfehlung` |
 | | Auskühlen | binary_sensor (only with windows) | |
 | | Aufheizen | binary_sensor (only with windows) | |
 | | Offen bei Heizen/Kühlen | binary_sensor (only with windows and heating/cooling devices, A12) | |
@@ -680,7 +692,9 @@ carry no area (ADR-005, ADR-007). The device column shows the device name and, i
 | | Irgendwo Auskühlen, Irgendwo Aufheizen, Irgendwo offen bei Heizen/Kühlen | binary_sensor | |
 | | Irgendwo Rollladen schließen | binary_sensor (SH1, + windows and reasons attribute; renamed from „Irgendwo beschatten" 2026-10-13) | |
 
-Every measurement carries `source`, `stage`, `reason` and, for fallbacks, `offset` as attributes (E6).
+Every measurement carries `source`, `stage`, `reason` and, for fallbacks, `offset` as attributes (E6). A room's absolute
+humidity and dew point carry `source`, `stage` and `reason` of their weaker input (temperature or humidity; stage order
+primary < fallback < none, a tie goes to humidity), without `offset`.
 
 The hub's „Irgendwo …" binary sensors exist only when at least one window exists („Irgendwo offen bei Heizen/Kühlen":
 a room with windows and heating or cooling devices), like the room entities marked „only with windows". Entities that
@@ -692,52 +706,24 @@ weather entity, and „Tagesstrategie" only with a weather entity (agreed 2026-1
 Entity IDs: Home Assistant 2026.10 builds them from area, device name and entity name (default `entity_id_parts`,
 `helpers/entity_registry.py`). The area is not stripped from a device name, so a device „Küche Klima" in the area
 Küche gives `sensor.kuche_kuche_klima_temperatur` (seen on DEV). Device names therefore must not contain the area;
-see §7 item 6 and ADR-007.
+see ADR-007.
 
-## 7. To verify on DEV before building (spike)
+## 7. Spike and open points: resolved
 
-Supported according to core and frontend source (2026-10-13), no spike needed: sections, menus and reconfigure in
-subentry flows; menu option descriptions (2025.10); `include_entities` on entity selectors; area temperature and
-humidity fields (2025.2); creating and updating other subentries from a flow. Not supported: live forms, select option
-descriptions, entity selectors filtered by area (§2.4).
+Every point that was open before the build is resolved (decisions 2026-10-12 to 2026-10-13, spike results 2026-10-13,
+click reviews on DEV through 2026-10-16). Nothing is left to approve here. The rules that still guide design:
 
-Spike results (2026-10-13, HA 2026.10.1, branch `spike/native-ui`, never merged; flows driven through the REST/WS flow
-API on DEV and checked in core and frontend source). „Eyes" means the mechanism works and Felix still judges the look
-in the UI.
+- What native flows can and cannot render is in §2.4. It was checked against core and frontend source and the DEV
+  spike (branch `spike/native-ui`, reference only, never merged).
+- Device names carry no area, because Home Assistant puts the area in front of entity IDs (ADR-007). A device's area
+  follows the room's area; `suggested_area` only places a new device.
+- The new-sensor repair (R14) needs a registry listener, not only a check at setup.
+- The S3 house plan on a phone was not tested (accepted 2026-10-13).
+- Minimum Home Assistant version: 2026.10.0 (ADR-008). Implementation pitfalls are in the project skill
+  `ha-integration-dev`.
 
-| # | Check | Result |
-|---|---|---|
-| 1 | Sortable entity selector in a subentry form and in a section | Works; drag-sorting confirmed by Felix in the UI |
-| 2 | S3: four sections with two area selectors, on a phone | Serialises (`expandable`, expanded); works on desktop. Phone not tested, accepted by Felix (2026-10-13) |
-| 3 | Markdown preview from a placeholder | Works: menu descriptions render GFM markdown incl. tables; look: eyes |
-| 4 | Area selector with a list of entity filters | Works: the frontend combines the list with „or". It still shows outdoor areas, so S2 and S3 now use computed lists |
-| 5 | Hub entry with all subentries in one step, success text | Works: `async_create_entry(subentries=..., description=<translation key>)`; dialog: eyes |
-| 6 | Device name with `{area}` and the generated entity IDs | **Fails as designed**: the area doubles (`sensor.kuche_kuche_klima_temperatur`). A device „Fenster" in the area gives `sensor.kuche_fenster_zustand` |
-| 7 | Window flow creating a room subentry | Works (`async_add_subentry`); page refresh without F5: eyes |
-| 8 | Order of the ⋮ add items | Works: frontend follows the order of `async_get_supported_subentry_types` |
-| 9 | Re-open a form with replaced suggestions after an area change | Works (second step id for the hint text) |
-| 10 | Entity picker shows each contact's area | Search by area works (source); display: eyes |
-| 11 | S8d raw values as field labels | Works: untranslated field keys show as labels; look: eyes |
-| 12 | Repair fix flows (update, recreate room, delete windows) | Works, both menu paths |
-
-Further findings for the real build: a room's device area must follow the room's area (`suggested_area` only places a
-new device); the new-sensor repair (R14) needs a registry listener, not only a check at setup. Implementation
-pitfalls are in the project skill `ha-integration-dev`.
-
-Minimum Home Assistant version: 2026.10.0 (ADR-008).
-
-## 8. Open points for review
-
-1. ~~First setup without windows~~: agreed 2026-10-12, windows are an add-on (W0).
-2. ~~Window form vs. type menu~~: agreed 2026-10-12, type menu first (variant B, S8).
-3. ~~Main side options~~: agreed 2026-10-13, all four directions plus „Keine", assignment in the description (S6).
-4. ~~Entity list (§6)~~: agreed 2026-10-13, complete as listed.
-5. ~~Shutters per window~~: agreed 2026-10-12, shading recommendation only, optional cover per window (SH1–SH4).
-   Extended 2026-10-13: cover recommendation with heat barrier by day and cold barrier at night, entity „Rollladen"
-   (`docs/logic.md` D16). Still a recommendation only; existing cover automations stay untouched.
-6. ~~Defaults (requirements Q5)~~: agreed 2026-10-13, as shown in S9.
-7. ~~State mapping for text sensors (S8d)~~: agreed 2026-10-13.
-8. ~~„Hinzufügen" only in the ⋮ menu~~: prototype review 2026-10-13, hard to find. Agreed 2026-10-13: optional windows
-   step in the first setup (S4) plus the ⋮ menu.
-9. ~~„Heizen und Kühlen"~~: agreed 2026-10-13, room section (R15) and warning entity (A12).
-10. ~~Repairs~~: agreed 2026-10-13, new sensors (R14) and windows without a room (W11), S11.
+Decisions behind the screens, for the record: first setup without windows and an optional windows step in S4 (W0);
+window type menu first (S8); main side with all four directions plus „Keine"; cover recommendation per window with an
+optional cover (SH1 to SH4, `docs/logic.md` D16), advisory only; defaults 40 min, 10 min, 60 %, 6 h (requirements Q5);
+text-sensor mapping (S8d); „Heizen und Kühlen" room section and warning entity (R15, A12); repairs for new sensors
+(R14) and windows without a room (W11), S11.

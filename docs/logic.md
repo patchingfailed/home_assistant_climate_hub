@@ -1,13 +1,12 @@
 # Logic specification
 
 Status: **approved 2026-10-13** after two review rounds: D1–D12 and D14–D16 approved, D13 replaced by D16; all
-folded into `docs/requirements.md`. Covers the pure modules in `custom_components/climate_hub/logic/`
+folded into `docs/requirements.md`. **Built** (all modules, 2026-10-16). Covers the pure modules in `custom_components/climate_hub/logic/`
 (rule 6: no Home Assistant imports, `now` is a parameter, table tests). Requirement IDs refer to
 `docs/requirements.md`, ADRs to `docs/architecture.md`, screens to `docs/ui_mockups.md`.
 
-Each module section has the requirements it covers, its interface (a sketch: names may be refined during the build,
-semantics may not), its rules, and table cases. The table cases are the acceptance tests: every row becomes a
-parametrised pytest case in `tests/logic/`.
+Each module section has the requirements it covers, its interface, its rules, and table cases. The table cases are the acceptance tests: every row becomes a
+parametrised pytest case in `tests/logic/`. Names and signatures follow the code where they differ from the sketches.
 
 ## 0. Review first: decisions this spec makes
 
@@ -68,6 +67,10 @@ snapshot (adapter: readings converted, contacts, climate activity, weather, fore
   8. house         indoor average, any-room flags, any cover to close, source outages (H5) (outage state persisted)
 ```
 
+The adapter evaluates the strategy and the windows before the rooms, because the room's recommendation (step 6) needs
+both. The results are the same as in the stated order. "Any cover to close" is a function of `cover` (§10 rule 9), the other
+house values are in `house` (§12).
+
 `prefill` (§11) is not part of the evaluation. Flows call it when sources are suggested, and the R14 listener calls
 it when a new entity appears.
 
@@ -122,6 +125,12 @@ Resolves one metric of one room or region from its ranked source list.
 class Status(StrEnum):  # set by the adapter, except STALE
     OK, UNAVAILABLE, UNKNOWN, NOT_NUMERIC, UNIT, MISSING, STALE
 
+class Stage(StrEnum):   # defined here, shared with outdoor and the entities
+    PRIMARY, FALLBACK, NEIGHBOUR, OPPOSITE, WEATHER, NONE
+
+class Metric(StrEnum):
+    TEMPERATURE, HUMIDITY, PRESSURE
+
 @dataclass(frozen=True)
 class Reading:
     entity_id: str
@@ -145,6 +154,14 @@ class SourceState:               # persisted, per (object, metric)
     anchor: float | None         # winner's deviation at switched_at (D1 glide)
 
 @dataclass(frozen=True)
+class Candidate:                 # one source after the staleness check (diagnostics, outages)
+    entity_id: str
+    status: Status
+    value: float | None          # raw value
+    offset: float | None         # learned offset, None while there is no sample
+    learned: bool                # paired for at least one hour
+
+@dataclass(frozen=True)
 class Resolution:
     value: float | None
     source: str | None
@@ -152,7 +169,7 @@ class Resolution:
     stage: Stage                 # PRIMARY, FALLBACK or NONE here
     offset: float | None         # applied offset, only for FALLBACK
     reason: Status | None        # status of the rank-1 source when stage is not PRIMARY
-    candidates: tuple[Candidate, ...]  # every source with status, raw value, learned offset (diagnostics)
+    candidates: tuple[Candidate, ...]  # every source, in rank order (diagnostics, outages)
 
 def resolve(readings: Sequence[Reading], max_age: timedelta, state: SourceState | None,
             now: datetime, bounds: tuple[float, float] | None) -> tuple[Resolution, SourceState]
@@ -235,6 +252,8 @@ Re-base cases (offsets #2 +0.3, #3 +1.2 relative to #1):
 ```python
 class Direction(StrEnum): N, E, S, W
 
+class OutdoorReason(StrEnum): NO_SIDE, NO_PAIR, NO_DATA     # why a value is missing (stage NONE)
+
 @dataclass(frozen=True)
 class RegionOwn:                     # one configured region, own sources already resolved (§4)
     direction: Direction
@@ -243,11 +262,18 @@ class RegionOwn:                     # one configured region, own sources alread
     pressure: Resolution
 
 @dataclass(frozen=True)
+class WeatherReadings:               # the weather entity as three readings (§4), own maximum age
+    temperature: Reading
+    humidity: Reading
+    pressure: Reading
+
+@dataclass(frozen=True)
 class OutdoorValue:
     value: float | None
     stage: Stage                     # PRIMARY, FALLBACK, NEIGHBOUR, OPPOSITE, WEATHER, NONE
     regions: tuple[Direction, ...]   # regions the value came from (empty for WEATHER/NONE)
-    reason: str | None
+    reason: OutdoorReason | None     # only at stage NONE
+    offset: float | None             # applied weather offset, only at stage WEATHER (E6)
 
 @dataclass(frozen=True)
 class OutdoorValues:                 # what a direction (and every room facing it) sees
@@ -264,9 +290,10 @@ class WeatherOffsets:                # persisted: per (direction, metric) an Off
 def fallback_chain(direction: Direction, configured: set[Direction]) -> list[tuple[Stage, tuple[Direction, ...]]]
 def learn_weather_offsets(regions, weather: WeatherReadings | None, state: WeatherOffsets | None,
                           now: datetime) -> WeatherOffsets
-def resolve_direction(direction, regions: Mapping[Direction, RegionOwn], weather: WeatherReadings | None,
-                      offsets: WeatherOffsets) -> OutdoorValues
-def house_outdoor(regions, weather, offsets) -> HouseOutdoor   # O7
+def resolve_direction(direction: Direction | None, regions: Mapping[Direction, RegionOwn],
+                      weather: WeatherReadings | None, offsets: WeatherOffsets,
+                      now: datetime) -> OutdoorValues      # None: room without a side (rule 7)
+def house_outdoor(regions, weather, offsets, now: datetime) -> HouseOutdoor   # O7
 ```
 
 Rules:
@@ -283,7 +310,8 @@ Rules:
    weather's corrected temperature and humidity (rule 9). If no stage has a pair, both are `None` with reason
    `no_pair`.
 6. Own pair stage: `fallback` if temperature or humidity came from a fallback source, else `primary`.
-7. A room without a main side gets all outdoor values `None` with reason `no_side`.
+7. A room without a main side (direction `None`) gets all outdoor values `None` with reason `no_side`. `no_data` is the
+   reason of a metric that no stage can deliver.
 8. **House outdoor (O7):** mean temperature of all regions with own valid values, with min, max and per-region values.
    Without any such region: the corrected weather value (stage `weather`, rule 9). Display and automations only;
    recommendations always use the room's own direction.
@@ -427,6 +455,7 @@ class ForecastBias:              # persisted
     obs_max: float | None        # observed house outdoor maximum / minimum of that day (own sensors only)
     obs_min: float | None
     covered: timedelta           # time with a valid own-sensor house outdoor value that day
+    last_at: datetime | None     # previous evaluation, for the coverage step
 
 def update_forecast_bias(state: ForecastBias | None, points, hourly: bool, observed: float | None,
                          now: datetime) -> ForecastBias   # observed: house outdoor from own sensors, else None
@@ -492,6 +521,7 @@ class Level(IntEnum): CLOSED = 0; AJAR = 1; TILTED = 2; OPEN = 3
 class OpenLeaves(StrEnum): NONE, LEFT, RIGHT, BOTH, UNKNOWN     # double leaf only
 
 def contact_level(raw: str | None, kind: ContactKind, mapping: Mapping[Level, frozenset[str]] | None) -> Level | None
+def ventilating(level: Level | None, min_level: Level = Level.TILTED) -> bool | None   # W3, rule 5
 def window_level(config: WindowConfig, levels: Mapping[str, Level | None]) -> WindowLevel   # level, open_leaves, implausible
 def debounce(raw: Level | None, prev: Debounced | None, now: datetime, min_level: Level) -> Debounced  # 5 s
 def open_since(debounced: Debounced, min_level: Level, prev: datetime | None,
@@ -505,10 +535,11 @@ Contact mapping (W2):
 - Text sensors: case-insensitive exact match of the stripped state against the S8d mapping (one set of texts per
   level). A text in no set is `None`.
 - `unavailable`, `unknown`, empty: `None` (W8).
-- Default words for S8d, instance language plus English: closed {zu, geschlossen, verriegelt, abgeschlossen, closed,
-  locked}, ajar {angelehnt, ajar}, tilted {gekippt, kipp, tilted}, open {offen, open}. Known texts of the sensor that
-  match a default word are pre-assigned; the rest are offered unassigned. The words come from the translations and
-  are passed to `suggest_text_mapping`; none are hardcoded.
+- Default words for S8d: the translations (`common.words_*`) of the instance language plus English. German: closed
+  {zu, geschlossen, verriegelt, abgeschlossen}, ajar {angelehnt}, tilted {gekippt, kipp}, open {offen, geöffnet}.
+  English: closed {closed, locked}, ajar {ajar}, tilted {tilted, tilt}, open {open}. Known texts of the sensor that
+  match a default word are pre-assigned; the rest are offered unassigned. The words are passed to
+  `suggest_text_mapping`; none are hardcoded.
 
 Level rules (applied in this order):
 1. **Leaves** (single window: one leaf). If every leaf is known: `leaf = max(leaves)`. If some leaf is unknown: the
@@ -587,6 +618,9 @@ published state is not ventilating.
 | 10:30:00 | closed | None | 10:00:02 |
 | 10:30:05 | closed | closed | – |
 
+**Start-up.** The first call (no previous `Debounced`) publishes the raw level at once, without the 5 s wait. The table
+above starts with a window that is already closed.
+
 After a restart: a persisted "open since" is kept if the window is still ventilating. Without one, the latest
 `last_changed` of the contacts that currently report a non-closed level (best effort; Home Assistant may reset
 `last_changed` at start-up, which is why the value is persisted).
@@ -617,17 +651,35 @@ class GoalState:                     # persisted per room
     pause_until: datetime | None     # after BURST_DONE, once the window is closed
     humid_guard: bool                # D8 hysteresis
 
+@dataclass(frozen=True)
+class RecommendationResult:
+    recommendation: Recommendation
+    reason: Reason
+    wanted_open: bool | None             # None: no recommendation (no side, no data, invalid range)
+    humidity_after_ventilating: float | None   # R13, for the attribute
+
+@dataclass(frozen=True)
+class ClimateDevice:                     # R15, one heating or cooling device
+    hvac_action: str | None
+    hvac_mode: str | None
+
 def recommend(inp: RoomInput, prev: GoalState | None, now: datetime) -> tuple[RecommendationResult, GoalState]
+def warnings(*, strategy, relation, trend, ventilating, ventilating_since, wanted_open, burst_duration,
+             now) -> tuple[bool | None, bool | None]                      # (cooling down, heating up)
+def open_while_conditioning(*, devices: tuple[ClimateDevice, ...], ventilating, ventilating_since,
+                            burst_duration, now) -> bool | None             # A12
 ```
 
 `RoomInput` holds: `t_in`, `rh_in`, `t_out`, `dew_point_out`, comfort `c_min` / `c_max`, `position`, `relation`,
-`dryness`, `trend`, `strategy`, `ventilating` (`None` without windows or when unknown), `ventilating_since`,
-heating/cooling activity, and the options (humidity threshold, burst duration). `middle = (c_min + c_max) / 2`.
+`dryness`, `trend`, `strategy`, `has_windows`, `has_side` (the room has a main outdoor side), `ventilating` (`None`
+without windows or when unknown), `ventilating_since`, and the options (humidity threshold, burst duration). The
+heating and cooling devices are not part of it; they feed `open_while_conditioning`. `middle = (c_min + c_max) / 2`.
 
 Evaluation order (the first step that decides wins):
 
-1. **Data.** `t_in` or `t_out` missing: `none` / `no_data`
-   (A5); the goal state is kept. (Windows without a room, W11, get `no_room` on their cover output, §10.) Invalid comfort range: `none` / `comfort_range_invalid`.
+1. **Data.** No main outdoor side (`has_side` false): `none` / `no_side` (A5). Otherwise `t_in` or `t_out` missing:
+   `none` / `no_data` (A5). The goal state is kept in both cases. (Windows without a room, W11, get `no_room` on their
+   cover output, §10.) Invalid comfort range: `none` / `comfort_range_invalid`.
 2. **Humidity guard (D8).** `rh_after = humidity_after_ventilating(t_in, dew_point_out)`. The guard engages at
    `rh_after ≥ threshold` and releases at `rh_after < threshold − 5`. Unknown `rh_after` leaves the guard off.
 3. **Thermal goal.** Cooling target: `c_min` on *prevent heat-up* days (D6), else `middle`.
@@ -657,9 +709,9 @@ Evaluation order (the first step that decides wins):
    ventilating → `close`; wanted closed and not ventilating → `keep_closed`; wanted closed and ventilating `None` →
    `close` (W0: without windows only `open` or `close`).
 
-Reasons (attribute `reason`, translated; German draft):
+Reasons (attribute `reason`, translated; German text, `translations/de.json` is authoritative):
 
-| Reason | German draft | Used with |
+| Reason | German text | Used with |
 |---|---|---|
 | `cool_room` | Raum zu warm, draußen kühler | open, keep_open |
 | `pre_cool` | Heißer Tag erwartet, jetzt vorkühlen | open, keep_open |
@@ -672,6 +724,7 @@ Reasons (attribute `reason`, translated; German draft):
 | `outside_humid` | Außenluft zu feucht für diesen Raum | close, keep_closed |
 | `in_range` | Raum im Wunschbereich | close, keep_closed |
 | `no_benefit` | Lüften hilft gerade nicht | close, keep_closed |
+| `no_side` | keine Außenseite | none |
 | `no_data` | Werte fehlen | none |
 | `comfort_range_invalid` | Wunschbereich ungültig (Minimum über Maximum) | none |
 
@@ -725,6 +778,8 @@ Other cases (window closed unless stated):
 | 17 | any | 22.0 | 50 | None | – | any | none | no_data |
 | 18 | none (no forecast) | 24.6 | 50 | 19 | 70 | – | open | cool_room |
 | 19 | neutral, comfort 24–20 | 22.0 | 50 | 19 | 70 | – | none | comfort_range_invalid |
+| 20 | heat-up | 18.0 (below) | 50 | 23 | 40 | – | open | warm_room (a cold room may warm up on a hot day) |
+| 21 | any, room without a main side | 22.0 | 50 | – | – | any | none | no_side |
 
 Case 14 also guards cooling: neutral, room 26 °C, outside 20 °C / 70 % starts `COOL` (RH after 48.7 %); as the room
 cools, RH after reaches 61.9 % at 22 °C and the guard ends the goal before the middle (closed, `outside_humid`).
@@ -782,6 +837,7 @@ class CoverState:                # persisted per window
     heat_risk: bool
 
 def cover(inp: CoverInput, prev: CoverState | None, now: datetime) -> tuple[CoverResult, CoverState]
+def any_cover_to_close(results: Mapping[str, CoverResult]) -> tuple[bool, tuple[tuple[str, CoverReason], ...]]
 ```
 
 `CoverInput`: sun azimuth and elevation (`sun.sun`), cloud coverage (weather attribute, optional), facing azimuth
@@ -817,12 +873,12 @@ Rules:
 8. **Cover state (SH2):** closed when `current_position ≤ 50`, or state `closed` without a position; `opening`,
    `closing` and unavailable are unknown. Wanted closed: closed → `keep_closed`, else `close`. Wanted open: not
    closed → `keep_open`, else `open`. No cover or unknown state: `close` or `open` only.
-9. **House level:** "any cover to close" is `True` if any window wants its cover closed (any reason; the attribute
-   lists windows and reasons), else `False`.
+9. **House level:** `any_cover_to_close` (a function of this module, not of `house`) is `True` if any window's advice
+   is `close` or `keep_closed` (any reason; the attribute lists windows and reasons), else `False`.
 
-Reasons (attribute `reason`, translated; German draft):
+Reasons (attribute `reason`, translated; German text, `translations/de.json` is authoritative):
 
-| Reason | German draft |
+| Reason | German text |
 |---|---|
 | `sun_heat` | Sonne auf dem Fenster, Hitze draußen halten |
 | `heat_barrier` | Draußen heißer, Hitze draußen halten |
@@ -887,7 +943,7 @@ def suggest_sources(area_id, entities, metric, scope) -> Suggestion   # ordered 
 def follow_devices(temperature_sources, entities, metric) -> list[str]  # R3 "follow"
 def suggest_metric_list(temperature_sources, area_id, entities, metric, scope) -> list[str]  # [] means follow
 def suggest_climate_devices(area_id, entities) -> list[str]           # R15
-def new_sources(area_id, entities, metric, scope, listed, dismissed) -> list[str]  # R14
+def new_sources(area_id, entities, metric, scope, listed) -> list[str]  # R14
 def propose_rooms(areas: Sequence[AreaInfo], entities, outside_words) -> RoomProposal  # S2
 ```
 
@@ -927,8 +983,10 @@ Rules:
   change (N5).
 - **Creation (R3):** if follow yields nothing for a metric, the stored list is pre-filled from the area's candidates
   of that metric; otherwise it is stored empty (follow).
-- **New source (R14):** an entity in the area of a room or region is reported when it classifies as tier 1 or 2
-  (rooms: also 3), is not in any of the object's lists, and is not dismissed.
+- **New source (R14):** an entity in the area of a room or region is reported when `suggest_sources` would pre-fill it
+  (tiers 1 to 3 plus the last resort above) and it is not in any of the object's lists. Dismissing is not part of the
+  logic: the repair issue keeps the dismissal of Home Assistant's own "ignore" (`dismissed_version`, `docs/integration.md`
+  §10).
 - **Heating and cooling devices (R15):** all `climate` entities in the area except own entities, by name.
 - **Rooms (S2):** areas with at least one pre-fillable temperature source (tier 1–3, so a smart plug's diagnostic
   temperature alone does not make a room). Pre-checked: not on a floor whose name
@@ -1027,12 +1085,14 @@ Rules:
 | Pre-cooling start above comfort minimum | 0.5 °C | no | D6 |
 | Strategy hysteresis | 0.5 °C | no | A1 |
 | Trend window / minimum span | 60 / 30 min | no | R10 |
+| Trend sample interval | 1 min | no | R10 |
 | Trend enter / exit | 0.5 / 0.25 K/h | no | R10 |
 | Offset time constant / sample cap | 8 h / 30 min | no | R7, D1 |
 | Offset learned after | 1 h paired | no | R7 |
 | Offset glide | 60 min | no | D1 |
 | Contact debounce | 5 s | no | W10 |
 | Weather offsets | same learner as source offsets (8 h / 30 min) | no | O5, D15 |
+| Forecast horizon / minimum hourly points | 24 h / 12 | no | A1, D4 |
 | Forecast bias: memory / samples before use / clamp | 0.25 per day / 3 / ±5 °C | no | A14, D15 |
 | Forecast bias: day coverage / hourly points per day / coverage step cap | 18 h / 18 / 10 min | no | A14, D15 |
 | Sun on window | elevation ≥ 10°, ±60°, clouds ≤ 70 % | no | SH1 |
@@ -1068,7 +1128,7 @@ Contract the built modules expect from the adapter:
 
 ## 15. Build order
 
-One Sonnet implementer per module, each with its tests, in this order (later modules use earlier ones):
+Built (milestone M1, 2026-10-15), module by module with its tests, in this order (later modules use earlier ones):
 `const` + `psychro` → `sources` → `outdoor` → `comfort` → `strategy` → `window` → `recommendation` → `cover` →
-`prefill` → `house`. Each module is done when its table cases pass, `ruff check` is clean, and it imports nothing from
-`homeassistant`.
+`prefill` → `house`. A module is done when its table cases pass, `ruff check` is clean, and it imports nothing from
+`homeassistant` (`tests/logic/test_purity.py`).

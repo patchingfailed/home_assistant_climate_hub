@@ -21,7 +21,7 @@ scripts/deploy.config.ps1
 .claude/settings.local.json
 .claude/worktrees/
 
-# Local-only raw material (V1 learnings, private notes) - never goes public
+# Local-only raw material and private notes, never goes public
 local input/
 local_input/
 local/

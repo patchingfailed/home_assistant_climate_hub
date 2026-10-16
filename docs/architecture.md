@@ -73,7 +73,11 @@ Unique IDs derive from subentry IDs only.
 in the instance language and never change on rename (rule 1). Fused values are distinguishable from raw sensors such as
 "Kitchen temperature".
 
-**Superseded in part** by ADR-007: device names no longer contain the area.
+**Superseded in part** by ADR-007: device names no longer contain the area, and the default window name is "Window" /
+"Fenster" without the area.
+
+Update 2026-10-16: the window naming above is superseded by ADR-007. Unique IDs derive from subentry IDs; the hub's
+entities use the config entry ID (the hub has no subentry).
 
 ## ADR-006: Tunables that automations may change are entities (2026-10-12)
 
@@ -84,6 +88,9 @@ Expert tunables that nobody changes at runtime (maximum age, burst duration, hum
 the hub options.
 
 **Consequences.** Values are restored on restart and can be set from dashboards and automations. Options remain short.
+
+Update 2026-10-16: the values are persisted in the integration's Store (integration I13), not restored with
+`RestoreNumber`, so the first evaluation after a start already uses them.
 
 ## ADR-007: Device names without the area (2026-10-13)
 
@@ -101,6 +108,10 @@ stay predictable either way.
 **Consequences.** Entity IDs as P7 intends: `sensor.kuche_klima_temperatur`, `sensor.kuche_fenster_zustand`. Friendly
 names carry no room („Klima Temperatur"); Home Assistant shows the area as context, and dashboards group by room
 anyway (accepted 2026-10-13). Entity IDs never follow later area changes (rule 1).
+
+Update 2026-10-16: a device the user moved to another area by hand stays there; a device moves along only when the
+subentry's area itself changes (integration I15). A pass-through window gets the default name "Passage" /
+"Durchgang".
 
 ## ADR-008: Minimum Home Assistant version 2026.10 (2026-10-14)
 
