@@ -10,6 +10,8 @@ description: Development workflow for the Climate Hub Home Assistant custom inte
 - Hosts, shares and tokens live **only** in `scripts/deploy.config.ps1`
   (gitignored, template `deploy.config.example.ps1`). Never write IPs into any other file.
 - DEV is the target of every test. **Prod only after explicit user approval.**
+- PROD installs Climate Hub through HACS from GitHub releases (release steps in `CLAUDE.md`). DEV keeps
+  `deploy.ps1`; its `-Instance Prod` path is for emergencies only, because HACS then shows a stale version.
 - DEV UI: `http://<DevHost>:8123`.
 
 ## Cycle
