@@ -3,9 +3,6 @@
     "comfort_range_invalid": {
       "message": "Wunschtemperatur min ({min} °C) muss unter Wunschtemperatur max ({max} °C) liegen."
     },
-    "comfort_threshold_invalid": {
-      "message": "Der Schwellwert der Wunschtemperatur ({threshold}) muss über 0 liegen."
-    },
     "evaluation_failed": {
       "message": "Die Auswertung ist für jeden Raum, jede Außenseite und jedes Fenster fehlgeschlagen."
     }

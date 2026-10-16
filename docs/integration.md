@@ -23,7 +23,7 @@ and folded where the last column says.
 | I5 | Area sync (R11) | Rooms and outdoor sides. A field is cleared only while it still points to the entity Climate Hub wrote; the previous value is not restored. | R11, S1 |
 | I6 | Cover entity (SH2) | Adding a cover later enables the window's „Rollladen" entity if the integration disabled it. Removing the cover leaves the entity as it is. | SH2 |
 | I7 | Window-dependent entities | Room entities that need windows and the hub's „Irgendwo …" sensors exist only with windows. Entities the configuration no longer produces are removed from the entity registry. | Mockups §6 |
-| I8 | Comfort range | A value that would make minimum ≥ maximum is rejected with a translated error; the old value stays. A threshold of 0 or less is rejected the same way. | H2 |
+| I8 | Comfort range | A value that would make minimum ≥ maximum is rejected with a translated error; the old value stays. The threshold needs no check of its own (the number entity's range covers it). | H2 |
 | I9 | Milestones | Three milestones (§15), one short-lived branch each, merged after green tests and Felix's DEV click review. | §15 |
 | I10 | Sun | Sun azimuth and elevation come from `sun.sun`, the standard entity. | §5 |
 | I11 | Forecast | Fetched at start, when the weather entity changes (at most every 15 min), and hourly as a backstop. Providers usually update hourly. | §5 |
@@ -565,7 +565,8 @@ Attribute values `stage`, `reason`, `open_leaves` are translated through `state_
   are removed (I7). History of a returning entity continues because its entity ID is free again.
 - Cover entity (I6): with a cover, if the registry entry is `disabled_by=INTEGRATION`, it is enabled.
 - Number entities validate (I8) and raise `ServiceValidationError(translation_domain=DOMAIN,
-  translation_key="comfort_range_invalid")`, or `comfort_threshold_invalid` for a threshold of 0 or less. A coordinator
+  translation_key="comfort_range_invalid")` (the threshold needs no check: Home Assistant validates `number.set_value`
+  against the entity's minimum and maximum). A coordinator
   that fails for every object raises `UpdateFailed(translation_key="evaluation_failed")`.
 
 Tests (`tests/integration/test_entities.py`, German instance): entity IDs as in mockups §6
@@ -732,7 +733,7 @@ a field the user changed is left alone; regions included.
 - Sections used: `config` (steps, sections, errors, `abort`, `create_entry.created`), `config_subentries` (room,
   region, window: steps, errors, `abort`, menu options with descriptions), `options`, `selector` (side, direction, facing,
   min_level), `entity` (names, enum states, `state_attributes`), `device` (`hub`, `climate`, `climate_area`,
-  `window_area`), `issues` (texts and fix flows), `exceptions` (`comfort_range_invalid`, `comfort_threshold_invalid`, `evaluation_failed`), `common` (I16).
+  `window_area`), `issues` (texts and fix flows), `exceptions` (`comfort_range_invalid`, `evaluation_failed`), `common` (I16).
 - Aborts: Home Assistant does not resolve `[%key:common::...]` references for custom integrations, so the reasons the
   flows end with have their own strings: `config.abort` and `config_subentries.{room,region,window}.abort` hold
   `reconfigure_successful` and `single_instance_allowed`. The fix flows of `issues` have their own `abort` blocks.

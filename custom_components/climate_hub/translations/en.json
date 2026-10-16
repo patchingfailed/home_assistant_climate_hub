@@ -3,9 +3,6 @@
     "comfort_range_invalid": {
       "message": "Comfort minimum ({min} °C) must be below comfort maximum ({max} °C)."
     },
-    "comfort_threshold_invalid": {
-      "message": "The comfort threshold ({threshold}) must be above 0."
-    },
     "evaluation_failed": {
       "message": "Every room, outdoor side and window failed to evaluate."
     }

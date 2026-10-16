@@ -344,9 +344,6 @@ async def test_comfort_saves_at_once_and_validates(
         await coordinator.async_set_comfort(c_min=26.0)
     assert err.value.translation_key == "comfort_range_invalid"
     assert err.value.translation_placeholders == {"min": "26", "max": "25.5"}
-    with pytest.raises(ServiceValidationError) as err:
-        await coordinator.async_set_comfort(threshold=0)
-    assert err.value.translation_key == "comfort_threshold_invalid"
     assert coordinator.comfort == expected
 
     assert await hass.config_entries.async_unload(entry.entry_id)

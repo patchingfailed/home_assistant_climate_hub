@@ -279,12 +279,6 @@ class ClimateHubCoordinator(DataUpdateCoordinator[EngineResult]):
                     "max": f"{new.c_max:g}",
                 },
             )
-        if new.threshold <= 0:
-            raise ServiceValidationError(
-                translation_domain=DOMAIN,
-                translation_key="comfort_threshold_invalid",
-                translation_placeholders={"threshold": f"{new.threshold:g}"},
-            )
         self.comfort = new
         await self.store.async_save(self.store_data())
         self._request()
