@@ -49,6 +49,10 @@ The design documents live in [`docs/`](docs/): [requirements](docs/requirements.
 [architecture decisions](docs/architecture.md), [UI mockups](docs/ui_mockups.md), [pure logic spec](docs/logic.md) and
 [integration spec](docs/integration.md). Current status: [`docs/STATUS.md`](docs/STATUS.md).
 
+## License
+
+[MIT](LICENSE)
+
 ## Built with care and responsible AI use
 
 This project is developed together with an AI assistant (Claude by Anthropic). The ideas, requirements, design
