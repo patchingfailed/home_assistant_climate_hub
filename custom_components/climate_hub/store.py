@@ -39,8 +39,12 @@ class StoreData:
 
 
 def fingerprint(data: Mapping[str, Any]) -> str:
-    """Return a stable hash of subentry data."""
-    text = json.dumps(data, sort_keys=True, separators=(",", ":"), default=str)
+    """Return a stable hash of subentry data.
+
+    A plain dict first: `json.dumps` would hash a `MappingProxyType` by its `str()`,
+    which depends on key order.
+    """
+    text = json.dumps(dict(data), sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(text.encode()).hexdigest()[:16]
 
 

@@ -560,6 +560,9 @@
             "title": "New sensor in area {area}",
             "description": "{source} measures temperature in area {area}. Add it as the last source of {title}? If its device also measures humidity or pressure, those come along. Change the order afterwards via ⋮ at {title}."
           }
+        },
+        "abort": {
+          "gone": "The room or outdoor side no longer exists, or the sensor is already a source."
         }
       }
     },
@@ -583,6 +586,9 @@
             "title": "Delete the windows",
             "description": "To be deleted: {windows}. Their entities go with them."
           }
+        },
+        "abort": {
+          "gone": "Nothing is left to repair for this area."
         }
       }
     }

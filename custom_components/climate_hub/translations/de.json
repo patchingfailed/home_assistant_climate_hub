@@ -560,6 +560,9 @@
             "title": "Neuer Sensor im Bereich {area}",
             "description": "{source} misst Temperatur im Bereich {area}. Als letzte Quelle für {title} aufnehmen? Hat das Gerät auch Feuchte oder Luftdruck, kommen diese mit. Die Reihenfolge änderst du danach über ⋮ bei {title}."
           }
+        },
+        "abort": {
+          "gone": "Den Raum oder die Außenseite gibt es nicht mehr, oder der Sensor ist schon Quelle."
         }
       }
     },
@@ -583,6 +586,9 @@
             "title": "Fenster löschen",
             "description": "Gelöscht werden: {windows}. Ihre Entitäten verschwinden mit ihnen."
           }
+        },
+        "abort": {
+          "gone": "Für diesen Bereich gibt es nichts mehr zu reparieren."
         }
       }
     }

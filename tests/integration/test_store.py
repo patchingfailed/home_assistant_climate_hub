@@ -1,6 +1,7 @@
 """The Store wrapper (docs/integration.md §7)."""
 
 from datetime import timedelta
+from types import MappingProxyType
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -137,3 +138,6 @@ def test_fingerprint_is_stable_and_order_independent() -> None:
     b = fingerprint({"n": 1, "temperature": ["sensor.a"], "area": "x"})
     assert a == b
     assert a != fingerprint({"area": "x", "temperature": ["sensor.b"], "n": 1})
+    # Subentry data arrives as a read-only mapping.
+    proxy = MappingProxyType({"n": 1, "temperature": ["sensor.a"], "area": "x"})
+    assert fingerprint(proxy) == a

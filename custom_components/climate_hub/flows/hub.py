@@ -39,7 +39,7 @@ from ..logic.prefill import (
     suggest_sources,
 )
 from ..logic.sources import Metric
-from ..registry import area_infos
+from ..registry import area_infos, entity_infos
 from .common import (
     async_window_words,
     is_text_sensor,
@@ -337,6 +337,12 @@ def build_items(
         if (area_id := plan[d][CONF_OUTDOOR])
     ]
     return room_items, region_items
+
+
+def new_room_item(hass: HomeAssistant, area_id: str) -> PlanItem:
+    """The room created for an area that has none, with suggested sources (U4)."""
+    rooms, _ = build_items(entity_infos(hass), [area_id], empty_plan())
+    return rooms[0]
 
 
 def subentry_data(

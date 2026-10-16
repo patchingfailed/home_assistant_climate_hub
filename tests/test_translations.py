@@ -291,3 +291,18 @@ def test_issue_translations_cover_the_keys_used_in_code(language: str) -> None:
     common = data["common"]
     for metric in ("temperature", "humidity", "pressure"):
         assert common[f"issue_offset_{metric}"]
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_repair_flow_steps_are_translated(language: str) -> None:
+    issues = _load(language)["issues"]
+    source = (COMPONENT / "repairs.py").read_text(encoding="utf-8")
+    used = set(re.findall(r'step_id="(\w+)"', source))
+    steps = {
+        step
+        for issue in ("new_source", "windows_without_room")
+        for step in issues[issue]["fix_flow"]["step"]
+    }
+    assert used and used <= steps
+    for issue in ("new_source", "windows_without_room"):
+        assert issues[issue]["fix_flow"]["abort"]["gone"]

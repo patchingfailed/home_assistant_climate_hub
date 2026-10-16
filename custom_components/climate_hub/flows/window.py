@@ -43,7 +43,7 @@ from .common import (
     option_selector,
     subentry_by_area,
 )
-from .hub import build_items, empty_plan, new_subentry
+from .hub import new_room_item, new_subentry
 from .preview import (
     PlanItem,
     PreviewRun,
@@ -246,8 +246,7 @@ class WindowSteps:
 
     def _window_new_room(self, area_id: str) -> PlanItem:
         """The room that saving creates along, with suggested sources (U4)."""
-        rooms, _ = build_items(entity_infos(self.hass), [area_id], empty_plan())
-        return rooms[0]
+        return new_room_item(self.hass, area_id)
 
     # Names and data
 
