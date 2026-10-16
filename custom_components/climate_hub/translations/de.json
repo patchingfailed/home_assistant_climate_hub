@@ -633,6 +633,10 @@
             "data": {
               "outdoor": "Außenbereich",
               "rooms": "Räume auf der Seite"
+            },
+            "data_description": {
+              "outdoor": "Bereich draußen, dessen Sensoren für diese Seite gelten. Leer lassen, wenn dort nichts misst.",
+              "rooms": "Räume, deren Fenster zu dieser Seite zeigen. Von hier kommt ihre Außenluft."
             }
           },
           "e": {
@@ -640,6 +644,10 @@
             "data": {
               "outdoor": "Außenbereich",
               "rooms": "Räume auf der Seite"
+            },
+            "data_description": {
+              "outdoor": "Bereich draußen, dessen Sensoren für diese Seite gelten. Leer lassen, wenn dort nichts misst.",
+              "rooms": "Räume, deren Fenster zu dieser Seite zeigen. Von hier kommt ihre Außenluft."
             }
           },
           "s": {
@@ -647,6 +655,10 @@
             "data": {
               "outdoor": "Außenbereich",
               "rooms": "Räume auf der Seite"
+            },
+            "data_description": {
+              "outdoor": "Bereich draußen, dessen Sensoren für diese Seite gelten. Leer lassen, wenn dort nichts misst.",
+              "rooms": "Räume, deren Fenster zu dieser Seite zeigen. Von hier kommt ihre Außenluft."
             }
           },
           "w": {
@@ -654,6 +666,10 @@
             "data": {
               "outdoor": "Außenbereich",
               "rooms": "Räume auf der Seite"
+            },
+            "data_description": {
+              "outdoor": "Bereich draußen, dessen Sensoren für diese Seite gelten. Leer lassen, wenn dort nichts misst.",
+              "rooms": "Räume, deren Fenster zu dieser Seite zeigen. Von hier kommt ihre Außenluft."
             }
           }
         }
@@ -677,6 +693,10 @@
             "data": {
               "outdoor": "Außenbereich",
               "rooms": "Räume auf der Seite"
+            },
+            "data_description": {
+              "outdoor": "Bereich draußen, dessen Sensoren für diese Seite gelten. Leer lassen, wenn dort nichts misst.",
+              "rooms": "Räume, deren Fenster zu dieser Seite zeigen. Von hier kommt ihre Außenluft."
             }
           },
           "e": {
@@ -684,6 +704,10 @@
             "data": {
               "outdoor": "Außenbereich",
               "rooms": "Räume auf der Seite"
+            },
+            "data_description": {
+              "outdoor": "Bereich draußen, dessen Sensoren für diese Seite gelten. Leer lassen, wenn dort nichts misst.",
+              "rooms": "Räume, deren Fenster zu dieser Seite zeigen. Von hier kommt ihre Außenluft."
             }
           },
           "s": {
@@ -691,6 +715,10 @@
             "data": {
               "outdoor": "Außenbereich",
               "rooms": "Räume auf der Seite"
+            },
+            "data_description": {
+              "outdoor": "Bereich draußen, dessen Sensoren für diese Seite gelten. Leer lassen, wenn dort nichts misst.",
+              "rooms": "Räume, deren Fenster zu dieser Seite zeigen. Von hier kommt ihre Außenluft."
             }
           },
           "w": {
@@ -698,6 +726,10 @@
             "data": {
               "outdoor": "Außenbereich",
               "rooms": "Räume auf der Seite"
+            },
+            "data_description": {
+              "outdoor": "Bereich draußen, dessen Sensoren für diese Seite gelten. Leer lassen, wenn dort nichts misst.",
+              "rooms": "Räume, deren Fenster zu dieser Seite zeigen. Von hier kommt ihre Außenluft."
             }
           }
         }
@@ -715,6 +747,9 @@
         "description": "In welchem Raum ist das Fenster?",
         "data": {
           "area": "Raum"
+        },
+        "data_description": {
+          "area": "Raum, in dem das Fenster liegt. Er bestimmt, welche Kontakte zur Auswahl stehen."
         }
       },
       "window_type": {
@@ -741,7 +776,10 @@
           "name": "Name"
         },
         "data_description": {
-          "name": "Leer lassen: Name nach dem Raum, z. B. {area} Fenster."
+          "name": "Leer lassen: Name nach dem Raum, z. B. {area} Fenster.",
+          "area": "Raum, in dem das Fenster liegt. Er bestimmt, welche Kontakte zur Auswahl stehen.",
+          "leaf": "Kontakt, der meldet, ob das Fenster offen ist, z. B. ein Reed-Kontakt am Rahmen.",
+          "show_all": "Zeigt alle Kontakte im Haus statt nur die dieses Bereichs. Hilft, wenn der richtige fehlt."
         },
         "sections": {
           "extra_contacts": {
@@ -760,6 +798,9 @@
             "description": "Dann gibt es eine Empfehlung, wann der Rollladen zu sein sollte: tagsüber gegen Sonne und Hitze, nachts gegen Kälte. Bewegen tut ihn deine Automation.",
             "data": {
               "cover": "Rollladen"
+            },
+            "data_description": {
+              "cover": "Rollladen oder Jalousie vor diesem Fenster. Leer lassen, wenn es keinen gibt."
             }
           },
           "advanced": {
@@ -790,7 +831,11 @@
         },
         "data_description": {
           "tilt": "Sitzt meist unten zwischen den Flügeln und meldet nur „offen“, wenn ein Flügel ganz aufgedreht ist. So lassen sich gekippt und offen unterscheiden.",
-          "name": "Leer lassen: Name nach dem Raum."
+          "name": "Leer lassen: Name nach dem Raum.",
+          "area": "Raum, in dem das Fenster liegt. Er bestimmt, welche Kontakte zur Auswahl stehen.",
+          "leaf_left": "Kontakt des linken Flügels, z. B. ein Reed-Kontakt am Rahmen.",
+          "leaf_right": "Kontakt des rechten Flügels, z. B. ein Reed-Kontakt am Rahmen.",
+          "show_all": "Zeigt alle Kontakte im Haus statt nur die dieses Bereichs. Hilft, wenn der richtige fehlt."
         },
         "sections": {
           "extra_contacts": {
@@ -807,6 +852,9 @@
             "description": "Dann gibt es eine Empfehlung, wann der Rollladen zu sein sollte: tagsüber gegen Sonne und Hitze, nachts gegen Kälte. Bewegen tut ihn deine Automation.",
             "data": {
               "cover": "Rollladen"
+            },
+            "data_description": {
+              "cover": "Rollladen oder Jalousie vor diesem Fenster. Leer lassen, wenn es keinen gibt."
             }
           },
           "advanced": {
@@ -837,7 +885,9 @@
         "data_description": {
           "inner": "Die Öffnung in diesem Raum.",
           "outer": "Die Öffnung nach draußen. Hier stehen alle Kontakte, denn sie liegt meist in einem anderen Bereich. Ein Kontakt darf auch zu einem anderen Fenster gehören.",
-          "name": "Leer lassen: Name nach dem Raum, z. B. {area} Durchgang."
+          "name": "Leer lassen: Name nach dem Raum, z. B. {area} Durchgang.",
+          "area": "Raum, in dem das Fenster liegt. Er bestimmt, welche Kontakte zur Auswahl stehen.",
+          "show_all": "Zeigt alle Kontakte im Haus statt nur die dieses Bereichs. Hilft, wenn der richtige fehlt."
         },
         "sections": {
           "cover": {
@@ -845,6 +895,9 @@
             "description": "Dann gibt es eine Empfehlung, wann der Rollladen zu sein sollte: tagsüber gegen Sonne und Hitze, nachts gegen Kälte. Bewegen tut ihn deine Automation.",
             "data": {
               "cover": "Rollladen"
+            },
+            "data_description": {
+              "cover": "Rollladen oder Jalousie vor diesem Fenster. Leer lassen, wenn es keinen gibt."
             }
           },
           "advanced": {
@@ -870,6 +923,12 @@
           "ajar": "angelehnt",
           "tilted": "gekippt",
           "open": "offen"
+        },
+        "data_description": {
+          "closed": "Text, den der Sensor meldet, wenn das Fenster zu ist, z. B. „closed“.",
+          "ajar": "Text, den der Sensor meldet, wenn das Fenster angelehnt ist, z. B. „ajar“.",
+          "tilted": "Text, den der Sensor meldet, wenn das Fenster gekippt ist, z. B. „tilted“.",
+          "open": "Text, den der Sensor meldet, wenn das Fenster offen ist, z. B. „open“."
         }
       },
       "window_preview": {
@@ -923,7 +982,8 @@
           },
           "data_description": {
             "side": "Von dieser Seite kommt die Außenluft, wenn du hier lüftest. Innenliegende Räume: Keine.",
-            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen."
+            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen.",
+            "area": "Bereich, für den dieser Raum steht. Eine Änderung schlägt die Quellen neu vor."
           },
           "sections": {
             "humidity_pressure": {
@@ -932,6 +992,10 @@
               "data": {
                 "humidity": "Feuchtequellen",
                 "pressure": "Luftdruckquellen"
+              },
+              "data_description": {
+                "humidity": "Sensoren für die Luftfeuchtigkeit, z. B. ein Hygrometer. Wichtigste oben, wie bei der Temperatur.",
+                "pressure": "Sensoren für den Luftdruck, z. B. eine Wetterstation. Wichtigste oben, wie bei der Temperatur."
               }
             },
             "climate": {
@@ -939,6 +1003,9 @@
               "description": "Sie werden nur gelesen, nie gesteuert. Läuft eines, während ein Fenster länger als zum Stoßlüften offen ist, gibt es eine Warnung.",
               "data": {
                 "climate_devices": "Heiz- und Klimageräte"
+              },
+              "data_description": {
+                "climate_devices": "Thermostate und Klimageräte des Raums, z. B. ein Heizkörperthermostat."
               }
             },
             "advanced": {
@@ -962,7 +1029,8 @@
           },
           "data_description": {
             "side": "Von dieser Seite kommt die Außenluft, wenn du hier lüftest. Innenliegende Räume: Keine.",
-            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen."
+            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen.",
+            "area": "Bereich, für den dieser Raum steht. Eine Änderung schlägt die Quellen neu vor."
           },
           "sections": {
             "humidity_pressure": {
@@ -971,6 +1039,10 @@
               "data": {
                 "humidity": "Feuchtequellen",
                 "pressure": "Luftdruckquellen"
+              },
+              "data_description": {
+                "humidity": "Sensoren für die Luftfeuchtigkeit, z. B. ein Hygrometer. Wichtigste oben, wie bei der Temperatur.",
+                "pressure": "Sensoren für den Luftdruck, z. B. eine Wetterstation. Wichtigste oben, wie bei der Temperatur."
               }
             },
             "climate": {
@@ -978,6 +1050,9 @@
               "description": "Sie werden nur gelesen, nie gesteuert. Läuft eines, während ein Fenster länger als zum Stoßlüften offen ist, gibt es eine Warnung.",
               "data": {
                 "climate_devices": "Heiz- und Klimageräte"
+              },
+              "data_description": {
+                "climate_devices": "Thermostate und Klimageräte des Raums, z. B. ein Heizkörperthermostat."
               }
             },
             "advanced": {
@@ -1036,7 +1111,9 @@
             "temperature": "Temperaturquellen, wichtigste oben"
           },
           "data_description": {
-            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen."
+            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen.",
+            "direction": "Himmelsrichtung dieser Außenseite. Pro Richtung gibt es eine Außenseite.",
+            "area": "Außenbereich, dessen Sensoren diese Seite messen. Eine Änderung schlägt die Quellen neu vor."
           },
           "sections": {
             "humidity_pressure": {
@@ -1045,6 +1122,10 @@
               "data": {
                 "humidity": "Feuchtequellen",
                 "pressure": "Luftdruckquellen"
+              },
+              "data_description": {
+                "humidity": "Sensoren für die Luftfeuchtigkeit, z. B. ein Hygrometer. Wichtigste oben, wie bei der Temperatur.",
+                "pressure": "Sensoren für den Luftdruck, z. B. eine Wetterstation. Wichtigste oben, wie bei der Temperatur."
               }
             },
             "advanced": {
@@ -1066,7 +1147,9 @@
             "temperature": "Temperaturquellen, wichtigste oben"
           },
           "data_description": {
-            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen."
+            "temperature": "Fällt die oberste Quelle aus, übernimmt die nächste. Ihre typische Abweichung wird ausgeglichen.",
+            "direction": "Himmelsrichtung dieser Außenseite. Pro Richtung gibt es eine Außenseite.",
+            "area": "Außenbereich, dessen Sensoren diese Seite messen. Eine Änderung schlägt die Quellen neu vor."
           },
           "sections": {
             "humidity_pressure": {
@@ -1075,6 +1158,10 @@
               "data": {
                 "humidity": "Feuchtequellen",
                 "pressure": "Luftdruckquellen"
+              },
+              "data_description": {
+                "humidity": "Sensoren für die Luftfeuchtigkeit, z. B. ein Hygrometer. Wichtigste oben, wie bei der Temperatur.",
+                "pressure": "Sensoren für den Luftdruck, z. B. eine Wetterstation. Wichtigste oben, wie bei der Temperatur."
               }
             },
             "advanced": {
@@ -1120,6 +1207,9 @@
           "description": "In welchem Raum ist das Fenster?",
           "data": {
             "area": "Raum"
+          },
+          "data_description": {
+            "area": "Raum, in dem das Fenster liegt. Er bestimmt, welche Kontakte zur Auswahl stehen."
           }
         },
         "window_type": {
@@ -1146,7 +1236,10 @@
             "name": "Name"
           },
           "data_description": {
-            "name": "Leer lassen: Name nach dem Raum, z. B. {area} Fenster."
+            "name": "Leer lassen: Name nach dem Raum, z. B. {area} Fenster.",
+            "area": "Raum, in dem das Fenster liegt. Er bestimmt, welche Kontakte zur Auswahl stehen.",
+            "leaf": "Kontakt, der meldet, ob das Fenster offen ist, z. B. ein Reed-Kontakt am Rahmen.",
+            "show_all": "Zeigt alle Kontakte im Haus statt nur die dieses Bereichs. Hilft, wenn der richtige fehlt."
           },
           "sections": {
             "extra_contacts": {
@@ -1165,6 +1258,9 @@
               "description": "Dann gibt es eine Empfehlung, wann der Rollladen zu sein sollte: tagsüber gegen Sonne und Hitze, nachts gegen Kälte. Bewegen tut ihn deine Automation.",
               "data": {
                 "cover": "Rollladen"
+              },
+              "data_description": {
+                "cover": "Rollladen oder Jalousie vor diesem Fenster. Leer lassen, wenn es keinen gibt."
               }
             },
             "advanced": {
@@ -1195,7 +1291,11 @@
           },
           "data_description": {
             "tilt": "Sitzt meist unten zwischen den Flügeln und meldet nur „offen“, wenn ein Flügel ganz aufgedreht ist. So lassen sich gekippt und offen unterscheiden.",
-            "name": "Leer lassen: Name nach dem Raum."
+            "name": "Leer lassen: Name nach dem Raum.",
+            "area": "Raum, in dem das Fenster liegt. Er bestimmt, welche Kontakte zur Auswahl stehen.",
+            "leaf_left": "Kontakt des linken Flügels, z. B. ein Reed-Kontakt am Rahmen.",
+            "leaf_right": "Kontakt des rechten Flügels, z. B. ein Reed-Kontakt am Rahmen.",
+            "show_all": "Zeigt alle Kontakte im Haus statt nur die dieses Bereichs. Hilft, wenn der richtige fehlt."
           },
           "sections": {
             "extra_contacts": {
@@ -1212,6 +1312,9 @@
               "description": "Dann gibt es eine Empfehlung, wann der Rollladen zu sein sollte: tagsüber gegen Sonne und Hitze, nachts gegen Kälte. Bewegen tut ihn deine Automation.",
               "data": {
                 "cover": "Rollladen"
+              },
+              "data_description": {
+                "cover": "Rollladen oder Jalousie vor diesem Fenster. Leer lassen, wenn es keinen gibt."
               }
             },
             "advanced": {
@@ -1242,7 +1345,9 @@
           "data_description": {
             "inner": "Die Öffnung in diesem Raum.",
             "outer": "Die Öffnung nach draußen. Hier stehen alle Kontakte, denn sie liegt meist in einem anderen Bereich. Ein Kontakt darf auch zu einem anderen Fenster gehören.",
-            "name": "Leer lassen: Name nach dem Raum, z. B. {area} Durchgang."
+            "name": "Leer lassen: Name nach dem Raum, z. B. {area} Durchgang.",
+            "area": "Raum, in dem das Fenster liegt. Er bestimmt, welche Kontakte zur Auswahl stehen.",
+            "show_all": "Zeigt alle Kontakte im Haus statt nur die dieses Bereichs. Hilft, wenn der richtige fehlt."
           },
           "sections": {
             "cover": {
@@ -1250,6 +1355,9 @@
               "description": "Dann gibt es eine Empfehlung, wann der Rollladen zu sein sollte: tagsüber gegen Sonne und Hitze, nachts gegen Kälte. Bewegen tut ihn deine Automation.",
               "data": {
                 "cover": "Rollladen"
+              },
+              "data_description": {
+                "cover": "Rollladen oder Jalousie vor diesem Fenster. Leer lassen, wenn es keinen gibt."
               }
             },
             "advanced": {
@@ -1275,6 +1383,12 @@
             "ajar": "angelehnt",
             "tilted": "gekippt",
             "open": "offen"
+          },
+          "data_description": {
+            "closed": "Text, den der Sensor meldet, wenn das Fenster zu ist, z. B. „closed“.",
+            "ajar": "Text, den der Sensor meldet, wenn das Fenster angelehnt ist, z. B. „ajar“.",
+            "tilted": "Text, den der Sensor meldet, wenn das Fenster gekippt ist, z. B. „tilted“.",
+            "open": "Text, den der Sensor meldet, wenn das Fenster offen ist, z. B. „open“."
           }
         },
         "window_preview": {
@@ -1314,6 +1428,12 @@
               "burst_duration": "Dauer Stoßlüften",
               "humidity_threshold": "Lüften wegen Feuchte ab",
               "repair_delay": "Ausfall melden nach"
+            },
+            "data_description": {
+              "max_age": "In Minuten. Ältere Messungen gelten als ausgefallen. Standard: 40.",
+              "burst_duration": "In Minuten. So lange dauert Stoßlüften; erst danach warnt der Hub vor Auskühlen oder Aufheizen. Standard: 10.",
+              "humidity_threshold": "In Prozent. Ab dieser Raumfeuchte empfiehlt der Hub Lüften, wenn die Außenluft trockener ist. Standard: 60.",
+              "repair_delay": "In Stunden. So lange fällt eine Quelle aus, bevor eine Reparatur-Meldung erscheint. Standard: 6."
             }
           }
         }

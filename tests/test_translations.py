@@ -222,6 +222,36 @@ def test_window_attribute_values_and_device_are_translated(language: str) -> Non
     }
 
 
+def _form_steps(data: dict[str, Any]) -> Iterator[tuple[str, dict[str, Any]]]:
+    """Every step of the config, subentry, options and repair flows, by path."""
+    roots = {"config": data["config"]["step"], "options": data["options"]["step"]}
+    for kind, subentry in data["config_subentries"].items():
+        roots[f"config_subentries.{kind}"] = subentry["step"]
+    for key, issue in data["issues"].items():
+        if "fix_flow" in issue:
+            roots[f"issues.{key}.fix_flow"] = issue["fix_flow"]["step"]
+    for root, steps in roots.items():
+        for step_id, step in steps.items():
+            yield f"{root}.{step_id}", step
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_every_form_field_has_a_help_text(language: str) -> None:
+    """U8: every field, sections included, has a `data_description`."""
+    missing: list[str] = []
+    for path, step in _form_steps(_load(language)):
+        forms = [(path, step)]
+        forms += [(f"{path}.{n}", s) for n, s in step.get("sections", {}).items()]
+        for where, form in forms:
+            descriptions = form.get("data_description", {})
+            missing += [
+                f"{where}.{field}"
+                for field in form.get("data", {})
+                if not descriptions.get(field, "").strip()
+            ]
+    assert missing == []
+
+
 def _step_ids(file: Path) -> set[str]:
     return set(re.findall(r'step_id="(\w+)"', file.read_text(encoding="utf-8")))
 

@@ -633,6 +633,10 @@
             "data": {
               "outdoor": "Outdoor area",
               "rooms": "Rooms on this side"
+            },
+            "data_description": {
+              "outdoor": "Outdoor area whose sensors count for this side. Leave empty if nothing measures there.",
+              "rooms": "Rooms whose windows face this side. Their outside air comes from here."
             }
           },
           "e": {
@@ -640,6 +644,10 @@
             "data": {
               "outdoor": "Outdoor area",
               "rooms": "Rooms on this side"
+            },
+            "data_description": {
+              "outdoor": "Outdoor area whose sensors count for this side. Leave empty if nothing measures there.",
+              "rooms": "Rooms whose windows face this side. Their outside air comes from here."
             }
           },
           "s": {
@@ -647,6 +655,10 @@
             "data": {
               "outdoor": "Outdoor area",
               "rooms": "Rooms on this side"
+            },
+            "data_description": {
+              "outdoor": "Outdoor area whose sensors count for this side. Leave empty if nothing measures there.",
+              "rooms": "Rooms whose windows face this side. Their outside air comes from here."
             }
           },
           "w": {
@@ -654,6 +666,10 @@
             "data": {
               "outdoor": "Outdoor area",
               "rooms": "Rooms on this side"
+            },
+            "data_description": {
+              "outdoor": "Outdoor area whose sensors count for this side. Leave empty if nothing measures there.",
+              "rooms": "Rooms whose windows face this side. Their outside air comes from here."
             }
           }
         }
@@ -677,6 +693,10 @@
             "data": {
               "outdoor": "Outdoor area",
               "rooms": "Rooms on this side"
+            },
+            "data_description": {
+              "outdoor": "Outdoor area whose sensors count for this side. Leave empty if nothing measures there.",
+              "rooms": "Rooms whose windows face this side. Their outside air comes from here."
             }
           },
           "e": {
@@ -684,6 +704,10 @@
             "data": {
               "outdoor": "Outdoor area",
               "rooms": "Rooms on this side"
+            },
+            "data_description": {
+              "outdoor": "Outdoor area whose sensors count for this side. Leave empty if nothing measures there.",
+              "rooms": "Rooms whose windows face this side. Their outside air comes from here."
             }
           },
           "s": {
@@ -691,6 +715,10 @@
             "data": {
               "outdoor": "Outdoor area",
               "rooms": "Rooms on this side"
+            },
+            "data_description": {
+              "outdoor": "Outdoor area whose sensors count for this side. Leave empty if nothing measures there.",
+              "rooms": "Rooms whose windows face this side. Their outside air comes from here."
             }
           },
           "w": {
@@ -698,6 +726,10 @@
             "data": {
               "outdoor": "Outdoor area",
               "rooms": "Rooms on this side"
+            },
+            "data_description": {
+              "outdoor": "Outdoor area whose sensors count for this side. Leave empty if nothing measures there.",
+              "rooms": "Rooms whose windows face this side. Their outside air comes from here."
             }
           }
         }
@@ -715,6 +747,9 @@
         "description": "Which room is the window in?",
         "data": {
           "area": "Room"
+        },
+        "data_description": {
+          "area": "Room the window is in. It decides which contacts are offered."
         }
       },
       "window_type": {
@@ -741,7 +776,10 @@
           "name": "Name"
         },
         "data_description": {
-          "name": "Leave empty for a name based on the room, e.g. {area} Window."
+          "name": "Leave empty for a name based on the room, e.g. {area} Window.",
+          "area": "Room the window is in. It decides which contacts are offered.",
+          "leaf": "Contact that reports whether the window is open, e.g. a reed contact on the frame.",
+          "show_all": "Lists every contact in the house instead of only this area's. Helps when the right one is missing."
         },
         "sections": {
           "extra_contacts": {
@@ -760,6 +798,9 @@
             "description": "Then there is a recommendation when the cover should be closed: by day against sun and heat, at night against the cold. Moving it is up to your automation.",
             "data": {
               "cover": "Cover"
+            },
+            "data_description": {
+              "cover": "Shutter or blind in front of this window. Leave empty if there is none."
             }
           },
           "advanced": {
@@ -790,7 +831,11 @@
         },
         "data_description": {
           "tilt": "Usually sits at the bottom between the leaves and only reports “open” when a leaf is turned fully open. This tells tilted from open.",
-          "name": "Leave empty for a name based on the room."
+          "name": "Leave empty for a name based on the room.",
+          "area": "Room the window is in. It decides which contacts are offered.",
+          "leaf_left": "Contact of the left leaf, e.g. a reed contact on the frame.",
+          "leaf_right": "Contact of the right leaf, e.g. a reed contact on the frame.",
+          "show_all": "Lists every contact in the house instead of only this area's. Helps when the right one is missing."
         },
         "sections": {
           "extra_contacts": {
@@ -807,6 +852,9 @@
             "description": "Then there is a recommendation when the cover should be closed: by day against sun and heat, at night against the cold. Moving it is up to your automation.",
             "data": {
               "cover": "Cover"
+            },
+            "data_description": {
+              "cover": "Shutter or blind in front of this window. Leave empty if there is none."
             }
           },
           "advanced": {
@@ -837,7 +885,9 @@
         "data_description": {
           "inner": "The opening in this room.",
           "outer": "The opening to the outside. All contacts are listed, because it usually lies in another area. A contact may also belong to another window.",
-          "name": "Leave empty for a name based on the room, e.g. {area} Passage."
+          "name": "Leave empty for a name based on the room, e.g. {area} Passage.",
+          "area": "Room the window is in. It decides which contacts are offered.",
+          "show_all": "Lists every contact in the house instead of only this area's. Helps when the right one is missing."
         },
         "sections": {
           "cover": {
@@ -845,6 +895,9 @@
             "description": "Then there is a recommendation when the cover should be closed: by day against sun and heat, at night against the cold. Moving it is up to your automation.",
             "data": {
               "cover": "Cover"
+            },
+            "data_description": {
+              "cover": "Shutter or blind in front of this window. Leave empty if there is none."
             }
           },
           "advanced": {
@@ -870,6 +923,12 @@
           "ajar": "ajar",
           "tilted": "tilted",
           "open": "open"
+        },
+        "data_description": {
+          "closed": "Text the sensor reports when the window is closed, e.g. “closed”.",
+          "ajar": "Text the sensor reports when the window is ajar, e.g. “ajar”.",
+          "tilted": "Text the sensor reports when the window is tilted, e.g. “tilted”.",
+          "open": "Text the sensor reports when the window is open, e.g. “open”."
         }
       },
       "window_preview": {
@@ -923,7 +982,8 @@
           },
           "data_description": {
             "side": "The outside air comes from this side when ventilating here. Interior rooms: None.",
-            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated."
+            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated.",
+            "area": "Area this room stands for. Changing it suggests the sources anew."
           },
           "sections": {
             "humidity_pressure": {
@@ -932,6 +992,10 @@
               "data": {
                 "humidity": "Humidity sources",
                 "pressure": "Pressure sources"
+              },
+              "data_description": {
+                "humidity": "Sensors for relative humidity, e.g. a hygrometer. Most important first, as for temperature.",
+                "pressure": "Sensors for air pressure, e.g. a weather station. Most important first, as for temperature."
               }
             },
             "climate": {
@@ -939,6 +1003,9 @@
               "description": "They are only read, never controlled. If one is running while a window is open longer than needed for a burst of ventilation, there is a warning.",
               "data": {
                 "climate_devices": "Heating and cooling devices"
+              },
+              "data_description": {
+                "climate_devices": "The room's thermostats and air conditioners, e.g. a radiator thermostat."
               }
             },
             "advanced": {
@@ -962,7 +1029,8 @@
           },
           "data_description": {
             "side": "The outside air comes from this side when ventilating here. Interior rooms: None.",
-            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated."
+            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated.",
+            "area": "Area this room stands for. Changing it suggests the sources anew."
           },
           "sections": {
             "humidity_pressure": {
@@ -971,6 +1039,10 @@
               "data": {
                 "humidity": "Humidity sources",
                 "pressure": "Pressure sources"
+              },
+              "data_description": {
+                "humidity": "Sensors for relative humidity, e.g. a hygrometer. Most important first, as for temperature.",
+                "pressure": "Sensors for air pressure, e.g. a weather station. Most important first, as for temperature."
               }
             },
             "climate": {
@@ -978,6 +1050,9 @@
               "description": "They are only read, never controlled. If one is running while a window is open longer than needed for a burst of ventilation, there is a warning.",
               "data": {
                 "climate_devices": "Heating and cooling devices"
+              },
+              "data_description": {
+                "climate_devices": "The room's thermostats and air conditioners, e.g. a radiator thermostat."
               }
             },
             "advanced": {
@@ -1036,7 +1111,9 @@
             "temperature": "Temperature sources, most important first"
           },
           "data_description": {
-            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated."
+            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated.",
+            "direction": "Compass direction of this outdoor side. Each direction has one outdoor side.",
+            "area": "Outdoor area whose sensors measure this side. Changing it suggests the sources anew."
           },
           "sections": {
             "humidity_pressure": {
@@ -1045,6 +1122,10 @@
               "data": {
                 "humidity": "Humidity sources",
                 "pressure": "Pressure sources"
+              },
+              "data_description": {
+                "humidity": "Sensors for relative humidity, e.g. a hygrometer. Most important first, as for temperature.",
+                "pressure": "Sensors for air pressure, e.g. a weather station. Most important first, as for temperature."
               }
             },
             "advanced": {
@@ -1066,7 +1147,9 @@
             "temperature": "Temperature sources, most important first"
           },
           "data_description": {
-            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated."
+            "temperature": "If the top source fails, the next one takes over. Its typical deviation is compensated.",
+            "direction": "Compass direction of this outdoor side. Each direction has one outdoor side.",
+            "area": "Outdoor area whose sensors measure this side. Changing it suggests the sources anew."
           },
           "sections": {
             "humidity_pressure": {
@@ -1075,6 +1158,10 @@
               "data": {
                 "humidity": "Humidity sources",
                 "pressure": "Pressure sources"
+              },
+              "data_description": {
+                "humidity": "Sensors for relative humidity, e.g. a hygrometer. Most important first, as for temperature.",
+                "pressure": "Sensors for air pressure, e.g. a weather station. Most important first, as for temperature."
               }
             },
             "advanced": {
@@ -1120,6 +1207,9 @@
           "description": "Which room is the window in?",
           "data": {
             "area": "Room"
+          },
+          "data_description": {
+            "area": "Room the window is in. It decides which contacts are offered."
           }
         },
         "window_type": {
@@ -1146,7 +1236,10 @@
             "name": "Name"
           },
           "data_description": {
-            "name": "Leave empty for a name based on the room, e.g. {area} Window."
+            "name": "Leave empty for a name based on the room, e.g. {area} Window.",
+            "area": "Room the window is in. It decides which contacts are offered.",
+            "leaf": "Contact that reports whether the window is open, e.g. a reed contact on the frame.",
+            "show_all": "Lists every contact in the house instead of only this area's. Helps when the right one is missing."
           },
           "sections": {
             "extra_contacts": {
@@ -1165,6 +1258,9 @@
               "description": "Then there is a recommendation when the cover should be closed: by day against sun and heat, at night against the cold. Moving it is up to your automation.",
               "data": {
                 "cover": "Cover"
+              },
+              "data_description": {
+                "cover": "Shutter or blind in front of this window. Leave empty if there is none."
               }
             },
             "advanced": {
@@ -1195,7 +1291,11 @@
           },
           "data_description": {
             "tilt": "Usually sits at the bottom between the leaves and only reports “open” when a leaf is turned fully open. This tells tilted from open.",
-            "name": "Leave empty for a name based on the room."
+            "name": "Leave empty for a name based on the room.",
+            "area": "Room the window is in. It decides which contacts are offered.",
+            "leaf_left": "Contact of the left leaf, e.g. a reed contact on the frame.",
+            "leaf_right": "Contact of the right leaf, e.g. a reed contact on the frame.",
+            "show_all": "Lists every contact in the house instead of only this area's. Helps when the right one is missing."
           },
           "sections": {
             "extra_contacts": {
@@ -1212,6 +1312,9 @@
               "description": "Then there is a recommendation when the cover should be closed: by day against sun and heat, at night against the cold. Moving it is up to your automation.",
               "data": {
                 "cover": "Cover"
+              },
+              "data_description": {
+                "cover": "Shutter or blind in front of this window. Leave empty if there is none."
               }
             },
             "advanced": {
@@ -1242,7 +1345,9 @@
           "data_description": {
             "inner": "The opening in this room.",
             "outer": "The opening to the outside. All contacts are listed, because it usually lies in another area. A contact may also belong to another window.",
-            "name": "Leave empty for a name based on the room, e.g. {area} Passage."
+            "name": "Leave empty for a name based on the room, e.g. {area} Passage.",
+            "area": "Room the window is in. It decides which contacts are offered.",
+            "show_all": "Lists every contact in the house instead of only this area's. Helps when the right one is missing."
           },
           "sections": {
             "cover": {
@@ -1250,6 +1355,9 @@
               "description": "Then there is a recommendation when the cover should be closed: by day against sun and heat, at night against the cold. Moving it is up to your automation.",
               "data": {
                 "cover": "Cover"
+              },
+              "data_description": {
+                "cover": "Shutter or blind in front of this window. Leave empty if there is none."
               }
             },
             "advanced": {
@@ -1275,6 +1383,12 @@
             "ajar": "ajar",
             "tilted": "tilted",
             "open": "open"
+          },
+          "data_description": {
+            "closed": "Text the sensor reports when the window is closed, e.g. “closed”.",
+            "ajar": "Text the sensor reports when the window is ajar, e.g. “ajar”.",
+            "tilted": "Text the sensor reports when the window is tilted, e.g. “tilted”.",
+            "open": "Text the sensor reports when the window is open, e.g. “open”."
           }
         },
         "window_preview": {
@@ -1314,6 +1428,12 @@
               "burst_duration": "Duration of burst ventilation",
               "humidity_threshold": "Ventilate for humidity from",
               "repair_delay": "Report an outage after"
+            },
+            "data_description": {
+              "max_age": "In minutes. Older readings count as failed. Default: 40.",
+              "burst_duration": "In minutes. How long a burst of fresh air lasts; only after that the hub warns about cooling down or heating up. Default: 10.",
+              "humidity_threshold": "In percent. From this room humidity the hub recommends ventilating if the outside air is drier. Default: 60.",
+              "repair_delay": "In hours. How long a source stays silent before a repair notice appears. Default: 6."
             }
           }
         }
