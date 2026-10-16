@@ -13,7 +13,8 @@ Branches (CLAUDE.md rule 14): `main` is the current line and pushed. `build/ci` 
 
 ## Next
 
-1. **PROD trial**, area sync off for the first run, only with Felix's explicit go.
+1. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
+   `open` for days (not built; needs a requirement and a mockup first, rule 8).
 
 DEV notes: the only real weather entity on DEV is `weather.forecast_home` (met.no); `weather.openweathermap` and
 `weather.mannheim` are mirrors without a forecast service, so the daily strategy stays unknown with them. DEV's
@@ -29,6 +30,12 @@ the area when the room was last saved counts as seen and raises nothing.
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-16: PROD first run (Felix's go, HA 2026.10.1). Only `custom_components/climate_hub` copied with
+  `deploy.ps1 -Instance Prod` (restart by hand: no PROD token in the shell), area sync left on (PROD does not use area
+  sensors). Felix set up rooms and areas through the flow: went well. The one report, a window shown open, was a
+  detached shared contact that kept saying `open`, not a logic bug; no code change. Verified on DEV: yes (before the
+  deploy); verified on PROD: first run, no findings.
 
 - 2026-10-16: CI merged into `main` (PR 1, branch deleted); on `main` CI and Validate are green, HACS included (it reads
   the default branch, so it failed on the PR). Brand images from Felix in `custom_components/climate_hub/brand/`
