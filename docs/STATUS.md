@@ -4,18 +4,17 @@ Updated 2026-10-16. The only place for project status.
 
 ## Now
 
-All three milestones are built and verified on DEV by Felix: M1 (rooms and outdoor sides) and M2 (windows) are in
-`main`; M3 (repairs: source outages, new sources, windows without a room) is on `build/m3-repairs`, click review
-passed on 2026-10-16, merge pending Felix's go. 738 tests green. Plan and build order: `docs/integration.md`.
+All three milestones are built, verified on DEV by Felix and merged into `main`: M1 (rooms and outdoor sides), M2
+(windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). 738 tests green.
+Plan and build order: `docs/integration.md`.
 
-Branches (CLAUDE.md rule 14): `main` is the current line and pushed (M2 included). `build/m3-repairs` is local, not
-pushed. `spike/native-ui` stays local as a reference and is never merged.
+Branches (CLAUDE.md rule 14): `main` is the current line; the M3 commits are not pushed yet (push is Felix's call).
+`spike/native-ui` stays local as a reference and is never merged.
 
 ## Next
 
-1. **Merge M3** into `main` after Felix's go; push is a separate step.
-2. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
-3. **PROD trial**, area sync off for the first run, only with Felix's explicit go.
+1. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
+2. **PROD trial**, area sync off for the first run, only with Felix's explicit go.
 
 DEV notes: the only real weather entity on DEV is `weather.forecast_home` (met.no); `weather.openweathermap` and
 `weather.mannheim` are mirrors without a forecast service, so the daily strategy stays unknown with them. DEV's
@@ -46,7 +45,8 @@ the area when the room was last saved counts as seen and raises nothing.
   surviving, W11 with room delete, recreate, same entity IDs), then Felix's click review: R14 dialog and its new
   menu, W11, outage with its text and its disappearance on recovery. Test setup removed afterwards (repair delay
   back to 6 h); five mirrored sensors stay in the areas they belong to. The room Küche, deleted for the W11 review,
-  is not recreated yet on DEV (its issue is open). Verified on DEV: yes.
+  was recreated through the fix flow with four suggested sources; no issue open. M3 merged into `main`;
+  `build/m3-repairs` deleted. Verified on DEV: yes.
 
 - 2026-10-16: M2 click review on DEV by Felix: passed. Before it, every window path ran through the flow API on DEV
   (single, double leaf with two text sensors and S8d pre-filled from recorder history, bath text sensor with handle,
