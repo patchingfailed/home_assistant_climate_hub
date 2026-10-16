@@ -6,7 +6,7 @@ Updated 2026-10-16. The only place for project status.
 
 All three milestones are built, verified on DEV by Felix and merged into `main`: M1 (rooms and outdoor sides), M2
 (windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). PROD runs since
-2026-10-16. 747 tests green on `fix/audit-findings`. Plan and build order: `docs/integration.md`.
+2026-10-16. 750 tests green on `fix/audit-findings`. Plan and build order: `docs/integration.md`.
 
 Branches (CLAUDE.md rule 14): `main` is the current line and pushed. `fix/audit-findings` holds the fixes and doc
 updates from the 2026-10-16 repo audit until merged. `spike/native-ui` stays local as a reference and is never merged.
@@ -15,12 +15,13 @@ The repository is public (Felix's go, 2026-10-16).
 ## Next
 
 1. **Audit fixes**: Felix's click review of `fix/audit-findings` on DEV (any reconfigure ends in „Die Änderungen sind
-   gespeichert.", interior rooms show „keine Außenseite", room absolute humidity and dew point show source and stage),
-   then merge, then PROD with Felix's go.
-2. **User documentation** in the README (entities, recommendation values, repairs, options, limitations), a separate
-   step; outline first.
-3. **Audit leftovers** (small, see Open decisions): W10 open-since hint, N7, U8 field descriptions, an entity-level
-   test for the R13 attribute, `any_cover_to_close` always carries `windows` even when empty.
+   gespeichert.", interior rooms show „keine Außenseite", room absolute humidity and dew point show source and stage,
+   form titles „Raum: …" / „Außenseite: …" / „Climate Hub – Optionen", help texts under every field), then merge,
+   then PROD with Felix's go.
+2. **User documentation** in the README (entities, recommendation values, repairs, options, limitations): paused by
+   Felix on 2026-10-16; outline first when picked up.
+3. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
+   `windows`, even when empty (decide: keep or drop when empty).
 4. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
    `open` for days (not built; needs a requirement and a mockup first, rule 8).
 
@@ -37,17 +38,19 @@ the area when the room was last saved counts as seen and raises nothing.
 
 - Scope guard from the review: no energy-exchange model (requirements §7); the cover recommendation is advisory and
   leaves existing cover automations untouched.
-- W10: the open-since hint at start takes the latest `last_changed` of all of a window's contacts
-  (`logic/engine.py:~334`); `logic.md` §8 says only contacts that report a non-closed level. Fix the code (recommended)
-  or the spec.
-- N7: `comfort_threshold_invalid` cannot be reached from the UI (the number entity's minimum is 0.5). Keep as
-  defensive code or remove with its translation.
-- Form titles: the mockups show „Raum: Wohnzimmer", „Außenseite: Osten", „Climate Hub – Optionen"; built are „Raum",
-  „Außenseite", „Optionen". Align the code or the mockup.
-- U8: some fields have no `data_description` (house plan and reconfigure sections `outdoor` and `rooms`,
-  `window_room.area`, the `window_mapping` fields). New help texts are UI text: mockup first (rule 8).
 
 ## Recently done
+
+- 2026-10-16: audit leftovers decided with Felix and built on `fix/audit-findings` (two Sonnet implementers, reviewed
+  and committed per topic). W10: the open-since hint after a restart uses only contacts that report a non-closed
+  level (a leaf closed later no longer moves the start forward). N7: the threshold check was unreachable (Home
+  Assistant validates `number.set_value` against the range, min 0.5) and is gone with its translation. Form titles
+  as in the mockups: „Raum: {area}", „Außenseite: {direction}" (translated direction), „Climate Hub – Optionen". U8:
+  70 fields per language had no help text; all have one now (Felix waived the mockup round, rule 8), and a test fails
+  on a field without one. Review find: the worker's „Alle Kontakte zeigen" text said „aus anderen Räumen", but the
+  switch also lifts the window-word filter for text sensors; reworded to „alle Kontakte im Haus". DEV: deployed with
+  restart, titles checked through the flow API (forms opened and discarded, nothing saved), texts served, log clean.
+  Verified on DEV: yes (API); click review pending.
 
 - 2026-10-16: repo audit (three Sonnet researchers: requirements traceability, specs and ADRs against code, UI and
   repo rules) and its fixes on `fix/audit-findings` (three Sonnet implementers, reviewed and committed per topic).
