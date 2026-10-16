@@ -23,7 +23,7 @@ from .logic.model import HouseModel
 
 @dataclass(frozen=True, slots=True)
 class SeenEntry:
-    """Pre-fillable entities in the area when the subentry was last saved (I4)."""
+    """Sensor and climate entities in the area when the subentry was last saved (I4)."""
 
     fingerprint: str
     entities: tuple[str, ...]
