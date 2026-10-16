@@ -5,19 +5,28 @@ Updated 2026-10-16. The only place for project status.
 ## Now
 
 All three milestones are built, verified on DEV by Felix and merged into `main`: M1 (rooms and outdoor sides), M2
-(windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). 738 tests green.
-Plan and build order: `docs/integration.md`.
+(windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). PROD runs since
+2026-10-16. 747 tests green on `fix/audit-findings`. Plan and build order: `docs/integration.md`.
 
-Branches (CLAUDE.md rule 14): `main` is the current line and pushed. `build/ci` (PR 1) holds the CI work until merged.
-`spike/native-ui` stays local as a reference and is never merged. The repository is public (Felix's go, 2026-10-16).
+Branches (CLAUDE.md rule 14): `main` is the current line and pushed. `fix/audit-findings` holds the fixes and doc
+updates from the 2026-10-16 repo audit until merged. `spike/native-ui` stays local as a reference and is never merged.
+The repository is public (Felix's go, 2026-10-16).
 
 ## Next
 
-1. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
+1. **Audit fixes**: Felix's click review of `fix/audit-findings` on DEV (any reconfigure ends in „Die Änderungen sind
+   gespeichert.", interior rooms show „keine Außenseite", room absolute humidity and dew point show source and stage),
+   then merge, then PROD with Felix's go.
+2. **User documentation** in the README (entities, recommendation values, repairs, options, limitations), a separate
+   step; outline first.
+3. **Audit leftovers** (small, see Open decisions): W10 open-since hint, N7, U8 field descriptions, an entity-level
+   test for the R13 attribute, `any_cover_to_close` always carries `windows` even when empty.
+4. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
    `open` for days (not built; needs a requirement and a mockup first, rule 8).
 
-DEV notes: the only real weather entity on DEV is `weather.forecast_home` (met.no); `weather.openweathermap` and
-`weather.mannheim` are mirrors without a forecast service, so the daily strategy stays unknown with them. DEV's
+DEV notes: DEV has one weather entity with a forecast service (met.no); its other weather entities are mirrors
+without one, so the daily strategy stays unknown with them. The `*_klima_*` entities without attributes on DEV are
+mirrors of another instance (`remote_homeassistant`), not Climate Hub's. DEV's
 mirrored sensors update only when their value changes, so a steady one turns stale after `max_age` and, after the
 repair delay, raises a real outage issue; that is DEV's mirror, not a bug. Outage tests: a state-only sensor set via
 `POST /api/states` (owned by no integration, so nothing overwrites it), first in a room's list, then `unavailable`;
@@ -26,10 +35,35 @@ the area when the room was last saved counts as seen and raises nothing.
 
 ## Open decisions
 
-- None. Scope guard from the review: no energy-exchange model (requirements §7); the cover recommendation is advisory and
+- Scope guard from the review: no energy-exchange model (requirements §7); the cover recommendation is advisory and
   leaves existing cover automations untouched.
+- W10: the open-since hint at start takes the latest `last_changed` of all of a window's contacts
+  (`logic/engine.py:~334`); `logic.md` §8 says only contacts that report a non-closed level. Fix the code (recommended)
+  or the spec.
+- N7: `comfort_threshold_invalid` cannot be reached from the UI (the number entity's minimum is 0.5). Keep as
+  defensive code or remove with its translation.
+- Form titles: the mockups show „Raum: Wohnzimmer", „Außenseite: Osten", „Climate Hub – Optionen"; built are „Raum",
+  „Außenseite", „Optionen". Align the code or the mockup.
+- U8: some fields have no `data_description` (house plan and reconfigure sections `outdoor` and `rooms`,
+  `window_room.area`, the `window_mapping` fields). New help texts are UI text: mockup first (rule 8).
 
 ## Recently done
+
+- 2026-10-16: repo audit (three Sonnet researchers: requirements traceability, specs and ADRs against code, UI and
+  repo rules) and its fixes on `fix/audit-findings` (three Sonnet implementers, reviewed and committed per topic).
+  Result: 66 of 86 requirement IDs and all 12 scenarios built and tested, 10 deferred by design, none built by
+  accident; the docs lagged the code mostly at interface level. Fixed: abort reasons had no translations, so every
+  reconfigure showed the raw `reconfigure_successful` (frontend falls back to the key); the 60 s tick could evaluate
+  before HA had started (I14), now the interval is set in the first run; interior rooms showed `no_data`, now
+  `no_side` („keine Außenseite"); room absolute humidity and dew point had no E6 attributes, now those of the weaker
+  input without `offset`; default words gain verriegelt, abgeschlossen, locked; dead `dismissed` parameter and a
+  test-only helper removed. Decided with Felix: A2 keeps warming a cold room on heat-up days (requirement sentence
+  fixed), W8 says `unknown`. New tests: A2, W8 entity state, U5 `reorder`, I14 tick, abort translations. Docs brought
+  to the built state (requirements markers for deferred IDs, interface sketches, plan-phrased text, mockup deviations,
+  §7/§8 of the mockups collapsed, ADR updates); a location name and a reference to an earlier iteration removed from
+  tracked files (they stay in the git history). DEV: deployed with restart, translations served in de and en, the
+  three interior rooms show `no_side`, the kitchen's derived values show the temperature fallback, first evaluation
+  after the start, log clean. Verified on DEV: yes (API); click review pending.
 
 - 2026-10-16: PROD first run (Felix's go, HA 2026.10.1). Only `custom_components/climate_hub` copied with
   `deploy.ps1 -Instance Prod` (restart by hand: no PROD token in the shell), area sync left on (PROD does not use area
