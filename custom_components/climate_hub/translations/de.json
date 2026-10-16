@@ -599,6 +599,10 @@
     }
   },
   "config": {
+    "abort": {
+      "reconfigure_successful": "Die Änderungen sind gespeichert.",
+      "single_instance_allowed": "Climate Hub ist bereits eingerichtet. Räume, Außenseiten und Fenster kommen über ⋮ beim Eintrag Climate Hub dazu."
+    },
     "step": {
       "user": {
         "title": "Climate Hub einrichten",
@@ -893,6 +897,9 @@
   },
   "config_subentries": {
     "room": {
+      "abort": {
+        "reconfigure_successful": "Die Änderungen sind gespeichert."
+      },
       "entry_type": "Raum",
       "initiate_flow": {
         "user": "Raum hinzufügen",
@@ -1003,6 +1010,9 @@
       }
     },
     "region": {
+      "abort": {
+        "reconfigure_successful": "Die Änderungen sind gespeichert."
+      },
       "entry_type": "Außenseite",
       "initiate_flow": {
         "user": "Außenseite hinzufügen",
@@ -1098,6 +1108,9 @@
       }
     },
     "window": {
+      "abort": {
+        "reconfigure_successful": "Die Änderungen sind gespeichert."
+      },
       "entry_type": "Fenster",
       "initiate_flow": {
         "user": "Fenster hinzufügen",

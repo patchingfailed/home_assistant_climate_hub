@@ -599,6 +599,10 @@
     }
   },
   "config": {
+    "abort": {
+      "reconfigure_successful": "The changes are saved.",
+      "single_instance_allowed": "Climate Hub is already set up. Add rooms, outdoor sides and windows via ⋮ on the Climate Hub entry."
+    },
     "step": {
       "user": {
         "title": "Set up Climate Hub",
@@ -893,6 +897,9 @@
   },
   "config_subentries": {
     "room": {
+      "abort": {
+        "reconfigure_successful": "The changes are saved."
+      },
       "entry_type": "Room",
       "initiate_flow": {
         "user": "Add room",
@@ -1003,6 +1010,9 @@
       }
     },
     "region": {
+      "abort": {
+        "reconfigure_successful": "The changes are saved."
+      },
       "entry_type": "Outdoor side",
       "initiate_flow": {
         "user": "Add outdoor side",
@@ -1098,6 +1108,9 @@
       }
     },
     "window": {
+      "abort": {
+        "reconfigure_successful": "The changes are saved."
+      },
       "entry_type": "Window",
       "initiate_flow": {
         "user": "Add window",

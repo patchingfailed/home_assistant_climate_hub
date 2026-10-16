@@ -306,3 +306,21 @@ def test_repair_flow_steps_are_translated(language: str) -> None:
     assert used and used <= steps
     for issue in ("new_source", "windows_without_room"):
         assert issues[issue]["fix_flow"]["abort"]["gone"]
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_abort_reasons_are_translated(language: str) -> None:
+    """The frontend shows the raw reason when `abort.<reason>` is missing."""
+    data = _load(language)
+    pattern = re.compile(r'async_abort\(\s*reason="(\w+)"')
+    # `single_instance_allowed`: manifest `single_config_entry`;
+    # `reconfigure_successful`: default of `async_update_and_abort`.
+    hub = {"single_instance_allowed", "reconfigure_successful"}
+    hub |= set(pattern.findall((COMPONENT / "config_flow.py").read_text("utf-8")))
+    subentry = {"reconfigure_successful"}
+    for path in (COMPONENT / "flows").glob("*.py"):
+        subentry |= set(pattern.findall(path.read_text(encoding="utf-8")))
+    assert sorted(hub - data["config"]["abort"].keys()) == []
+    for kind in ("room", "region", "window"):
+        section = data["config_subentries"][kind]["abort"]
+        assert sorted(subentry - section.keys()) == [], kind
