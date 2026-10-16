@@ -239,6 +239,28 @@ async def test_nothing_evaluates_before_start(
     assert coordinator.data is not None
 
 
+async def test_tick_waits_for_start(
+    hass: HomeAssistant,
+    house: House,
+    freezer: FrozenDateTimeFactory,
+    evaluations: list[Any],
+) -> None:
+    """Listeners exist from setup on, but the tick must not beat the start (I14)."""
+    hass.set_state(CoreState.starting)
+    coordinator = await _setup(hass, house)
+    await _advance(hass, freezer, TICK * 2)
+    assert not evaluations
+    assert coordinator.data is None
+
+    hass.set_state(CoreState.running)
+    hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
+    await hass.async_block_till_done()
+    assert len(evaluations) == 1
+
+    await _advance(hass, freezer, TICK)
+    assert len(evaluations) == 2
+
+
 async def _count_setups(
     hass: HomeAssistant, patch_target: str, action: Callable[[], None]
 ) -> int:

@@ -68,7 +68,7 @@ class ClimateHubCoordinator(DataUpdateCoordinator[EngineResult]):
             LOGGER,
             config_entry=entry,
             name=DOMAIN,
-            update_interval=TICK,
+            update_interval=None,  # set at the first run (I14)
             request_refresh_debouncer=Debouncer(
                 hass,
                 LOGGER,
@@ -132,6 +132,8 @@ class ClimateHubCoordinator(DataUpdateCoordinator[EngineResult]):
     async def _async_first_run(self, _hass: HomeAssistant) -> None:
         await self._async_fetch_forecast()
         self._started = True
+        # Only now: a tick scheduled at setup could evaluate before HA has started.
+        self.update_interval = TICK
         await self.async_refresh()
         if self.last_update_success:
             issues.async_sync_new_sources(self.hass, self.config_entry, self)
