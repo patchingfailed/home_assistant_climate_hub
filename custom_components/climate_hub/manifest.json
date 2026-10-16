@@ -1,13 +1,14 @@
 {
   "domain": "climate_hub",
   "name": "Climate Hub",
+  "after_dependencies": ["recorder", "sun", "weather"],
   "codeowners": ["@patchingfailed"],
   "config_flow": true,
   "dependencies": ["repairs"],
-  "after_dependencies": ["recorder", "sun", "weather"],
   "documentation": "https://github.com/patchingfailed/home_assistant_climate_hub",
   "integration_type": "service",
   "iot_class": "calculated",
+  "issue_tracker": "https://github.com/patchingfailed/home_assistant_climate_hub/issues",
   "single_config_entry": true,
   "version": "0.1.0"
 }
