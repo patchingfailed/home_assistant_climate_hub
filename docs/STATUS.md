@@ -6,17 +6,17 @@ Updated 2026-10-16. The only place for project status.
 
 All three milestones are built, verified on DEV by Felix and merged into `main`: M1 (rooms and outdoor sides), M2
 (windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). PROD runs since
-2026-10-16; the audit fixes are merged into `main` but not yet on PROD. 750 tests green. Plan and build order:
-`docs/integration.md`.
+2026-10-16 (0.1.0, copied by hand); release 0.2.0 with the audit fixes is published but not yet on PROD. 750 tests
+green. Plan and build order: `docs/integration.md`.
 
-Branches (CLAUDE.md rule 14): `main` is the current line; the audit merge is local until Felix's push. No open
-branches; `spike/native-ui` stays local as a reference and is never merged. The repository is public (Felix's go,
-2026-10-16).
+Branches (CLAUDE.md rule 14): `main` is the current line and pushed. No open branches; `spike/native-ui` stays local
+as a reference and is never merged. The repository is public (Felix's go, 2026-10-16).
 
 ## Next
 
-1. **Release and PROD** for the audit fixes, each with Felix's go: version bump, push, tag and GitHub release (HACS
-   users only get fixes through a release), then PROD (restart, because translations changed).
+1. **PROD to HACS** (Felix, on PROD): HA backup; HACS → ⋮ → custom repositories → this repository, type
+   Integration; download v0.2.0; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
+   gets releases; `deploy.ps1 -Instance Prod` stays as an emergency path (Felix, 2026-10-16).
 2. **User documentation** in the README (entities, recommendation values, repairs, options, limitations): paused by
    Felix on 2026-10-16; outline first when picked up.
 3. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
@@ -39,6 +39,14 @@ the area when the room was last saved counts as seen and raises nothing.
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-16: release 0.2.0 (Felix's go). Version 0.2.0 rather than 1.x: 0.x bumps the minor for new and changed
+  behaviour (the interior-room reason changes from `no_data` to `no_side`); 1.0 waits for a quiet PROD. New
+  `.github/workflows/release.yml`: a `v*` tag creates the GitHub release, after checking the tag against the manifest
+  version, with the annotated tag's message as notes (`gh` is not installed locally; release steps in CLAUDE.md).
+  `main` pushed, CI and Validate green on both commits, tag `v0.2.0` pushed, release workflow green, release is the
+  latest. Decided with Felix: PROD moves to HACS. Verified on DEV: not applicable (release only; the code is the one
+  Felix clicked through).
 
 - 2026-10-16: audit leftovers decided with Felix and built on `fix/audit-findings` (two Sonnet implementers, reviewed
   and committed per topic). W10: the open-since hint after a restart uses only contacts that report a non-closed
