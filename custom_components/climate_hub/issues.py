@@ -244,9 +244,11 @@ async def async_sync_outages(
             active = entity_name(hass, resolution.source)
             if resolution.offset is not None and round(resolution.offset, 1) != 0:
                 key = "outage"
+                # The fallback reads `offset` above the reference and is lowered by
+                # it: the text names the correction, so the sign flips.
                 offset = texts(
                     f"issue_offset_{metric.value}",
-                    value=texts.number(resolution.offset, 1, signed=True),
+                    value=texts.number(-resolution.offset, 1, signed=True),
                 )
             else:
                 key = "outage_fallback"

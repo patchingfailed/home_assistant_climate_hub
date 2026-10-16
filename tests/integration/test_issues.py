@@ -152,7 +152,7 @@ async def test_outage_after_the_delay_with_offset_text(
         "source": "Klimasensor Temperatur",
         "hours": "6",
         "active": "Luftmesser Temperatur",
-        "offset": "+0,3 °C",
+        "offset": "-0,3 °C",
     }
 
 
