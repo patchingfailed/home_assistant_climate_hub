@@ -539,6 +539,54 @@
       "name": "{area} {name}"
     }
   },
+  "issues": {
+    "outage": {
+      "title": "Sensor for {title} not responding",
+      "description": "{source} has delivered no valid values for over {hours} h. {title} currently uses {active}, corrected by {offset}. Check the battery or the connection. This message disappears by itself once the sensor delivers values again."
+    },
+    "outage_fallback": {
+      "title": "Sensor for {title} not responding",
+      "description": "{source} has delivered no valid values for over {hours} h. {title} currently uses {active}. Check the battery or the connection. This message disappears by itself once the sensor delivers values again."
+    },
+    "outage_none": {
+      "title": "Sensor for {title} not responding",
+      "description": "{source} has delivered no valid values for over {hours} h, and {title} has no replacement right now. Check the battery or the connection. This message disappears by itself once the sensor delivers values again."
+    },
+    "new_source": {
+      "title": "New sensor in area {area}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "New sensor in area {area}",
+            "description": "{source} measures temperature in area {area}. Add it as the last source of {title}? If its device also measures humidity or pressure, those come along. Change the order afterwards via ⋮ at {title}."
+          }
+        }
+      }
+    },
+    "windows_without_room": {
+      "title": "Windows in area {area} have no room",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Windows in area {area} have no room",
+            "description": "There is no room for area {area} any more. Affected: {windows}. They keep reporting whether they are open, but without a room there is no recommendation.",
+            "menu_options": {
+              "recreate_room": "Recreate the room",
+              "delete_windows": "Delete the windows"
+            }
+          },
+          "recreate_room": {
+            "title": "Recreate room {area}",
+            "description": "{preview}\n\nSubmitting creates the room with these sources. Afterwards it can be changed like any room."
+          },
+          "delete_windows": {
+            "title": "Delete the windows",
+            "description": "To be deleted: {windows}. Their entities go with them."
+          }
+        }
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {
@@ -1424,6 +1472,9 @@
     "weather_daily": "Weather service: {values}, daily forecast.",
     "weather_no_forecast": "Weather service: {values}, but no forecast. The daily strategy stays empty.",
     "weather_unavailable": "Weather service: not available. If all outdoor sensors fail, outside values are missing and the daily strategy stays empty.",
-    "weather_none": "No weather service chosen. The daily strategy stays empty."
+    "weather_none": "No weather service chosen. The daily strategy stays empty.",
+    "issue_offset_temperature": "{value} °C",
+    "issue_offset_humidity": "{value} %",
+    "issue_offset_pressure": "{value} hPa"
   }
 }

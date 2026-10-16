@@ -648,10 +648,18 @@ Issue IDs (**frozen** prefixes):
 | New source (R14) | `new_source_<subentry_id>_<entity_id>` | yes | registry listener and setup (I4) |
 | Windows without a room (W11) | `windows_without_room_<area_id>` | yes | setup (subentry changes reload) |
 
+All issues: severity warning, not persistent (they are re-synced at setup; Home Assistant keeps an ignored issue's
+`dismissed_version` across restarts). Titles name the object as „Sensor für {title}" or the area as „im Bereich
+{area}", because a placeholder cannot inflect („im Bad", „in der Küche"). Fixable issues carry their S11 text in the
+fix flow's first step (hassfest allows `description` or `fix_flow`, not both).
+
 ### 10.1 Outages (H5)
 
-Placeholders: object title, source name, active source and applied offset („Thermostat Bad, korrigiert um −0,8 °C").
-Severity warning, not persistent.
+Placeholders: object title, source name, repair delay in hours, active source and applied offset („Für Bad gilt
+gerade Thermostat Bad, korrigiert um −0,8 °C"). The metric is the first of temperature, humidity, pressure whose
+candidates contain the entity. Three translation keys, chosen at each sync: `outage` (another source is active with
+an offset that rounds to non-zero), `outage_fallback` (active source without offset) and `outage_none` (no valid
+value). Synced after each evaluation that produced a house result.
 
 ### 10.2 New sources (R14, I4)
 
@@ -660,15 +668,19 @@ Severity warning, not persistent.
   as reviewed, including sources the user removed on purpose.
 - An issue is raised for each entity from `prefill.new_sources(area, infos, temperature, scope, listed, dismissed)`
   that is not in `seen`. `dismissed` are this domain's `new_source_*` issues the user ignored (`dismissed_version`
-  set); such issues are never deleted while the entity qualifies, so "Ignorieren" stays in force.
+  set); such issues are never deleted while the entity qualifies, so "Ignorieren" stays in force. "Pre-fillable"
+  includes the R6 last resort: an entity without a device or a helper raises the issue only in an area that has
+  nothing better (agreed 2026-10-16; field use will show whether it nags).
 - Fix flow: confirm (S11 text) → append the entity to the temperature list; where the humidity or pressure list is
   explicit (not "follow"), the device's matching sensors are appended there too. The issue disappears with the
-  reload.
+  reload. Before saving, the fix flow adds only its entity to `seen` and stores the new fingerprint, so other open
+  `new_source_*` issues of the same object survive the reload (a fix is not a review of the whole form).
 
 ### 10.3 Windows without a room (W11)
 
 Fix flow menu `recreate_room` (shows the S6 preview with suggested sources, then adds the room subentry) and
-`delete_windows` (removes the window subentries of that area).
+`delete_windows` (a confirm step naming the windows, then removes the window subentries of that area). The menu
+labels carry no placeholders; the menu text names the area and the windows.
 
 Tests (`tests/integration/test_issues.py`, `tests/flows/test_repairs.py`): outage after the delay and its removal;
 R14 not raised for a deliberately removed suggestion, raised for a new entity and for one moved into the area, not
@@ -773,7 +785,7 @@ Step 8 note: `binary_sensor.py` arrives in M2, because M1 has no binary sensor (
 |---|---|---|---|---|
 | 18 | Issue sync | `issues.py` (H5, R14 with the seen set, W11), hooks in the coordinator | `tests/integration/test_issues.py` | suite green |
 | 19 | Fix flows | `repairs.py` | `tests/flows/test_repairs.py` | both fix flows end to end |
-| 20 | M3 on DEV | fixes only | full suite | outage by unplugging a DEV sensor (delay lowered in options), a new mirrored entity in a room's area; merge |
+| 20 | M3 on DEV | fixes only | full suite | outage by a state-only test sensor set to `unavailable` (delay 1 h in options; DEV's mirrored sensors also go stale on their own), a mirrored entity moved into a room's area, a room deleted next to its window; merge |
 
 After M3: CI (STATUS Next 3).
 

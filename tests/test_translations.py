@@ -271,3 +271,23 @@ def test_level_words_are_word_lists(language: str) -> None:
     for level in Level:
         words = [w.strip() for w in common[f"words_{level.name.lower()}"].split(",")]
         assert words and all(words)
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_issue_translations_cover_the_keys_used_in_code(language: str) -> None:
+    """Every key `issues.py` uses exists; each issue has a title and either a
+    description or a fix flow (hassfest: they are mutually exclusive)."""
+    data = _load(language)
+    source = (COMPONENT / "issues.py").read_text(encoding="utf-8")
+    used = set(re.findall(r'translation_key="(\w+)"', source))
+    used |= set(re.findall(r'key(?:, active)? = "(\w+)"', source))
+    used |= {"outage", "outage_fallback", "outage_none"}
+    assert used >= {"new_source", "windows_without_room"}
+    issues = data["issues"]
+    assert sorted(used - issues.keys()) == []
+    for key, issue in issues.items():
+        assert issue["title"], key
+        assert ("description" in issue) != ("fix_flow" in issue), key
+    common = data["common"]
+    for metric in ("temperature", "humidity", "pressure"):
+        assert common[f"issue_offset_{metric}"]

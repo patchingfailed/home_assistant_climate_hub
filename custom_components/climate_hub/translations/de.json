@@ -539,6 +539,54 @@
       "name": "{area} {name}"
     }
   },
+  "issues": {
+    "outage": {
+      "title": "Sensor für {title} meldet sich nicht",
+      "description": "{source} liefert seit über {hours} h keine gültigen Werte. Für {title} gilt gerade {active}, korrigiert um {offset}. Prüfe Batterie oder Verbindung. Die Meldung verschwindet von selbst, sobald der Sensor wieder Werte liefert."
+    },
+    "outage_fallback": {
+      "title": "Sensor für {title} meldet sich nicht",
+      "description": "{source} liefert seit über {hours} h keine gültigen Werte. Für {title} gilt gerade {active}. Prüfe Batterie oder Verbindung. Die Meldung verschwindet von selbst, sobald der Sensor wieder Werte liefert."
+    },
+    "outage_none": {
+      "title": "Sensor für {title} meldet sich nicht",
+      "description": "{source} liefert seit über {hours} h keine gültigen Werte, und für {title} gibt es gerade keinen Ersatz. Prüfe Batterie oder Verbindung. Die Meldung verschwindet von selbst, sobald der Sensor wieder Werte liefert."
+    },
+    "new_source": {
+      "title": "Neuer Sensor im Bereich {area}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Neuer Sensor im Bereich {area}",
+            "description": "{source} misst Temperatur im Bereich {area}. Als letzte Quelle für {title} aufnehmen? Hat das Gerät auch Feuchte oder Luftdruck, kommen diese mit. Die Reihenfolge änderst du danach über ⋮ bei {title}."
+          }
+        }
+      }
+    },
+    "windows_without_room": {
+      "title": "Fenster im Bereich {area} haben keinen Raum mehr",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Fenster im Bereich {area} haben keinen Raum mehr",
+            "description": "Im Bereich {area} gibt es keinen Raum mehr. Betroffen: {windows}. Sie melden weiter, ob sie offen sind, aber ohne Raum gibt es keine Empfehlung.",
+            "menu_options": {
+              "recreate_room": "Raum wieder anlegen",
+              "delete_windows": "Fenster löschen"
+            }
+          },
+          "recreate_room": {
+            "title": "Raum {area} wieder anlegen",
+            "description": "{preview}\n\nAbsenden legt den Raum mit diesen Quellen an. Danach lässt er sich wie jeder Raum ändern."
+          },
+          "delete_windows": {
+            "title": "Fenster löschen",
+            "description": "Gelöscht werden: {windows}. Ihre Entitäten verschwinden mit ihnen."
+          }
+        }
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {
@@ -1424,6 +1472,9 @@
     "weather_daily": "Wetterdienst: {values}, Vorhersage täglich.",
     "weather_no_forecast": "Wetterdienst: {values}, aber keine Vorhersage. Die Tagesstrategie bleibt leer.",
     "weather_unavailable": "Wetterdienst: nicht verfügbar. Fallen alle Außensensoren aus, fehlen Außenwerte, und die Tagesstrategie bleibt leer.",
-    "weather_none": "Kein Wetterdienst gewählt. Die Tagesstrategie bleibt leer."
+    "weather_none": "Kein Wetterdienst gewählt. Die Tagesstrategie bleibt leer.",
+    "issue_offset_temperature": "{value} °C",
+    "issue_offset_humidity": "{value} %",
+    "issue_offset_pressure": "{value} hPa"
   }
 }

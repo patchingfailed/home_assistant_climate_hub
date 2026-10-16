@@ -621,7 +621,15 @@ Als Quelle für den Raum Küche aufnehmen?
     Die Reihenfolge änderst du am Raum."            [ Absenden ]
 ```
 
-Only climate-grade sources (R6) raise it; contacts, motion sensors and helpers never do.
+Only what the pre-fill would suggest (R6) raises it; contacts and motion sensors never do, entities without a device
+and helpers only in an area that has nothing better (R6 last resort, agreed 2026-10-16).
+
+Built texts (2026-10-16): a placeholder cannot inflect „im Bad" or „in der Küche", so titles read „Sensor für
+{Raum} meldet sich nicht", „Neuer Sensor im Bereich {Bereich}" and „Fenster im Bereich {Bereich} haben keinen Raum
+mehr". The outage text says „liefert seit über {n} h keine gültigen Werte. Für {Raum} gilt gerade {Quelle},
+korrigiert um {Abweichung}" (without the offset clause when none applies, or „gibt es gerade keinen Ersatz"). The
+fixable issues show their text in the fix flow's first step. „Fenster löschen" gets a confirm step naming the
+windows.
 
 **Windows without a room (W11)**, fixable, one issue per area.
 

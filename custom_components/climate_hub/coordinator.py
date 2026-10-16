@@ -21,6 +21,7 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
+from . import issues
 from .const import (
     CONTACT_RECHECK,
     DOMAIN,
@@ -132,6 +133,8 @@ class ClimateHubCoordinator(DataUpdateCoordinator[EngineResult]):
         await self._async_fetch_forecast()
         self._started = True
         await self.async_refresh()
+        if self.last_update_success:
+            issues.async_sync_new_sources(self.hass, self.config_entry, self)
 
     async def async_shutdown(self) -> None:
         """Cancel timers and write the Store at once."""
@@ -203,6 +206,8 @@ class ClimateHubCoordinator(DataUpdateCoordinator[EngineResult]):
         self._registry_timer = None
         if build_model(self.hass, self.config_entry) != self.model:
             self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
+        elif self.data is not None:
+            issues.async_sync_new_sources(self.hass, self.config_entry, self)
 
     # Evaluation
 
@@ -219,6 +224,9 @@ class ClimateHubCoordinator(DataUpdateCoordinator[EngineResult]):
         self.state = state
         self.store.schedule_save(self.store_data)
         self._schedule_recheck(state)
+        await issues.async_sync_outages(
+            self.hass, self.config_entry, self.model, result
+        )
         return result
 
     def _log_failures(self, failures: Mapping[str, str]) -> None:
