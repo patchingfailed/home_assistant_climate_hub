@@ -673,7 +673,10 @@ value). Synced after each evaluation that produced a house result.
   set); such issues are never deleted while the entity qualifies, so "Ignorieren" stays in force. "Pre-fillable"
   includes the R6 last resort: an entity without a device or a helper raises the issue only in an area that has
   nothing better (agreed 2026-10-16; field use will show whether it nags).
-- Fix flow: confirm (S11 text) → append the entity to the temperature list; where the humidity or pressure list is
+- Fix flow: a menu with the S11 text, „Als Quelle aufnehmen" and „Nicht aufnehmen" (Felix's click review: a bare
+  confirm left no way to say no in the dialog). „Nicht aufnehmen" ignores the issue like Home Assistant's own
+  „Ignorieren" and ends with a short note on how to undo it. „Als Quelle aufnehmen" appends the entity to the
+  temperature list; where the humidity or pressure list is
   explicit (not "follow"), the device's matching sensors are appended there too. The issue disappears with the
   reload. Before saving, the fix flow adds only its entity to `seen` and stores the new fingerprint, so other open
   `new_source_*` issues of the same object survive the reload (a fix is not a review of the whole form).

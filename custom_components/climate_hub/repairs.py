@@ -20,6 +20,7 @@ from .registry import entity_infos
 from .store import SeenEntry, fingerprint
 
 ABORT_GONE = "gone"
+ABORT_DECLINED = "declined"
 _FOLLOWED = ((Metric.HUMIDITY, m.CONF_HUMIDITY), (Metric.PRESSURE, m.CONF_PRESSURE))
 
 
@@ -35,24 +36,34 @@ async def async_create_fix_flow(
 
 
 class NewSourceFlow(RepairsFlow):
-    """Confirm, then append the new sensor to the object's sources (R14)."""
+    """Append the new sensor to the object's sources, or decline it (R14)."""
+
+    def _placeholders(self) -> dict[str, str] | None:
+        issue = ir.async_get(self.hass).async_get_issue(DOMAIN, self.issue_id)
+        return None if issue is None else issue.translation_placeholders
 
     async def async_step_init(
         self, user_input: dict[str, str] | None = None
     ) -> FlowResult:
-        return await self.async_step_confirm()
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["add", "decline"],
+            description_placeholders=self._placeholders(),
+        )
 
-    async def async_step_confirm(
+    async def async_step_decline(
         self, user_input: dict[str, str] | None = None
     ) -> FlowResult:
-        if user_input is None:
-            issue = ir.async_get(self.hass).async_get_issue(DOMAIN, self.issue_id)
-            return self.async_show_form(
-                step_id="confirm",
-                description_placeholders=(
-                    None if issue is None else issue.translation_placeholders
-                ),
-            )
+        """Ignore the issue, as Home Assistant's own "Ignore" does; it stays listed."""
+        placeholders = self._placeholders()
+        ir.async_ignore_issue(self.hass, DOMAIN, self.issue_id, True)
+        return self.async_abort(
+            reason=ABORT_DECLINED, description_placeholders=placeholders
+        )
+
+    async def async_step_add(
+        self, user_input: dict[str, str] | None = None
+    ) -> FlowResult:
         assert self.data is not None
         entry = self.hass.config_entries.async_get_entry(str(self.data["entry_id"]))
         entity_id = str(self.data["entity_id"])

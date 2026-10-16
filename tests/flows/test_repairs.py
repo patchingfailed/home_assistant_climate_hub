@@ -31,6 +31,7 @@ from ..integration.test_issues import (
 )
 
 RELOAD = timedelta(seconds=2)
+ADD = {"next_step_id": "add"}
 
 
 async def _init(hass: HomeAssistant, issue_id: str) -> dict[str, Any]:
@@ -95,14 +96,15 @@ async def test_new_source_follow_list_stays_empty_and_seen_is_kept(
     }
 
     result = await _init(hass, f"{BEDROOM_ISSUE}{first}")
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "confirm"
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "init"
+    assert result["menu_options"] == ["add", "decline"]
     assert result["description_placeholders"] == {
         "area": "Schlafzimmer",
         "source": "extra_a",
         "title": "r_bedroom",
     }
-    result = await _configure(hass, result, {})
+    result = await _configure(hass, result, ADD)
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert _subentry(entry, "r_bedroom").data[m.CONF_TEMPERATURE] == [
         house.bedroom_temp,
@@ -131,7 +133,7 @@ async def test_new_source_extends_an_explicit_humidity_list(
     assert issue_id in _all(hass)
 
     result = await _init(hass, issue_id)
-    result = await _configure(hass, result, {})
+    result = await _configure(hass, result, ADD)
     assert result["type"] is FlowResultType.CREATE_ENTRY
     data = _subentry(entry, "r_living").data
     assert data[m.CONF_TEMPERATURE][-1] == new
@@ -139,6 +141,35 @@ async def test_new_source_extends_an_explicit_humidity_list(
 
     await _advance(hass, freezer, RELOAD)
     assert issue_id not in _all(hass)
+
+
+async def test_new_source_declined_stays_ignored(
+    hass: HomeAssistant, house: House, freezer: FrozenDateTimeFactory
+) -> None:
+    entry = _entry(house)
+    await _start(hass, entry)
+    new = _add_sensor(hass, house, "extra_a", house.bedroom)
+    await _settle(hass, freezer)
+    issue_id = f"{BEDROOM_ISSUE}{new}"
+
+    result = await _init(hass, issue_id)
+    result = await _configure(hass, result, {"next_step_id": "decline"})
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "declined"
+    assert result["description_placeholders"] == {
+        "area": "Schlafzimmer",
+        "source": "extra_a",
+        "title": "r_bedroom",
+    }
+    assert _subentry(entry, "r_bedroom").data[m.CONF_TEMPERATURE] == [
+        house.bedroom_temp
+    ]
+    assert _all(hass, "new_source_")[issue_id].dismissed_version is not None
+
+    # The next sync keeps it ignored.
+    er.async_get(hass).async_update_entity(new, name="Anders")
+    await _settle(hass, freezer)
+    assert _all(hass, "new_source_")[issue_id].dismissed_version is not None
 
 
 async def test_new_source_aborts_when_the_subentry_is_gone(
@@ -150,7 +181,7 @@ async def test_new_source_aborts_when_the_subentry_is_gone(
     await _settle(hass, freezer)
     result = await _init(hass, f"{BEDROOM_ISSUE}{new}")
     hass.config_entries.async_remove_subentry(entry, "r_bedroom")
-    result = await _configure(hass, result, {})
+    result = await _configure(hass, result, ADD)
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "gone"
 

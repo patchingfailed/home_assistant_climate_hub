@@ -629,7 +629,8 @@ Built texts (2026-10-16): a placeholder cannot inflect „im Bad" or „in der K
 mehr". The outage text says „liefert seit über {n} h keine gültigen Werte. Für {Raum} gilt gerade {Quelle},
 korrigiert um {Abweichung}" (without the offset clause when none applies, or „gibt es gerade keinen Ersatz"). The
 fixable issues show their text in the fix flow's first step. „Fenster löschen" gets a confirm step naming the
-windows.
+windows. The new-sensor dialog is a menu, „Als Quelle aufnehmen" or „Nicht aufnehmen" (the latter ignores the issue),
+instead of a bare confirm.
 
 **Windows without a room (W11)**, fixable, one issue per area.
 

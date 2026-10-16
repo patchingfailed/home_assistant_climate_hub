@@ -556,13 +556,18 @@
       "title": "Neuer Sensor im Bereich {area}",
       "fix_flow": {
         "step": {
-          "confirm": {
+          "init": {
             "title": "Neuer Sensor im Bereich {area}",
-            "description": "{source} misst Temperatur im Bereich {area}. Als letzte Quelle für {title} aufnehmen? Hat das Gerät auch Feuchte oder Luftdruck, kommen diese mit. Die Reihenfolge änderst du danach über ⋮ bei {title}."
+            "description": "{source} misst Temperatur im Bereich {area}. Als letzte Quelle für {title} aufnehmen? Hat das Gerät auch Feuchte oder Luftdruck, kommen diese mit. Die Reihenfolge änderst du danach über ⋮ bei {title}.",
+            "menu_options": {
+              "add": "Als Quelle aufnehmen",
+              "decline": "Nicht aufnehmen"
+            }
           }
         },
         "abort": {
-          "gone": "Den Raum oder die Außenseite gibt es nicht mehr, oder der Sensor ist schon Quelle."
+          "gone": "Den Raum oder die Außenseite gibt es nicht mehr, oder der Sensor ist schon Quelle.",
+          "declined": "{source} wird für {title} nicht mehr vorgeschlagen. Rückgängig machen lässt sich das über ⋮ → Ignorierte Reparaturen anzeigen."
         }
       }
     },
