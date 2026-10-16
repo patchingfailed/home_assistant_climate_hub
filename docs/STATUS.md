@@ -6,18 +6,17 @@ Updated 2026-10-16. The only place for project status.
 
 All three milestones are built, verified on DEV by Felix and merged into `main`: M1 (rooms and outdoor sides), M2
 (windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). PROD runs since
-2026-10-16. 750 tests green on `fix/audit-findings`. Plan and build order: `docs/integration.md`.
+2026-10-16; the audit fixes are merged into `main` but not yet on PROD. 750 tests green. Plan and build order:
+`docs/integration.md`.
 
-Branches (CLAUDE.md rule 14): `main` is the current line and pushed. `fix/audit-findings` holds the fixes and doc
-updates from the 2026-10-16 repo audit until merged. `spike/native-ui` stays local as a reference and is never merged.
-The repository is public (Felix's go, 2026-10-16).
+Branches (CLAUDE.md rule 14): `main` is the current line; the audit merge is local until Felix's push. No open
+branches; `spike/native-ui` stays local as a reference and is never merged. The repository is public (Felix's go,
+2026-10-16).
 
 ## Next
 
-1. **Audit fixes**: Felix's click review of `fix/audit-findings` on DEV (any reconfigure ends in „Die Änderungen sind
-   gespeichert.", interior rooms show „keine Außenseite", room absolute humidity and dew point show source and stage,
-   form titles „Raum: …" / „Außenseite: …" / „Climate Hub – Optionen", help texts under every field), then merge,
-   then PROD with Felix's go.
+1. **Release and PROD** for the audit fixes, each with Felix's go: version bump, push, tag and GitHub release (HACS
+   users only get fixes through a release), then PROD (restart, because translations changed).
 2. **User documentation** in the README (entities, recommendation values, repairs, options, limitations): paused by
    Felix on 2026-10-16; outline first when picked up.
 3. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
@@ -50,7 +49,8 @@ the area when the room was last saved counts as seen and raises nothing.
   on a field without one. Review find: the worker's „Alle Kontakte zeigen" text said „aus anderen Räumen", but the
   switch also lifts the window-word filter for text sensors; reworded to „alle Kontakte im Haus". DEV: deployed with
   restart, titles checked through the flow API (forms opened and discarded, nothing saved), texts served, log clean.
-  Verified on DEV: yes (API); click review pending.
+  Felix's click review of the whole branch on DEV: passed; `fix/audit-findings` merged into `main` (fast-forward)
+  and deleted. Verified on DEV: yes.
 
 - 2026-10-16: repo audit (three Sonnet researchers: requirements traceability, specs and ADRs against code, UI and
   repo rules) and its fixes on `fix/audit-findings` (three Sonnet implementers, reviewed and committed per topic).
