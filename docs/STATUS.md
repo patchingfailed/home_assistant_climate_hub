@@ -4,22 +4,26 @@ Updated 2026-10-16. The only place for project status.
 
 ## Now
 
-Milestones M1 (rooms and outdoor sides) and M2 (windows) are built, verified on DEV by Felix and merged into `main`
-(M2 on 2026-10-16): window devices and entities, the window flow S8–S8d, windows in the first setup, the weather
-status in S4 and S9. 711 tests green. Plan and build order: `docs/integration.md`. No repairs yet (M3).
+All three milestones are built and verified on DEV by Felix: M1 (rooms and outdoor sides) and M2 (windows) are in
+`main`; M3 (repairs: source outages, new sources, windows without a room) is on `build/m3-repairs`, click review
+passed on 2026-10-16, merge pending Felix's go. 738 tests green. Plan and build order: `docs/integration.md`.
 
-Branches (CLAUDE.md rule 14): `main` is the current line; the M2 commits are not pushed yet. `spike/native-ui` stays
-local as a reference and is never merged.
+Branches (CLAUDE.md rule 14): `main` is the current line and pushed (M2 included). `build/m3-repairs` is local, not
+pushed. `spike/native-ui` stays local as a reference and is never merged.
 
 ## Next
 
-1. **M3 repairs** (steps 18–20). Proposal for then: MQTT test devices on DEV (Mosquitto plus discovery, values
-   republished from the mirror, availability topics for outages), because DEV's mirrored entities have no devices.
+1. **Merge M3** into `main` after Felix's go; push is a separate step.
 2. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
-3. **PROD trial** after M2, area sync off for the first run, only with Felix's explicit go.
+3. **PROD trial**, area sync off for the first run, only with Felix's explicit go.
 
 DEV notes: the only real weather entity on DEV is `weather.forecast_home` (met.no); `weather.openweathermap` and
-`weather.mannheim` are mirrors without a forecast service, so the daily strategy stays unknown with them.
+`weather.mannheim` are mirrors without a forecast service, so the daily strategy stays unknown with them. DEV's
+mirrored sensors update only when their value changes, so a steady one turns stale after `max_age` and, after the
+repair delay, raises a real outage issue; that is DEV's mirror, not a bug. Outage tests: a state-only sensor set via
+`POST /api/states` (owned by no integration, so nothing overwrites it), first in a room's list, then `unavailable`;
+the repair delay goes down to 1 h in S9. New-source tests: move a mirrored sensor into a room's area; one that was in
+the area when the room was last saved counts as seen and raises nothing.
 
 ## Open decisions
 
@@ -27,6 +31,22 @@ DEV notes: the only real weather entity on DEV is `weather.forecast_home` (met.n
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-16: M3 built on `build/m3-repairs` (steps 18 and 19 by a Sonnet implementer, each reviewed and committed
+  separately) and verified on DEV. `issues.py`: outage issues after each evaluation with three texts (correction,
+  fallback only, no replacement), kept while their object fails; new-source issues (R14) from the pre-fill rules
+  including the R6 last resort, minus the seen set; windows without a room (W11) at setup. `repairs.py`: new sensor
+  as a menu „Als Quelle aufnehmen" / „Nicht aufnehmen" (Felix's click review; the bare confirm had no „no"), and
+  windows without a room with „Raum wieder anlegen" (S6 preview) or „Fenster löschen" (confirm). Decided with Felix:
+  DEV test without MQTT, R14 follows the pre-fill exactly, repair delay minimum stays 1 h. Found and fixed: the
+  fingerprint hashed `MappingProxyType` by its `str()` (key-order dependent), so a fix would have swallowed other
+  open issues; the seen set missed mirrored sensors at start-up (their device class only arrives with the state), so
+  it now records every sensor and climate entity of the area; the outage text showed the deviation (+0,8 °C) instead
+  of the applied correction (−0,8 °C). DEV smoke test through the API (R14 raise and fix with the second issue
+  surviving, W11 with room delete, recreate, same entity IDs), then Felix's click review: R14 dialog and its new
+  menu, W11, outage with its text and its disappearance on recovery. Test setup removed afterwards (repair delay
+  back to 6 h); five mirrored sensors stay in the areas they belong to. The room Küche, deleted for the W11 review,
+  is not recreated yet on DEV (its issue is open). Verified on DEV: yes.
 
 - 2026-10-16: M2 click review on DEV by Felix: passed. Before it, every window path ran through the flow API on DEV
   (single, double leaf with two text sensors and S8d pre-filled from recorder history, bath text sensor with handle,
