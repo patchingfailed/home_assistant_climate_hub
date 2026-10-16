@@ -24,6 +24,3 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # No brand image yet (own work package). Remove "brands" from this list once
-          # custom_components/climate_hub/brand/icon.png exists.
-          ignore: brands

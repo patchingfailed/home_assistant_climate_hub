@@ -13,11 +13,9 @@ Branches (CLAUDE.md rule 14): `main` is the current line and pushed. `build/ci` 
 
 ## Next
 
-1. **CI follow-up**: after the merge, confirm the HACS check is green on `main` (on the PR branch it reads the default
-   branch and fails on license, `hacs.json` and manifest).
-2. **Brand icon** (own work package, Felix): `custom_components/climate_hub/brand/icon.png`; then drop `ignore: brands`
-   from `.github/workflows/validate.yml`. First release tag after that.
-3. **PROD trial**, area sync off for the first run, only with Felix's explicit go.
+1. **First release tag** (HACS shows releases; optional but useful), then the DEV check that the icon shows in
+   "Add integration" (needs `deploy.ps1 -Restart`).
+2. **PROD trial**, area sync off for the first run, only with Felix's explicit go.
 
 DEV notes: the only real weather entity on DEV is `weather.forecast_home` (met.no); `weather.openweathermap` and
 `weather.mannheim` are mirrors without a forecast service, so the daily strategy stays unknown with them. DEV's
@@ -33,6 +31,11 @@ the area when the room was last saved counts as seen and raises nothing.
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-16: CI merged into `main` (PR 1, branch deleted); on `main` CI and Validate are green, HACS included (it reads
+  the default branch, so it failed on the PR). Brand images from Felix in `custom_components/climate_hub/brand/`
+  (icon, logo, dark logo, each plus @2x; source SVG in `docs/assets/icon.svg`), logo on top of the README, `ignore:
+  brands` removed from `validate.yml`. Verified on DEV: no.
 
 - 2026-10-16: CI on `build/ci`: `ci.yml` (ruff check and format, pytest on Python 3.14) and `validate.yml` (hassfest,
   HACS action, daily cron; `brands` ignored until the icon exists), `hacs.json` (minimum 2026.10.0), manifest

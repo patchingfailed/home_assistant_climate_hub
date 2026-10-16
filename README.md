@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="custom_components/climate_hub/brand/dark_logo@2x.png">
+    <img alt="Climate Hub" src="custom_components/climate_hub/brand/logo@2x.png" width="420">
+  </picture>
+</p>
+
 # Climate Hub
 
 Everything about your indoor climate in one place: Climate Hub merges all the temperature, humidity and pressure
