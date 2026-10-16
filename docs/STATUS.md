@@ -8,13 +8,16 @@ All three milestones are built, verified on DEV by Felix and merged into `main`:
 (windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). 738 tests green.
 Plan and build order: `docs/integration.md`.
 
-Branches (CLAUDE.md rule 14): `main` is the current line; the M3 commits are not pushed yet (push is Felix's call).
-`spike/native-ui` stays local as a reference and is never merged.
+Branches (CLAUDE.md rule 14): `main` is the current line and pushed. `build/ci` (PR 1) holds the CI work until merged.
+`spike/native-ui` stays local as a reference and is never merged. The repository is public (Felix's go, 2026-10-16).
 
 ## Next
 
-1. **CI**: pytest, ruff, hassfest, HACS validation; `hacs.json` with `"homeassistant": "2026.10.0"` (ADR-008).
-2. **PROD trial**, area sync off for the first run, only with Felix's explicit go.
+1. **CI follow-up**: after the merge, confirm the HACS check is green on `main` (on the PR branch it reads the default
+   branch and fails on license, `hacs.json` and manifest).
+2. **Brand icon** (own work package, Felix): `custom_components/climate_hub/brand/icon.png`; then drop `ignore: brands`
+   from `.github/workflows/validate.yml`. First release tag after that.
+3. **PROD trial**, area sync off for the first run, only with Felix's explicit go.
 
 DEV notes: the only real weather entity on DEV is `weather.forecast_home` (met.no); `weather.openweathermap` and
 `weather.mannheim` are mirrors without a forecast service, so the daily strategy stays unknown with them. DEV's
@@ -30,6 +33,13 @@ the area when the room was last saved counts as seen and raises nothing.
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-16: CI on `build/ci`: `ci.yml` (ruff check and format, pytest on Python 3.14) and `validate.yml` (hassfest,
+  HACS action, daily cron; `brands` ignored until the icon exists), `hacs.json` (minimum 2026.10.0), manifest
+  `issue_tracker` and sorted keys, README with the problem statement and the AI disclosure, MIT license. `win_compat`
+  needs no change on Linux. Publish check (tree and 68 commits): no IPs, tokens or hosts; the repository went public.
+  Found: a workflow on a branch needs a pull request to run (push trigger is `main` only); the HACS job needs a
+  checkout. Verified on DEV: not applicable (no integration code changed).
 
 - 2026-10-16: M3 built on `build/m3-repairs` (steps 18 and 19 by a Sonnet implementer, each reviewed and committed
   separately) and verified on DEV. `issues.py`: outage issues after each evaluation with three texts (correction,
