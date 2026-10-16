@@ -1,10 +1,13 @@
 # Climate Hub
 
-A Home Assistant integration that turns many uneven temperature and humidity sensors into **one trustworthy climate
-picture** per room and per outdoor side, and tells you **when opening or closing a window helps**.
+Everything about your indoor climate in one place: Climate Hub merges all the temperature, humidity and pressure
+sensors of a room, plus the readings from outside, into **one entity per room and per outdoor side**. When a sensor
+drops out, that entity keeps delivering a trustworthy value instead of going `unavailable`. That makes it a stable
+foundation for dashboards and downstream automations. On top of that, it tells you **when opening or closing a window
+helps**.
 
-Some of your sensors sit next to a radiator, some report the fridge, some drop off the network for hours. Climate Hub
-ranks them, falls back when one fails, and always says where a value came from.
+The problem: some of your sensors sit next to a radiator, some report the fridge, some drop off the network for hours.
+Climate Hub ranks them, falls back when one fails, and always says where a value came from.
 
 ## What it does
 
