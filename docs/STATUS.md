@@ -1,6 +1,6 @@
 # Status
 
-Updated 2026-10-16. The only place for project status.
+Updated 2026-10-18. The only place for project status.
 
 ## Now
 
@@ -9,16 +9,17 @@ All three milestones are built, verified on DEV by Felix and merged into `main`:
 2026-10-16 (0.1.0, copied by hand); release 0.2.0 with the audit fixes is published but not yet on PROD. 750 tests
 green. Plan and build order: `docs/integration.md`.
 
-Branches (CLAUDE.md rule 14): `main` is the current line and pushed. No open branches; `spike/native-ui` stays local
-as a reference and is never merged. The repository is public (Felix's go, 2026-10-16).
+Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` is open for the documentation package
+(local, no commits of its own yet). `spike/native-ui` stays local as a reference and is never merged. The repository is
+public (Felix's go, 2026-10-16).
 
 ## Next
 
 1. **PROD to HACS** (Felix, on PROD): HA backup; HACS → ⋮ → custom repositories → this repository, type
    Integration; download v0.2.0; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
    gets releases; `deploy.ps1 -Instance Prod` stays as an emergency path (Felix, 2026-10-16).
-2. **User documentation** in the README (entities, recommendation values, repairs, options, limitations): paused by
-   Felix on 2026-10-16; outline first when picked up.
+2. **Documentation package** on `docs/documentation`, planned with Felix on 2026-10-18 (section below). Built in a
+   new session, starting with WP0.
 3. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
    `windows`, even when empty (decide: keep or drop when empty).
 4. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
@@ -33,12 +34,80 @@ repair delay, raises a real outage issue; that is DEV's mirror, not a bug. Outag
 the repair delay goes down to 1 h in S9. New-source tests: move a mirrored sensor into a room's area; one that was in
 the area when the room was last saved counts as seen and raises nothing.
 
+## Documentation package (planned 2026-10-18)
+
+Three readers, three places. Every work package starts with an outline that Felix approves, is written from the code
+(the audit found the specs lagging at interface level) and is checked fact by fact against the code by a verifier.
+Order WP0 → WP1 → WP3 → WP2, all on `docs/documentation`; Sonnet workers draft, the main session reviews.
+
+| Reader | Question | Place |
+|---|---|---|
+| Home Assistant user | How do I get it running, what do I see afterwards, is that normal? | `README.md` (HACS shows it), `docs/reference.md` |
+| Developer, reviewer, new dev session | What is built, how is it computed, and why? | `docs/logic.md`, `docs/integration.md`, reworked in place |
+| Claude working with an installed Climate Hub | Which entities, what do the values mean, what may I change, how do I diagnose? | `docs/agent/climate-hub/SKILL.md` |
+
+Decided with Felix:
+- The technical documentation stays in the design set: `logic.md` and `integration.md` become the description of the
+  built system instead of a new file next to them. File names, section numbers and the D/I IDs stay, because about 80
+  code and test docstrings cite them.
+- The agent context is for Claude outside Home Assistant (Claude Code or claude.ai with access to an instance), in
+  skill format. No prompt for Home Assistant's own Assist.
+- Screenshots: Felix takes them from a shot list that WP1 delivers; no automation for now.
+- A docs guard test (WP1).
+
+**WP0 Writing rules.** A short "Docs" section in CLAUDE.md, so every session and worker reads it: numbers and
+conditions instead of adjectives ("falls back after 40 min without an update", not "robust fallback"); state limits and
+what the integration does not do; no marketing words (seamless, powerful, effortless, robust, smart, simply, just,
+easily, comprehensive, crucial, leverage; kept as a grep list); no "not just X but Y", rhetorical questions,
+"Whether you …", triads for rhythm, closing summaries, emoji, exclamation marks, bold in running text; every statement
+checkable against code or behaviour, checked instead of hedged; one fact in one place, others link. The README's
+documentation section becomes the map of the three readers.
+
+**WP1 User.** README: what it does (sober rewrite of the pitch and of the "Built with care …" heading); requirements
+(HA 2026.10, sensors assigned to areas, optional weather entity with a forecast); first setup as click steps along
+S1–S4 and what the defaults mean; adding rooms, sides and windows later; expected behaviour (offsets learn over about
+24 h, fallback stage in the attributes, `none` with `no_side` without a main side, daily strategy unknown without a
+forecast-capable weather entity, the cover recommendation moves nothing, repairs only after the repair delay, entities
+briefly unavailable after a configuration change); troubleshooting table (symptom → cause → remedy, from cases seen on
+DEV and PROD); limits (requirements §7). `docs/reference.md`: every entity with raw states and English label, every
+reason, attributes, options with defaults, repairs, diagnostics. Source of truth: `en.json`, the entity classes,
+mockups §6. English only (rule 12). `tests/test_docs.py`: every entity key and every enum state and reason in
+`en.json` appears in `docs/reference.md` and in the skill. Shot list for Felix (screen, state, crop, English UI);
+before an image is committed, check it for private details (rule 13: device names, user in the sidebar, URL bar), and
+check that images render in HACS' info view (relative paths may not; then absolute URLs). Done when the verifier
+passed and someone set up Climate Hub on DEV using only the README, every step as written.
+
+**WP3 Agent context.** `docs/agent/climate-hub/SKILL.md`, self-contained, about 150–250 lines: object model; finding
+entities by platform `climate_hub` and `translation_key`, not by entity ID pattern (IDs are generated in the instance
+language); raw states and reasons with their meaning; provenance through `source`, `stage`, `reason`, `offset`; only
+the three comfort numbers are writable, everything else goes through the UI flows, never `.storage`; rules (never touch
+unique IDs, recommendations are advice, no cover automation unless asked, automations tolerate `unavailable` after a
+reload); recipes (diagnose a value, explain a recommendation, one dashboard template for every room, automations on
+recommendation plus reason and on the `any_*` sensors). Open for the outline: whether the repository should also be
+installable as a Claude Code plugin. Done when a fresh Sonnet session with only the skill and read access to DEV solves
+five tasks (explain a value, explain a `close`, list open windows, draft an automation, set the comfort range for the
+night), each answer checked against DEV.
+
+**WP2 Technical documentation.** Rework `logic.md` and `integration.md` from build specs into the description of the
+built system. Each section: what happens, how (formula or Mermaid flow), constants with values, why (ADR, requirement,
+D/I ID), where in code and tests. Mermaid flows at least for one evaluation (8 steps), a room value with fallback and
+offset learning, the outdoor fallback chain, window state, recommendation, cover. Removed: build order (§15 in both;
+the CLAUDE.md layout line follows), approval and review history. The §0 decision tables dissolve into each section's
+rationale; the IDs stay as anchors. Representative table cases stay as worked examples (the psychrometric reference
+values in full); the complete cases live in the tests. Done when the verifier checked every number, formula and
+threshold against the code, the reference values are recomputed with the code, Mermaid renders on GitHub, Felix read
+two sections (dew point, recommendation) and could follow them, and no link or section reference is dead.
+
 ## Open decisions
 
 - Scope guard from the review: no energy-exchange model (requirements §7); the cover recommendation is advisory and
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-18: documentation package planned with Felix (section above): three readers, writing rules, the technical
+  documentation reworks the specs in place, agent context as a Claude skill, screenshots by Felix from a shot list,
+  docs guard test. Branch `docs/documentation` opened. Verified on DEV: not applicable (plan only).
 
 - 2026-10-16: release 0.2.0 (Felix's go). Version 0.2.0 rather than 1.x: 0.x bumps the minor for new and changed
   behaviour (the interior-room reason changes from `no_data` to `no_side`); 1.0 waits for a quiet PROD. New
