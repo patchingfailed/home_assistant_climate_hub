@@ -10,7 +10,7 @@ All three milestones are built, verified on DEV by Felix and merged into `main`:
 green. Plan and build order: `docs/integration.md`.
 
 Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` is open for the documentation package
-(local, no commits of its own yet). `spike/native-ui` stays local as a reference and is never merged. The repository is
+(local, WP0 done); it merges into `main` after WP1. `spike/native-ui` stays local as a reference and is never merged. The repository is
 public (Felix's go, 2026-10-16).
 
 ## Next
@@ -18,8 +18,7 @@ public (Felix's go, 2026-10-16).
 1. **PROD to HACS** (Felix, on PROD): HA backup; HACS → ⋮ → custom repositories → this repository, type
    Integration; download v0.2.0; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
    gets releases; `deploy.ps1 -Instance Prod` stays as an emergency path (Felix, 2026-10-16).
-2. **Documentation package** on `docs/documentation`, planned with Felix on 2026-10-18 (section below). Built in a
-   new session, starting with WP0.
+2. **Documentation package**, planned with Felix on 2026-10-18 (section below). WP0 done; next is the WP1 outline.
 3. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
    `windows`, even when empty (decide: keep or drop when empty).
 4. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
@@ -38,7 +37,9 @@ the area when the room was last saved counts as seen and raises nothing.
 
 Three readers, three places. Every work package starts with an outline that Felix approves, is written from the code
 (the audit found the specs lagging at interface level) and is checked fact by fact against the code by a verifier.
-Order WP0 → WP1 → WP3 → WP2, all on `docs/documentation`; Sonnet workers draft, the main session reviews.
+Order WP0 → WP1 → WP3 → WP2; Sonnet workers draft, the main session reviews. WP0 and WP1 on `docs/documentation`,
+merged into `main` after WP1 so that the README HACS shows is reworked early and the branch stays short; WP3 and WP2
+on a new branch (Felix, 2026-10-18).
 
 | Reader | Question | Place |
 |---|---|---|
@@ -55,13 +56,9 @@ Decided with Felix:
 - Screenshots: Felix takes them from a shot list that WP1 delivers; no automation for now.
 - A docs guard test (WP1).
 
-**WP0 Writing rules.** A short "Docs" section in CLAUDE.md, so every session and worker reads it: numbers and
-conditions instead of adjectives ("falls back after 40 min without an update", not "robust fallback"); state limits and
-what the integration does not do; no marketing words (seamless, powerful, effortless, robust, smart, simply, just,
-easily, comprehensive, crucial, leverage; kept as a grep list); no "not just X but Y", rhetorical questions,
-"Whether you …", triads for rhythm, closing summaries, emoji, exclamation marks, bold in running text; every statement
-checkable against code or behaviour, checked instead of hedged; one fact in one place, others link. The README's
-documentation section becomes the map of the three readers.
+**WP0 Writing rules.** Done: the "Docs" section in CLAUDE.md is the reference for every session and worker. The
+README's documentation section is the map of the readers, one row per reader once its document exists (WP1 adds
+`docs/reference.md`, WP3 the skill).
 
 **WP1 User.** README: what it does (sober rewrite of the pitch and of the "Built with care …" heading); requirements
 (HA 2026.10, sensors assigned to areas, optional weather entity with a forecast); first setup as click steps along
@@ -104,6 +101,12 @@ two sections (dew point, recommendation) and could follow them, and no link or s
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-18: WP0 of the documentation package. "Docs" section in CLAUDE.md with the writing rules; beyond the plan:
+  present tense for what is built, one name per concept, prose wrapped at 120. Decided with Felix: bold only for UI
+  labels in click steps (Home Assistant docs convention); the rules cover UI strings only when they are added or
+  changed anyway, no sweep of existing ones; merge after WP1. README documentation section rebuilt as the reader map.
+  Verified on DEV: not applicable (docs only).
 
 - 2026-10-18: documentation package planned with Felix (section above): three readers, writing rules, the technical
   documentation reworks the specs in place, agent context as a Claude skill, screenshots by Felix from a shot list,

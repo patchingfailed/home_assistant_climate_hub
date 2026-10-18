@@ -52,9 +52,10 @@ restart.
 
 ## Documentation
 
-The design documents live in [`docs/`](docs/): [requirements](docs/requirements.md),
-[architecture decisions](docs/architecture.md), [UI mockups](docs/ui_mockups.md), [pure logic spec](docs/logic.md) and
-[integration spec](docs/integration.md). Current status: [`docs/STATUS.md`](docs/STATUS.md).
+| For | Read |
+|---|---|
+| Setting up and using Climate Hub | this README |
+| Development and review: what is built, how it is computed, why | [logic](docs/logic.md), [integration](docs/integration.md), [architecture decisions](docs/architecture.md), [requirements](docs/requirements.md), [UI mockups](docs/ui_mockups.md); status in [STATUS](docs/STATUS.md) |
 
 ## License
 

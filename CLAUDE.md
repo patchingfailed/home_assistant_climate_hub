@@ -59,3 +59,23 @@ emergency path (HACS then shows a stale version).
 14. **Branches:** `main` holds the current, tested state. A larger task gets a short-lived branch off `main`, merged
     back once its tests are green and Felix has looked, then deleted. Spikes (`spike/*`) are reference only, never
     merged.
+
+## Docs
+
+Writing rules for `README.md`, everything in `docs/`, and UI strings in `translations/` when they are added or
+changed anyway.
+
+- Numbers and conditions instead of adjectives: "falls back to the next source when the current one has not updated
+  for 40 min (default `max_age`)", not "robust fallback".
+- State limits and what Climate Hub does not do.
+- Every statement is checkable against code or behaviour. Check it instead of hedging with "should" or "probably".
+- Present tense for what is built; planned or deferred items are marked as such.
+- One fact in one place; other places link to it.
+- One name per concept. User docs use the English UI label ("outdoor side"); technical docs use the code name
+  (`region`) and give the UI label at its first mention.
+- Raw states, reasons, keys and attributes in backticks (`no_side`); UI labels as the English UI shows them.
+- Not used: rhetorical questions, "not just X but Y", "Whether you …", triads for rhythm, closing summaries, emoji,
+  exclamation marks, bold for emphasis. Bold marks only UI labels in click steps (Home Assistant docs convention).
+- Banned words (grep list): `seamless`, `powerful`, `effortless`, `robust`, `smart`, `simply`, `just`, `easily`,
+  `comprehensive`, `crucial`, `leverage`.
+- Prose wraps at 120 characters.
