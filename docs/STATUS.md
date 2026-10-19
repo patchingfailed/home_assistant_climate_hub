@@ -283,9 +283,10 @@ two sections (dew point, recommendation) and could follow them, and no link or s
   `docs/requirements.md`, `docs/architecture.md` (ADR-001 to ADR-006), `docs/ui_mockups.md`, this file.
   Verified on DEV: no (nothing built yet).
 
-## Room readings (branch `feature/room-readings`, 2026-10-19)
+## Room readings (merged into `main` 2026-10-19)
 
-Branched from `main` in a separate worktree, so `docs/documentation` stays as it is. Decided with Felix on 2026-10-19:
+Built on `feature/room-readings` in a separate worktree, so `docs/documentation` stayed as it was; fast-forwarded
+into `main` with Felix's go on 2026-10-19 and deleted (not pushed). Decided with Felix on 2026-10-19:
 own entities instead of attributes on the room temperature; a room switch „Messpunkte einzeln zeigen" (default on);
 `climate` entities listed but counted in the spread only when a room has fewer than two sensors; a setpoint comparison
 as its own entity; humidity included. Requirements R16, R17 and E6, mockup S6 and §6, logic §16, integration §3.2,
@@ -298,14 +299,14 @@ removes and restores both spread entities. DEV showed that many friendly names a
 labels now fall back to the entity ID before the full name.
 
 Open:
-1. Felix looks at the entities on DEV (more-info attribute view, German and English) and the switch in the room form,
-   then merge into `main` (his go; push separately).
+1. Felix clicks through the entities on DEV (more-info attribute view, German and English) and the switch in the room
+   form.
 2. Decisions taken without Felix, to confirm: an outage of one of two sensors leaves the spread empty instead of
    counting the thermostat; only `heat`, `cool`, `heat_cool` and `auto` count as regulating; negative deviation
    means colder than the setpoint; metric words are known in English and German only.
-3. After both branches are in `main`: the new entities and attributes go into `docs/reference.md`, `README.md` and the
-   agent skill (`docs/agent/climate-hub/SKILL.md`), which exist only on `docs/documentation`.
+3. The new entities and attributes go into `docs/reference.md`, `README.md` and the agent skill
+   (`docs/agent/climate-hub/SKILL.md`), which exist only on `docs/documentation`: that branch merges `main` first.
 
-DEV note: since 2026-10-19 DEV runs this branch (copied from a `git archive` export of its HEAD), not 0.2.0. Because
+DEV note: since 2026-10-19 DEV runs this state (copied from a `git archive` export of the branch HEAD), not 0.2.0. Because
 DEV's server language is English, the new entities have English entity IDs there
 (`sensor.study_climate_temperature_spread`); the README walkthrough on DEV now shows these three entities as well.
