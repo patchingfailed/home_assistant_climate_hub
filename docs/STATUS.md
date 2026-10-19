@@ -6,25 +6,23 @@ Updated 2026-10-19. The only place for project status.
 
 All three milestones are built, verified on DEV by Felix and merged into `main`: M1 (rooms and outdoor sides), M2
 (windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). PROD runs since
-2026-10-16 (0.1.0, copied by hand). Release 0.3.0 (2026-10-19) carries the room readings (R16, R17; section at the
-end) and the user documentation; it is not yet on PROD. 822 tests green. Plan and build order: `docs/integration.md`.
+2026-10-16 (0.1.0, copied by hand). Release 0.3.0 (2026-10-19) carries the room readings (R16, R17; section at the end)
+and the user documentation, 0.3.1 the fixes from the documentation work; neither is on PROD yet. 829 tests green. Plan
+and build order: `docs/integration.md`.
 
-Branches (CLAUDE.md rule 14): `main` is the current line; `docs/documentation` was merged into it on 2026-10-19 and
-deleted. `spike/native-ui` stays local as a reference and is never merged. The repository is public (Felix's go,
-2026-10-16).
+Branches (CLAUDE.md rule 14): `main` is the current line; `docs/documentation` and `fix/doc-findings` were merged into
+it on 2026-10-19 and deleted. `spike/native-ui` stays local as a reference and is never merged. The repository is public
+(Felix's go, 2026-10-16).
 
 ## Next
 
 1. **PROD to HACS** (Felix, on PROD): HA backup; HACS → ⋮ → custom repositories → this repository, type
-   Integration; download v0.3.0; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
+   Integration; download v0.3.1; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
    gets releases; `deploy.ps1 -Instance Prod` stays as an emergency path (Felix, 2026-10-16).
-2. **Fix branch `fix/doc-findings`**, built and verified on DEV through the flow API (see Recently done). Open:
-   Felix looks at it (on DEV: **Add window** with an area without a temperature sensor shows the hint; the window
-   type step's title), then merge into `main`; proposal: patch release 0.3.1, since 0.3.0 still shows the broken
-   title in the first setup. Still to check on DEV: the repair menus `new_source` and `windows_without_room` carry
-   `{area}` in their titles (a different dialog; Felix's M3 click review saw no error).
-3. **WP2, technical documentation** (section "Documentation package" below), in a fresh session on a new branch.
+2. **WP2, technical documentation** (section "Documentation package" below), in a fresh session on a new branch.
    WP0, WP1 and WP3 are done and released with 0.3.0.
+3. **Small check on DEV**: the repair menus `new_source` and `windows_without_room` carry `{area}` in their titles
+   (a different dialog from the config flow; Felix's M3 click review saw no error). Look at one when a repair is open.
 4. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
    `open` for days (not built; needs a requirement and a mockup first, rule 8).
 
@@ -115,8 +113,8 @@ two sections (dew point, recommendation) and could follow them, and no link or s
   the repair still deletes it. 829 tests green. DEV: deployed with restart; through the flow API the living room
   (no temperature sensor) is refused with `no_room_temperature`, the kitchen proceeds to the type step; en and de
   texts served. Two core warnings ("Failed to load integration for translation: climate_hub.sensor/number") predate
-  the deploy and come from Home Assistant's translation helper. Verified on DEV: yes (flow API; click review
-  pending).
+  the deploy and come from Home Assistant's translation helper. Verified on DEV: yes (flow API, then Felix's click
+  review: passed). Merged into `main` and released as 0.3.1 (Felix's go).
 
 - 2026-10-19: documentation merged and release 0.3.0 (Felix's go). `docs/documentation` fast-forwarded into `main`
   and deleted; DEV's server language back to `de`. Before the push, a scan of the 17 unpushed commits found a room
