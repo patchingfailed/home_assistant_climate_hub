@@ -10,17 +10,22 @@ All three milestones are built, verified on DEV by Felix and merged into `main`:
 green. Plan and build order: `docs/integration.md`.
 
 Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` is open for the documentation package
-(local, WP0 done); it merges into `main` after WP1. `spike/native-ui` stays local as a reference and is never merged. The repository is
-public (Felix's go, 2026-10-16).
+(local, WP0 done, WP1 drafted); it merges into `main` after WP1. `spike/native-ui` stays local as a reference and
+is never merged. The repository is public (Felix's go, 2026-10-16).
 
 ## Next
 
 1. **PROD to HACS** (Felix, on PROD): HA backup; HACS → ⋮ → custom repositories → this repository, type
    Integration; download v0.2.0; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
    gets releases; `deploy.ps1 -Instance Prod` stays as an emergency path (Felix, 2026-10-16).
-2. **Documentation package**, planned with Felix on 2026-10-18 (section below). WP0 done; next is the WP1 outline.
+2. **Documentation package**, planned with Felix on 2026-10-18 (section below). WP0 done; WP1 drafted and verified
+   against the code. Next: Felix deletes the DEV entry and sets Climate Hub up again from the README alone (English
+   UI), taking the screenshots from the shot list on the way; then images in, merge into `main`.
 3. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
-   `windows`, even when empty (decide: keep or drop when empty).
+   `windows`, even when empty (decide: keep or drop when empty). Found during WP1: the reason `ok` is translated but
+   never written (dead entry, rule 4; `tests/test_docs.py` requires it in the reference while it exists); the `plan`
+   and `reconfigure` step descriptions say "Simply leave out …" (banned word; change when the text is touched anyway);
+   diagnostics redact nothing (no secrets in them; the reference says so; proposal: keep).
 4. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
    `open` for days (not built; needs a requirement and a mockup first, rule 8).
 
@@ -101,6 +106,18 @@ two sections (dew point, recommendation) and could follow them, and no link or s
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-18: WP1 drafted (outline approved by Felix). README rewritten (sober intro, requirements, first setup as
+  click steps, defaults, adding later, what you get, expected behaviour, troubleshooting from real cases, limits,
+  "Development and AI use"); new `docs/reference.md` (every entity, state, reason, attribute, setting, repair,
+  diagnostics); new `tests/test_docs.py` (en.json keys, states and reasons in the reference; banned words read from
+  CLAUDE.md; relative links and anchors). Two Sonnet drafters, two Sonnet verifiers (about 580 statements checked
+  against code): README 8 wrong or imprecise plus 4 minor, reference 3 wrong and 5 imprecise, all fixed. Among them:
+  the room pre-check rule (an outside-word floor beats a climate entity), the reload timer (1 s after the first
+  change), the cover hold (15 min dwell of the current wish, not of the new one) and the `new_source` check (start
+  and 5 s after a registry change, not every evaluation). Code facts that the specs state differently, for WP2: offsets use an 8 h time constant, not a 24 h
+  window; the Daily strategy entity does not exist without a weather entity. 756 tests green. Verified on DEV: no
+  (Felix's README walkthrough pending).
 
 - 2026-10-18: WP0 of the documentation package. "Docs" section in CLAUDE.md with the writing rules; beyond the plan:
   present tense for what is built, one name per concept, prose wrapped at 120. Decided with Felix: bold only for UI
