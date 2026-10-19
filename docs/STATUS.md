@@ -6,32 +6,23 @@ Updated 2026-10-19. The only place for project status.
 
 All three milestones are built, verified on DEV by Felix and merged into `main`: M1 (rooms and outdoor sides), M2
 (windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). PROD runs since
-2026-10-16 (0.1.0, copied by hand); release 0.2.0 with the audit fixes is published but not yet on PROD. Room readings
-(R16, R17) merged into `main` on 2026-10-19 (section at the end). 822 tests green. Plan and build order:
-`docs/integration.md`.
+2026-10-16 (0.1.0, copied by hand). Release 0.3.0 (2026-10-19) carries the room readings (R16, R17; section at the
+end) and the user documentation; it is not yet on PROD. 822 tests green. Plan and build order: `docs/integration.md`.
 
-Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` is open for the documentation package
-(local, WP0 done, WP1 drafted, WP3 built); it merges into `main` after Felix's README walkthrough.
-`spike/native-ui` stays local as a reference and is never merged. The repository is public (Felix's go, 2026-10-16).
+Branches (CLAUDE.md rule 14): `main` is the current line; `docs/documentation` was merged into it on 2026-10-19 and
+deleted. `spike/native-ui` stays local as a reference and is never merged. The repository is public (Felix's go,
+2026-10-16).
 
 ## Next
 
 1. **PROD to HACS** (Felix, on PROD): HA backup; HACS → ⋮ → custom repositories → this repository, type
-   Integration; download v0.2.0; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
+   Integration; download v0.3.0; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
    gets releases; `deploy.ps1 -Instance Prod` stays as an emergency path (Felix, 2026-10-16).
-2. **Documentation package**, planned with Felix on 2026-10-18 (section below). WP0 done; WP1 drafted, verified
-   against the code, entry points corrected from Felix's screenshot; WP3 (agent skill) built on the same branch at
-   Felix's request, because he wants to use it on PROD now. Continue here:
-   1. DEV is prepared: server language switched from `de` to `en` (2026-10-19, Felix's go) so that device names and
-      entity IDs come out English; floors First floor and Outside. After the walkthrough, switch the server language
-      back to `de` (Settings → System → General, or WebSocket `config/core/update` with `language`).
-   2. Done 2026-10-19: Felix rebuilt DEV from the README and took the screenshots; all nine are embedded
-      (`setup-preview` with the location hint blurred by Felix, `room-sensors` and `window-type` retaken;
-      `setup-plan` and `room-readings` kept as they are by Felix's choice). His one note, folded in: the README now
-      explains up front that outdoor sides need Home Assistant areas of their own ("Areas for the outside").
-   3. Open: Felix's go for the merge of `docs/documentation` into `main` (push is a separate go); then switch DEV's
-      server language back to `de`. The merge carries WP3 as well; WP2 follows on a new branch.
-3. **Bug: menu titles with a placeholder** (found in the screenshots, 2026-10-19). The window type step's title "Add
+2. **Fix branch** off `main` for the findings in items 4 and 5 (Felix agreed to the order on 2026-10-19: release,
+   then fixes, then WP2). Some need Felix's decision first (marked "decide").
+3. **WP2, technical documentation** (section "Documentation package" below), in a fresh session on a new branch.
+   WP0, WP1 and WP3 are done and released with 0.3.0.
+4. **Bug: menu titles with a placeholder** (found in the screenshots, 2026-10-19). The window type step's title "Add
    window: {area}" (en and de, config flow and window subentry) renders as "Translation [formatjs Error:
    MISSING_VALUE]": the backend sends `area` (checked through the flow API on DEV), but the frontend does not fill
    placeholders into a menu step's title; menu descriptions work. Narrowed down: the error showed in the first-setup
@@ -42,7 +33,7 @@ Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` i
    `{area}` in their titles; check them on DEV. Related UI text: the setup preview says "no outdoor side, the weather
    service steps in" for a side without an outdoor area, but the logic takes the neighbouring sides first, then the
    opposite side, then the weather service (`logic/outdoor.py` `fallback_chain`).
-4. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
+5. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
    `windows`, even when empty (decide: keep or drop when empty). Found during WP1: the reason `ok` is translated but
    never written (dead entry, rule 4; `tests/test_docs.py` requires it in the reference while it exists); the `plan`
    and `reconfigure` step descriptions say "Simply leave out …" (banned word; change when the text is touched anyway);
@@ -51,20 +42,20 @@ Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` i
    so a room with an empty temperature list exists (DEV's living room), while the room form requires at least one
    source; `any_cover_to_close` counts every window, also windows without a cover whose `cover` sensor is disabled
    (the skill documents the current behaviour).
-5. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
+6. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
    `open` for days (not built; needs a requirement and a mockup first, rule 8).
 
 DEV notes: since 2026-10-19 DEV runs the `main` state with the room readings (see the end), and its areas and its
-outdoor floor carry English names (area IDs unchanged) for the README walkthrough; since 2026-10-19 the six indoor areas
-sit on a floor "First floor", the outdoor areas on "Outside". DEV's server language is English (`en`) for the
-walkthrough; normally German (`de`). DEV has one weather entity with a forecast service (met.no); its other weather
-entities are mirrors without one, so the daily strategy stays unknown with them. The `*_klima_*` entities without
-attributes on DEV are mirrors of another instance (`remote_homeassistant`), not Climate Hub's. DEV's mirrored sensors
-update only when their value changes, so a steady one turns stale after `max_age` and, after the repair delay, raises a
-real outage issue; that is DEV's mirror, not a bug. Outage tests: a state-only sensor set via `POST /api/states` (owned
-by no integration, so nothing overwrites it), first in a room's list, then `unavailable`; the repair delay goes down to
-1 h in S9. New-source tests: move a mirrored sensor into a room's area; one that was in the area when the room was last
-saved counts as seen and raises nothing.
+outdoor floor carry English names (area IDs unchanged) since 2026-10-18; since 2026-10-19 the six indoor areas sit on a
+floor "First floor", the outdoor areas on "Outside". DEV's server language is German (`de`); it was English for the
+README walkthrough. DEV has one weather entity with a forecast service (met.no); its other weather entities are mirrors
+without one, so the daily strategy stays unknown with them. The `*_klima_*` entities without attributes on DEV are
+mirrors of another instance (`remote_homeassistant`), not Climate Hub's. DEV's mirrored sensors update only when their
+value changes, so a steady one turns stale after `max_age` and, after the repair delay, raises a real outage issue; that
+is DEV's mirror, not a bug. Outage tests: a state-only sensor set via `POST /api/states` (owned by no integration, so
+nothing overwrites it), first in a room's list, then `unavailable`; the repair delay goes down to 1 h in S9. New-source
+tests: move a mirrored sensor into a room's area; one that was in the area when the room was last saved counts as seen
+and raises nothing.
 
 ## Documentation package (planned 2026-10-18)
 
@@ -129,6 +120,14 @@ two sections (dew point, recommendation) and could follow them, and no link or s
 
 ## Recently done
 
+- 2026-10-19: documentation merged and release 0.3.0 (Felix's go). `docs/documentation` fast-forwarded into `main`
+  and deleted; DEV's server language back to `de`. Before the push, a scan of the 17 unpushed commits found a room
+  name that hints at the location in `docs/logic.md` §16, `tests/logic/test_readings.py` and this file; the unpushed
+  commits were rewritten so that no commit contains it (replaced by "Arbeitszimmer"; tests green). Pushed history
+  was already clean. Version 0.3.0, `main` pushed, CI and Validate green, tag `v0.3.0` pushed with release notes
+  (room readings, form text, documentation). Verified on DEV: not applicable (release; the code is the one verified
+  on DEV with the room readings).
+
 - 2026-10-19: README walkthrough closed. The remaining five screenshots embedded (Felix blurred the location hint in
   `setup-preview` and retook `room-sensors` and `window-type`). New README section "Areas for the outside" (Felix's
   note): an outdoor side is a Home Assistant area per side of the house, best on a floor named with an outside word;
@@ -151,7 +150,7 @@ two sections (dew point, recommendation) and could follow them, and no link or s
   get", the switch under "Adding and changing later", three limits. Written from the code; a verifier found no wrong
   statement and two imprecisions (a range counts only without a single setpoint; "that reports a setpoint" in the
   README), both fixed. 822 tests green. Found on DEV: since its areas were renamed to English, the source labels keep
-  the old German area words ("Arbeitszimmer", "Küche Heizung"), because labels drop only the current area name and
+  the old German area words, because labels drop only the current area name and
   aliases. Verified on DEV: yes (template rendered, attributes read).
 
 - 2026-10-19: WP3, the agent skill (Felix asked for it to work on PROD; the planned WP3 paragraph served as the
