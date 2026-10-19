@@ -354,3 +354,27 @@ def test_abort_reasons_are_translated(language: str) -> None:
     for kind in ("room", "region", "window"):
         section = data["config_subentries"][kind]["abort"]
         assert sorted(subentry - section.keys()) == [], kind
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_menu_titles_have_no_placeholders(language: str) -> None:
+    """The frontend does not fill placeholders into a menu step's title."""
+    data = _load(language)
+    bad = [
+        f"{root}.{step_id}"
+        for root, steps in (
+            ("config", data["config"]["step"]),
+            (
+                "config_subentries",
+                {
+                    f"{kind}.{k}": v
+                    for kind, sub in data["config_subentries"].items()
+                    for k, v in sub["step"].items()
+                },
+            ),
+            ("options", data["options"]["step"]),
+        )
+        for step_id, step in steps.items()
+        if "menu_options" in step and "{" in step["title"]
+    ]
+    assert bad == []

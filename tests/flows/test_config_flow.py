@@ -177,8 +177,23 @@ async def test_preview_lists_rooms_sides_and_what_was_not_taken(
         "Fällt Westen aus, springen Norden (Straße) und Süden (Garten) ein, "
         "dann der Wetterdienst."
     ) in preview
-    assert "Osten: keine Außenseite, Wetterdienst springt ein." in preview
+    # East has no side: its neighbours, then the opposite side, then the weather
+    assert (
+        "Osten: keine Außenseite, dafür springen Norden (Straße) und "
+        "Süden (Garten) ein, "
+        "dann Westen (Hof), dann der Wetterdienst."
+    ) in preview
     assert "Quellen und Reihenfolge änderst du später pro Raum." in preview
+
+
+async def test_preview_without_any_side_names_the_weather_only(
+    hass: HomeAssistant, house: House
+) -> None:
+    result = await _to_plan(hass, house)
+    result = await _configure(hass, result, _plan())
+    preview = result["description_placeholders"]["preview"]
+    assert "Norden: keine Außenseite, dafür springt der Wetterdienst ein." in preview
+    assert "Westen: keine Außenseite, dafür springt der Wetterdienst ein." in preview
 
 
 async def test_create_makes_the_documented_entry_and_it_loads(
@@ -302,4 +317,5 @@ async def test_changing_the_plan_keeps_the_answers(
     assert result["step_id"] == "preview"
     preview = result["description_placeholders"]["preview"]
     assert "**Osten · Hof**" in preview
-    assert "Norden: keine Außenseite" in preview
+    # North has no side, but its neighbour east is configured now
+    assert "Norden: keine Außenseite, dafür springt Osten (Hof) ein" in preview

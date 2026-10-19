@@ -186,10 +186,12 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 │     Außenbereich         [ Hof                         ▾ ] │
 │     Räume auf der Seite  [ Bad ✕ ]                         │
 │                                                            │
-│   Innenliegende Räume ohne Fenster einfach weglassen.      │
+│   Innenliegende Räume ohne Fenster weglassen.              │
 │                                              [ Weiter ]    │
 └────────────────────────────────────────────────────────────┘
 ```
+
+Changed 2026-10-19: the hint lost its adverb („einfach" in German).
 
 - Four fixed sections, so all keys are translatable. Each section has a select for the outdoor area (options: areas
   with a temperature sensor that are not rooms, i.e. the unchecked ones from S2; may stay empty) and a select,
@@ -217,7 +219,9 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 │   (Garten) ein, dann der Wetterdienst.                     │
 │ • **Süden · Garten** 12,5 °C · 76 %                        │
 │ • **Westen · Hof** 14,5 °C · 65 %                          │
-│ • Osten: keine Außenseite, Wetterdienst springt ein.       │
+│ • Osten: keine Außenseite, dafür springen Norden (Straße) │
+│   und Süden (Garten) ein, dann Westen (Hof), dann der     │
+│   Wetterdienst.                                           │
 │ **Fenster**                                                │
 │ • Noch keine. Mit Fenstern siehst du, was gerade offen     │
 │   ist, und bekommst Warnungen.                             │
@@ -235,6 +239,10 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
   (helper platform), „mehrere Temperaturen am Gerät".
 - Shows each side's computed fallback chain (ADR-003), in the sentence S7 uses: „Fällt Norden aus, springen Westen (Hof)
   und Süden (Garten) ein, dann der Wetterdienst."
+- A direction without an outdoor side states the chain that serves it: the configured neighbouring sides first, then
+  the opposite side, then the weather service (changed 2026-10-19; before, the line always said the weather service
+  steps in). Without a weather service the weather part is left out, and with no other side and no weather service
+  the line is „Osten: keine Außenseite."
 - **Wetterdienst** line (agreed 2026-10-15), from the current values and one test fetch of the forecast:
   „Wetterdienst: 12,5 °C · 89 %, Vorhersage stündlich." · „Wetterdienst: 12,5 °C · 89 %, Vorhersage täglich." ·
   „Wetterdienst: 12,5 °C · 89 %, aber keine Vorhersage. Die Tagesstrategie bleibt leer." · „Wetterdienst: nicht verfügbar. Fallen alle Außensensoren aus, fehlen Außenwerte, und
@@ -422,7 +430,9 @@ descriptions (Home Assistant 2025.10).
 ```
 
 ```
-┌─ Fenster hinzufügen: Küche ────────────────────────────────┐
+┌─ Fenster hinzufügen ───────────────────────────────────────┐
+│ Raum: Küche                                                │
+│                                                            │
 │ Was für ein Fenster ist es?                                │
 │                                                            │
 │  > Einfaches Fenster oder Tür                              │
@@ -435,6 +445,11 @@ descriptions (Home Assistant 2025.10).
 │      Wintergartenfenster.                                  │
 └────────────────────────────────────────────────────────────┘
 ```
+
+Changed 2026-10-19: the menu title is plain, and the room moves into the description. The frontend does not fill
+placeholders into the title of a menu step. The room step refuses an area that is not a room yet and has no
+temperature sensor, because saving would create a room without sources. Error text: „{area} hat keinen
+Temperatursensor und kann deshalb kein Raum werden. Weise dem Bereich zuerst einen Temperatursensor zu."
 
 ### S8a Einfaches Fenster oder Tür
 
@@ -660,6 +675,10 @@ Climate Hub: Fenster im Bereich Küche haben keinen Raum mehr
 
 „Raum wieder anlegen" shows the room preview with suggested sources (S6) before saving. „Fenster löschen" gets a confirm
 step naming the windows. Both options resolve the issue.
+
+Changed 2026-10-19: „Raum wieder anlegen" for an area without a temperature sensor ends with a message instead of
+creating a room without sources: „Küche hat keinen Temperatursensor und kann deshalb kein Raum werden. Weise dem
+Bereich zuerst einen Temperatursensor zu, oder lösche die Fenster." The issue stays open and „Fenster löschen" remains.
 
 ## 6. Entities (what dashboards and automations see)
 

@@ -63,7 +63,7 @@ def _cover_windows(house: HouseResult, hass: HomeAssistant) -> dict[str, Any]:
         )
         if entity_id is not None:
             windows.append({"entity_id": entity_id, "reason": reason.value})
-    return {"windows": windows}
+    return {"windows": windows} if windows else {}
 
 
 def _flag(

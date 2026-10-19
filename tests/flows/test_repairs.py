@@ -240,6 +240,28 @@ async def test_recreate_room(
     assert _all(hass, "windows_without_room_") == {}
 
 
+async def test_recreate_room_without_a_temperature_sensor_is_refused(
+    hass: HomeAssistant, house: House, freezer: FrozenDateTimeFactory
+) -> None:
+    entry = await _windows_entry(hass, house)  # the conservatory has no sensor
+    await _start(hass, entry)
+    issue_id = f"windows_without_room_{house.conservatory}"
+    rooms_before = set(entry.subentries)
+
+    result = await _init(hass, issue_id)
+    result = await _configure(hass, result, {"next_step_id": "recreate_room"})
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "no_room_temperature"
+    assert result["description_placeholders"] == {"area": "Wintergarten"}
+    assert set(entry.subentries) == rooms_before
+
+    await _advance(hass, freezer, RELOAD)
+    assert set(_all(hass, "windows_without_room_")) == {issue_id}
+    # The windows can still be deleted
+    result = await _init(hass, issue_id)
+    assert result["type"] is FlowResultType.MENU
+
+
 async def test_delete_windows(
     hass: HomeAssistant, house: House, freezer: FrozenDateTimeFactory
 ) -> None:

@@ -185,7 +185,8 @@ Everything set during the first setup can be changed later.
     has the sources and the sections **Humidity and pressure** and **Advanced**. The reference lists every field of
     the [outdoor side form](docs/reference.md#outdoor-side-form).
   - **Add window** runs the same window steps as the first setup. If the area is not a room yet, saving creates the
-    room with suggested sources. The reference lists every field of the [window form](docs/reference.md#window-form).
+    room with suggested sources. An area without a temperature sensor is refused, because it cannot become a room.
+    The reference lists every field of the [window form](docs/reference.md#window-form).
 - To change one item, select the gear icon on its card. It opens **Reconfigure room**, **Reconfigure outdoor side** or
   **Reconfigure window**. ⋮ on the card offers **Rename** and **Delete**. Renaming changes the title on the card and
   in repair texts, while device and entity names stay as they are. When you delete a room, its windows remain: they

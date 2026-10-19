@@ -20,6 +20,7 @@ from .registry import entity_infos
 from .store import SeenEntry, fingerprint
 
 ABORT_GONE = "gone"
+ABORT_NO_TEMPERATURE = "no_room_temperature"
 ABORT_DECLINED = "declined"
 _FOLLOWED = ((Metric.HUMIDITY, m.CONF_HUMIDITY), (Metric.PRESSURE, m.CONF_PRESSURE))
 
@@ -158,6 +159,12 @@ class WindowsWithoutRoomFlow(RepairsFlow):
         entry, area_id, _ = state
         texts = await async_texts(self.hass)
         item = new_room_item(self.hass, area_id)
+        if not item.data.get(m.CONF_TEMPERATURE):
+            # The issue stays open, so "Delete the windows" is still there next time
+            return self.async_abort(
+                reason=ABORT_NO_TEMPERATURE,
+                description_placeholders={"area": area_name(self.hass, area_id)},
+            )
         if user_input is None:
             run = await async_run_preview(
                 self.hass, entry, None, item.subentry_type, item.data

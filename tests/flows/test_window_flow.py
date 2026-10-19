@@ -116,6 +116,20 @@ async def test_add_starts_with_the_room(
     assert [str(k) for k in result["data_schema"].schema] == ["area"]
 
 
+async def test_room_step_refuses_an_area_without_a_temperature_sensor(
+    hass: HomeAssistant, house: House, hub: MockConfigEntry
+) -> None:
+    result = await _init(hub=hub, hass=hass)
+    result = await _configure(hass, result, {"area": house.storage})
+    assert result["step_id"] == "window_room"
+    assert result["errors"] == {"base": "no_room_temperature"}
+    assert result["description_placeholders"]["area"] == "Abstellraum"
+    # An area with a temperature sensor that is not a room yet becomes one
+    result = await _configure(hass, result, {"area": house.kitchen})
+    assert result["step_id"] == "window_type"
+    assert result["description_placeholders"]["area"] == "Küche"
+
+
 async def test_room_step_refuses_an_outdoor_area(
     hass: HomeAssistant, house: House, hub: MockConfigEntry
 ) -> None:

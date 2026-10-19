@@ -157,7 +157,7 @@ Hub device ("Home climate"):
 | `outdoor` | °C, mean of the outdoor side temperatures | `stage`, `minimum`, `maximum`, `per_region` (`n`, `e`, `s`, `w`) |
 | `comfort_min`, `comfort_max`, `threshold` | number, °C | none |
 | `any_cooling_down`, `any_heating_up`, `any_open_while_conditioning` | `on` if a room is on, `unknown` if none is on and one is unknown | none |
-| `any_cover_to_close` | `on` if a window has cover advice `close` or `keep_closed` | `windows`: list of `entity_id`, `reason` |
+| `any_cover_to_close` | `on` if a window has cover advice `close` or `keep_closed` | `windows`: list of `entity_id`, `reason`; absent when off |
 
 The comfort range is one for the whole house. `cooling_down` and `heating_up` start only after a window has ventilated
 longer than the burst duration (default 10 min). `trend` samples survive a restart. `any_cover_to_close` counts every
@@ -198,7 +198,6 @@ An outdoor side at `fallback` therefore shows only `source` and `stage`; read it
 | `no_side` | Outside value of a room without a main side. |
 | `no_pair` | Outside absolute humidity or dew point: no stage has temperature and humidity from the same sides. |
 | `no_data` | Outside temperature, humidity or pressure: no stage, weather service included, delivers. |
-| `ok` | Defined for a working source, never written as an attribute value. |
 
 How `offset` is learned: while the first source and a lower-ranked one both deliver, the deviation between them feeds a
 moving average with a time constant of 8 h; it counts as learned after 1 h of paired readings. After a switch down to a
@@ -351,7 +350,7 @@ Collect the entities from the registry and the diagnostics, then check. Each fin
 | Room value at `fallback` with a `reason` | The first source is out: check it (battery, connection). If it reports only on change, raise `max_age`; or reorder under the gear icon of the card (**Temperature sources**). |
 | Outdoor side value at `fallback` | Same, but read the side's first source directly (no `reason` on the side). |
 | Value at `none` with a `reason` | All sources failed: check them, or add one on the card. |
-| Room value at `none` without a `reason` | The room has no sources (for example created by **Add window** in an area without a temperature sensor): add them under **Reconfigure room**. |
+| Room value at `none` without a `reason` | The room has no sources. Only older versions could create such a room (**Add window** in an area without a temperature sensor; the window flow and the repair "Recreate the room" refuse that now): add them under **Reconfigure room**. |
 | Many `stale` readings | Raise `max_age` for the room or side, or in the hub options. |
 | Room with `no_side` that has windows | It most likely lacks its main side: set **Main side** in **Reconfigure room** or in the house plan (⋮ → **Reconfigure**). Rooms without an outside wall keep None; ask the user. |
 | Outside humidity or pressure at `weather` while the side's temperature is `primary` | The outdoor side has no humidity or pressure source: add them under **Humidity and pressure** on the side's card. |

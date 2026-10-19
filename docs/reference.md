@@ -186,8 +186,9 @@ Details:
   `offset` are excluded from the recorder.
 - `any_cooling_down`, `any_heating_up`, `any_open_while_conditioning` are on when any room has the matching binary
   sensor on, `unknown` when none is on and at least one is unknown.
-- `any_cover_to_close` is on when at least one window has the cover advice `close` or `keep_closed`. `windows` lists
-  those windows as `entity_id` (the window's `cover` sensor) and `reason` (a cover reason, raw value).
+- `any_cover_to_close` is on when at least one window has the cover advice `close` or `keep_closed`. `windows` is
+  present only when at least one window qualifies, and then lists those windows as `entity_id` (the window's `cover`
+  sensor) and `reason` (a cover reason, raw value).
 
 ## Provenance attributes
 
@@ -225,7 +226,6 @@ Which attributes appear:
 
 | Raw value | English label | Meaning |
 |---|---|---|
-| `ok` | ok | Defined as a status of a source. It is never written as `reason`: a `reason` exists only when the first source is not usable. |
 | `unavailable` | unavailable | The source entity is `unavailable`. |
 | `unknown` | unknown | The source entity is `unknown`, or has no value. |
 | `not_numeric` | not numeric | The state of the source is not a number. |
@@ -428,7 +428,9 @@ Add with "Add outdoor side" (first direction and area, then this form); change w
 
 Add with "Add window" (room, then type, then this form); change with "Reconfigure window". The type is one of
 "Single window or door", "Double leaf" and "Pass-through" (ventilating only works when two openings in a row are
-open). The fields depend on the type.
+open). The fields depend on the type. An area that is not a room yet and has no temperature sensor is refused with
+"{area} has no temperature sensor, so it cannot become a room", because saving creates the room with the suggested
+temperature sources. Assign a temperature sensor to the area first.
 
 | Label | Key | Types | Default | What it does |
 |---|---|---|---|---|
@@ -461,7 +463,7 @@ restart they are created again when the condition still holds.
 | `outage_fallback` | As `outage`, with another source in use and no correction. | As `outage`. | As `outage`. |
 | `outage_none` | As `outage`, but no source of the failed metric (temperature, humidity or pressure) of that object has a value. | As `outage`. | As `outage`. |
 | `new_source` | A sensor or climate entity of the area of a room or outdoor side qualifies as a temperature source and is neither in the list nor seen before. Checked after the first evaluation at start and 5 s after the last change to the entity, device or area registry. One issue per entity. | A menu: "Add as a source" appends it as the last temperature source (and, when the humidity or pressure list is not empty, the humidity or pressure entities of its device); "Do not add" ignores the issue, as Home Assistant's own "Ignore" does. | The entity is added, is no longer a candidate, or the room or outdoor side is deleted. An ignored issue stays ignored; undo with "Show ignored repairs". |
-| `windows_without_room` | A window exists in an area that has no room. Checked at setup and after each configuration change. One issue per area. | A menu: "Recreate the room" shows a preview and creates the room with suggested sources; "Delete the windows" removes the windows of the area and their entities. | The area has a room again or the windows are deleted. |
+| `windows_without_room` | A window exists in an area that has no room. Checked at setup and after each configuration change. One issue per area. | A menu: "Recreate the room" shows a preview and creates the room with suggested sources, or, when the area has no temperature sensor, ends with a message and creates nothing (the issue stays open); "Delete the windows" removes the windows of the area and their entities. | The area has a room again or the windows are deleted. |
 
 The three outage variants share the same title, "Sensor for {title} not responding"; they differ in the text: `outage`
 names the active replacement and its correction, `outage_fallback` names the replacement only, `outage_none` states that

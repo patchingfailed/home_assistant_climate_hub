@@ -32,7 +32,6 @@
           "reason": {
             "name": "Reason",
             "state": {
-              "ok": "ok",
               "unavailable": "unavailable",
               "unknown": "unknown",
               "not_numeric": "not numeric",
@@ -72,7 +71,6 @@
           "reason": {
             "name": "Reason",
             "state": {
-              "ok": "ok",
               "unavailable": "unavailable",
               "unknown": "unknown",
               "not_numeric": "not numeric",
@@ -112,7 +110,6 @@
           "reason": {
             "name": "Reason",
             "state": {
-              "ok": "ok",
               "unavailable": "unavailable",
               "unknown": "unknown",
               "not_numeric": "not numeric",
@@ -152,7 +149,6 @@
           "reason": {
             "name": "Reason",
             "state": {
-              "ok": "ok",
               "unavailable": "unavailable",
               "unknown": "unknown",
               "not_numeric": "not numeric",
@@ -192,7 +188,6 @@
           "reason": {
             "name": "Reason",
             "state": {
-              "ok": "ok",
               "unavailable": "unavailable",
               "unknown": "unknown",
               "not_numeric": "not numeric",
@@ -232,7 +227,6 @@
           "reason": {
             "name": "Reason",
             "state": {
-              "ok": "ok",
               "unavailable": "unavailable",
               "unknown": "unknown",
               "not_numeric": "not numeric",
@@ -272,7 +266,6 @@
           "reason": {
             "name": "Reason",
             "state": {
-              "ok": "ok",
               "unavailable": "unavailable",
               "unknown": "unknown",
               "not_numeric": "not numeric",
@@ -627,7 +620,8 @@
           }
         },
         "abort": {
-          "gone": "Nothing is left to repair for this area."
+          "gone": "Nothing is left to repair for this area.",
+          "no_room_temperature": "{area} has no temperature sensor, so it cannot become a room. Assign a temperature sensor to the area first, or delete the windows."
         }
       }
     }
@@ -662,7 +656,7 @@
       },
       "plan": {
         "title": "House plan",
-        "description": "Assign each side of the house its outdoor area and the rooms whose windows face that way. Sides without an outdoor area, such as a wall facing the neighbour, stay empty.\n\nSimply leave out interior rooms without windows.",
+        "description": "Assign each side of the house its outdoor area and the rooms whose windows face that way. Sides without an outdoor area, such as a wall facing the neighbour, stay empty.\n\nLeave out interior rooms without windows.",
         "sections": {
           "n": {
             "name": "North",
@@ -722,7 +716,7 @@
       },
       "reconfigure": {
         "title": "House plan",
-        "description": "Assign each side of the house its outdoor area and the rooms whose windows face that way. Sides without an outdoor area, such as a wall facing the neighbour, stay empty.\n\nSimply leave out interior rooms without windows.",
+        "description": "Assign each side of the house its outdoor area and the rooms whose windows face that way. Sides without an outdoor area, such as a wall facing the neighbour, stay empty.\n\nLeave out interior rooms without windows.",
         "sections": {
           "n": {
             "name": "North",
@@ -789,8 +783,8 @@
         }
       },
       "window_type": {
-        "title": "Add window: {area}",
-        "description": "What kind of window is it?",
+        "title": "Add window",
+        "description": "Room: {area}\n\nWhat kind of window is it?",
         "menu_options": {
           "window_single": "Single window or door",
           "window_double": "Double leaf",
@@ -1253,8 +1247,8 @@
           }
         },
         "window_type": {
-          "title": "Add window: {area}",
-          "description": "What kind of window is it?",
+          "title": "Add window",
+          "description": "Room: {area}\n\nWhat kind of window is it?",
           "menu_options": {
             "window_single": "Single window or door",
             "window_double": "Double leaf",
@@ -1443,6 +1437,7 @@
       },
       "error": {
         "is_region": "{area} is an outdoor side.",
+        "no_room_temperature": "{area} has no temperature sensor, so it cannot become a room. Assign a temperature sensor to the area first.",
         "no_contact": "A contact is missing for the window.",
         "same_contact": "A contact can only have one role in a window."
       }
@@ -1584,7 +1579,7 @@
     "plan_spare": "Fallbacks: {sources}.",
     "plan_side": "Side: {side}.",
     "plan_side_none": "No side.",
-    "plan_no_side": "{direction}: no outdoor side, the weather service steps in.",
+    "plan_no_side": "{direction}: no outdoor side, {chain}.",
     "plan_no_side_no_weather": "{direction}: no outdoor side.",
     "plan_closing": "You change sources and their order later per room.",
     "words_closed": "closed, locked",

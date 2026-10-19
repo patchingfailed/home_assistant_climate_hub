@@ -32,6 +32,10 @@ from custom_components.climate_hub.coordinator import ClimateHubCoordinator
 from custom_components.climate_hub.entity import ClimateHubEntity
 from custom_components.climate_hub.logic import model as m
 from custom_components.climate_hub.logic.cover import CoverReason
+from custom_components.climate_hub.logic.psychro import (
+    dew_point,
+    humidity_after_ventilating,
+)
 from custom_components.climate_hub.sensor import SENSORS
 from tests.house import House, set_value
 
@@ -790,6 +794,44 @@ async def test_any_cover_to_close_attribute(hass: HomeAssistant, house: House) -
             "reason": "insulate",
         },
     ]
+
+
+async def test_humidity_difference_carries_the_humidity_after_ventilating(
+    hass: HomeAssistant, house: House
+) -> None:
+    """R13: outside air heated to the room temperature, from the outside dew point."""
+    await _setup(hass, house)
+    entity_id = _entity_id(hass, "sensor", f"{LIVING}_humidity_difference")
+    dew_out = dew_point(13.0, 71.0)
+    assert dew_out is not None
+    expected = round(humidity_after_ventilating(21.4, dew_out), 1)
+    assert 0 < expected < 100
+    attributes = _state(hass, entity_id).attributes
+    assert attributes["humidity_after_ventilating"] == pytest.approx(expected, abs=0.1)
+
+
+async def test_any_cover_to_close_has_no_windows_attribute_when_none_close(
+    hass: HomeAssistant, house: House
+) -> None:
+    entry = await _setup_windows(hass, house)
+    coordinator: ClimateHubCoordinator = entry.runtime_data.coordinator
+    data = coordinator.data
+    assert data.house is not None
+    idle = replace(data.house, any_cover_to_close=False, covers_to_close=())
+    coordinator.async_set_updated_data(replace(data, house=idle))
+    await hass.async_block_till_done()
+    state = _state(hass, COVER_FLAG)
+    assert state.state == "off"
+    assert "windows" not in state.attributes
+
+    unregistered = replace(
+        data.house,
+        any_cover_to_close=True,
+        covers_to_close=(("w_unknown", CoverReason.NIGHT),),
+    )
+    coordinator.async_set_updated_data(replace(data, house=unregistered))
+    await hass.async_block_till_done()
+    assert "windows" not in _state(hass, COVER_FLAG).attributes
 
 
 async def test_window_device(hass: HomeAssistant, house: House) -> None:

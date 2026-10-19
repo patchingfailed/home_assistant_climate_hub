@@ -431,18 +431,26 @@ def room_markdown(
     return _BLOCK.join(lines)
 
 
-def _chain_sentence(
-    hass: HomeAssistant, texts: Texts, model: m.HouseModel, direction: Direction
+def _chain_parts(
+    hass: HomeAssistant,
+    texts: Texts,
+    model: m.HouseModel,
+    direction: Direction,
+    *,
+    weather: bool = True,
 ) -> str:
-    """ "Fällt Osten aus, springen Norden (Straße) und Süden (Garten) ein, ..." (S7)."""
+    """ "Norden (Straße) und Süden (Garten) springen ein, dann der Wetterdienst"."""
     configured = {r.direction for r in model.regions.values()}
-    parts = [texts("chain_start", direction=texts.direction(direction)) + " "]
+    parts = []
     first = True
-    for stage, directions in fallback_chain(direction, configured)[1:]:
+    for stage, directions in fallback_chain(direction, configured):
+        if stage is Stage.PRIMARY:
+            continue
         if stage is Stage.WEATHER:
-            parts.append(
-                texts("chain_weather_first" if first else "chain_weather_then")
-            )
+            if weather:
+                parts.append(
+                    texts("chain_weather_first" if first else "chain_weather_then")
+                )
             continue
         places = [
             texts(
@@ -458,7 +466,29 @@ def _chain_sentence(
         else:
             parts.append(texts("chain_then", place=places[0]))
         first = False
-    return "".join(parts) + texts("chain_end")
+    return "".join(parts)
+
+
+def _chain_sentence(
+    hass: HomeAssistant, texts: Texts, model: m.HouseModel, direction: Direction
+) -> str:
+    """ "Fällt Osten aus, springen Norden (Straße) und Süden (Garten) ein, ..." (S7)."""
+    return (
+        texts("chain_start", direction=texts.direction(direction))
+        + " "
+        + _chain_parts(hass, texts, model, direction)
+        + texts("chain_end")
+    )
+
+
+def _no_side_line(
+    hass: HomeAssistant, texts: Texts, model: m.HouseModel, direction: Direction
+) -> str:
+    """A direction without an outdoor side: the chain that serves it (I17)."""
+    chain = _chain_parts(hass, texts, model, direction, weather=bool(model.weather))
+    if not chain:
+        return texts("plan_no_side_no_weather", direction=texts.direction(direction))
+    return texts("plan_no_side", direction=texts.direction(direction), chain=chain)
 
 
 def _region_area(hass: HomeAssistant, model: m.HouseModel, direction: Direction) -> str:
@@ -594,11 +624,10 @@ def regions_markdown(
         )
     if missing_sides:
         configured = {i.data[m.CONF_DIRECTION] for i in items}
-        key = "plan_no_side" if run.model.weather else "plan_no_side_no_weather"
         lines.extend(
-            "- " + texts(key, direction=texts.direction(d))
-            for d in (d.value for d in Direction)
-            if d not in configured
+            "- " + _no_side_line(hass, texts, run.model, d)
+            for d in Direction
+            if d.value not in configured
         )
     return _BLOCK.join([texts("plan_regions_head"), "\n".join(lines)])
 

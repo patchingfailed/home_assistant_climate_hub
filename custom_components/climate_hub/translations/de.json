@@ -32,7 +32,6 @@
           "reason": {
             "name": "Grund",
             "state": {
-              "ok": "in Ordnung",
               "unavailable": "nicht verfügbar",
               "unknown": "unbekannt",
               "not_numeric": "kein Zahlenwert",
@@ -72,7 +71,6 @@
           "reason": {
             "name": "Grund",
             "state": {
-              "ok": "in Ordnung",
               "unavailable": "nicht verfügbar",
               "unknown": "unbekannt",
               "not_numeric": "kein Zahlenwert",
@@ -112,7 +110,6 @@
           "reason": {
             "name": "Grund",
             "state": {
-              "ok": "in Ordnung",
               "unavailable": "nicht verfügbar",
               "unknown": "unbekannt",
               "not_numeric": "kein Zahlenwert",
@@ -152,7 +149,6 @@
           "reason": {
             "name": "Grund",
             "state": {
-              "ok": "in Ordnung",
               "unavailable": "nicht verfügbar",
               "unknown": "unbekannt",
               "not_numeric": "kein Zahlenwert",
@@ -192,7 +188,6 @@
           "reason": {
             "name": "Grund",
             "state": {
-              "ok": "in Ordnung",
               "unavailable": "nicht verfügbar",
               "unknown": "unbekannt",
               "not_numeric": "kein Zahlenwert",
@@ -232,7 +227,6 @@
           "reason": {
             "name": "Grund",
             "state": {
-              "ok": "in Ordnung",
               "unavailable": "nicht verfügbar",
               "unknown": "unbekannt",
               "not_numeric": "kein Zahlenwert",
@@ -272,7 +266,6 @@
           "reason": {
             "name": "Grund",
             "state": {
-              "ok": "in Ordnung",
               "unavailable": "nicht verfügbar",
               "unknown": "unbekannt",
               "not_numeric": "kein Zahlenwert",
@@ -627,7 +620,8 @@
           }
         },
         "abort": {
-          "gone": "Für diesen Bereich gibt es nichts mehr zu reparieren."
+          "gone": "Für diesen Bereich gibt es nichts mehr zu reparieren.",
+          "no_room_temperature": "{area} hat keinen Temperatursensor und kann deshalb kein Raum werden. Weise dem Bereich zuerst einen Temperatursensor zu, oder lösche die Fenster."
         }
       }
     }
@@ -662,7 +656,7 @@
       },
       "plan": {
         "title": "Hausplan",
-        "description": "Ordne jeder Hausseite ihren Außenbereich zu und die Räume, deren Fenster dorthin zeigen. Seiten ohne Außenbereich, etwa eine Wand zum Nachbarhaus, bleiben leer.\n\nInnenliegende Räume ohne Fenster einfach weglassen.",
+        "description": "Ordne jeder Hausseite ihren Außenbereich zu und die Räume, deren Fenster dorthin zeigen. Seiten ohne Außenbereich, etwa eine Wand zum Nachbarhaus, bleiben leer.\n\nInnenliegende Räume ohne Fenster weglassen.",
         "sections": {
           "n": {
             "name": "Norden",
@@ -722,7 +716,7 @@
       },
       "reconfigure": {
         "title": "Hausplan",
-        "description": "Ordne jeder Hausseite ihren Außenbereich zu und die Räume, deren Fenster dorthin zeigen. Seiten ohne Außenbereich, etwa eine Wand zum Nachbarhaus, bleiben leer.\n\nInnenliegende Räume ohne Fenster einfach weglassen.",
+        "description": "Ordne jeder Hausseite ihren Außenbereich zu und die Räume, deren Fenster dorthin zeigen. Seiten ohne Außenbereich, etwa eine Wand zum Nachbarhaus, bleiben leer.\n\nInnenliegende Räume ohne Fenster weglassen.",
         "sections": {
           "n": {
             "name": "Norden",
@@ -789,8 +783,8 @@
         }
       },
       "window_type": {
-        "title": "Fenster hinzufügen: {area}",
-        "description": "Was für ein Fenster ist es?",
+        "title": "Fenster hinzufügen",
+        "description": "Raum: {area}\n\nWas für ein Fenster ist es?",
         "menu_options": {
           "window_single": "Einfaches Fenster oder Tür",
           "window_double": "Doppelflügel",
@@ -1253,8 +1247,8 @@
           }
         },
         "window_type": {
-          "title": "Fenster hinzufügen: {area}",
-          "description": "Was für ein Fenster ist es?",
+          "title": "Fenster hinzufügen",
+          "description": "Raum: {area}\n\nWas für ein Fenster ist es?",
           "menu_options": {
             "window_single": "Einfaches Fenster oder Tür",
             "window_double": "Doppelflügel",
@@ -1443,6 +1437,7 @@
       },
       "error": {
         "is_region": "{area} ist eine Außenseite.",
+        "no_room_temperature": "{area} hat keinen Temperatursensor und kann deshalb kein Raum werden. Weise dem Bereich zuerst einen Temperatursensor zu.",
         "no_contact": "Für das Fenster fehlt ein Kontakt.",
         "same_contact": "Ein Kontakt darf in einem Fenster nur eine Aufgabe haben."
       }
@@ -1584,7 +1579,7 @@
     "plan_spare": "Ersatz: {sources}.",
     "plan_side": "Seite: {side}.",
     "plan_side_none": "Keine Seite.",
-    "plan_no_side": "{direction}: keine Außenseite, Wetterdienst springt ein.",
+    "plan_no_side": "{direction}: keine Außenseite, dafür {chain}.",
     "plan_no_side_no_weather": "{direction}: keine Außenseite.",
     "plan_closing": "Quellen und Reihenfolge änderst du später pro Raum.",
     "words_closed": "zu, geschlossen, verriegelt, abgeschlossen",

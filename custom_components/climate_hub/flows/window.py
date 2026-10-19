@@ -609,6 +609,10 @@ class WindowSubentryFlow(WindowSteps, ConfigSubentryFlow):
     def _window_room_problem(self, area_id: str) -> str | None:
         if area_id in subentry_by_area(self._get_entry(), SUBENTRY_REGION):
             return "is_region"
+        if not self._window_has_room(area_id) and not self._window_new_room(
+            area_id
+        ).data.get(m.CONF_TEMPERATURE):
+            return "no_room_temperature"  # saving would create a room without sources
         return None
 
     def _window_names_in(self, area_id: str) -> list[str]:
