@@ -427,7 +427,10 @@ there is no replacement. A source counts as not responding in every status excep
 
 ## Diagnostics
 
-The download on the Climate Hub entry ("Download diagnostics") is one JSON file with the full decision chain:
+The download on the Climate Hub entry ("Download diagnostics" in its three-dot menu) is one JSON file; an admin token
+gets the same file from `GET /api/diagnostics/config_entry/<entry_id>`. Home Assistant puts its own keys at the top
+(`home_assistant`, `custom_components`, `integration_manifest`, `setup_times`, and `issues` with the repairs) and
+Climate Hub's decision chain under `data`:
 
 - `options`: the hub options.
 - `subentries`: ID, type, title and data of every room, outdoor side and window.

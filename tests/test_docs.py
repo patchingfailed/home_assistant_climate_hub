@@ -12,9 +12,10 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 EN_JSON = ROOT / "custom_components" / "climate_hub" / "translations" / "en.json"
 REFERENCE = ROOT / "docs" / "reference.md"
+AGENT_SKILL = ROOT / "docs" / "agent" / "climate-hub" / "SKILL.md"
 
 # Files the banned-word and link checks cover; later work adds files here.
-CHECKED_FILES = (ROOT / "README.md", REFERENCE)
+CHECKED_FILES = (ROOT / "README.md", REFERENCE, AGENT_SKILL)
 
 _LINK_PATTERNS = (
     re.compile(r"\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)"),
@@ -42,10 +43,13 @@ def _expected_reference_words() -> set[str]:
     return words
 
 
-def test_reference_covers_every_entity_key_state_and_attribute() -> None:
-    documented = _backticked(REFERENCE.read_text(encoding="utf-8"))
+@pytest.mark.parametrize("path", (REFERENCE, AGENT_SKILL), ids=lambda p: p.name)
+def test_covers_every_entity_key_state_and_attribute(path: Path) -> None:
+    documented = _backticked(path.read_text(encoding="utf-8"))
     missing = sorted(_expected_reference_words() - documented)
-    assert not missing, f"docs/reference.md lacks backticked: {', '.join(missing)}"
+    assert not missing, (
+        f"{path.relative_to(ROOT)} lacks backticked: {', '.join(missing)}"
+    )
 
 
 def _banned_words() -> list[str]:

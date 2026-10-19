@@ -18,7 +18,8 @@ Deploy/test/debug workflow for this project: skill `ha-integration-dev`.
 custom_components/climate_hub/  integration (logic/ = pure logic without HA imports)
 tests/                          pytest (logic/, flows/, integration/)
 docs/                           requirements.md, STATUS.md, architecture.md (ADRs), ui_mockups.md,
-                                logic.md (pure logic spec), integration.md (HA layer spec + build order)
+                                logic.md (pure logic spec), integration.md (HA layer spec + build order),
+                                reference.md (user reference), agent/climate-hub/SKILL.md (Claude skill)
 scripts/deploy.ps1              deploy to DEV (hosts/tokens only in scripts/deploy.config.ps1, gitignored)
 win_compat.py                   pytest plugin: stubs Unix-only modules so HA tests start on Windows
 local input/                    private, gitignored raw material (never referenced from code or docs)

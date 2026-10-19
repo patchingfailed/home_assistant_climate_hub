@@ -258,6 +258,7 @@ for the full decision chain of every value.
 | For | Read |
 |---|---|
 | Setting up and using Climate Hub | this README, [reference](docs/reference.md) |
+| Letting Claude work with an installed Climate Hub (entities, diagnosis, automations) | [agent skill](docs/agent/climate-hub/SKILL.md) |
 | Development and review: what is built, how it is computed, why | [logic](docs/logic.md), [integration](docs/integration.md), [architecture decisions](docs/architecture.md), [requirements](docs/requirements.md), [UI mockups](docs/ui_mockups.md); status in [STATUS](docs/STATUS.md) |
 
 ## License
