@@ -18,31 +18,14 @@ deleted. `spike/native-ui` stays local as a reference and is never merged. The r
 1. **PROD to HACS** (Felix, on PROD): HA backup; HACS → ⋮ → custom repositories → this repository, type
    Integration; download v0.3.0; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
    gets releases; `deploy.ps1 -Instance Prod` stays as an emergency path (Felix, 2026-10-16).
-2. **Fix branch** off `main` for the findings in items 4 and 5 (Felix agreed to the order on 2026-10-19: release,
-   then fixes, then WP2). Some need Felix's decision first (marked "decide").
+2. **Fix branch `fix/doc-findings`**, built and verified on DEV through the flow API (see Recently done). Open:
+   Felix looks at it (on DEV: **Add window** with an area without a temperature sensor shows the hint; the window
+   type step's title), then merge into `main`; proposal: patch release 0.3.1, since 0.3.0 still shows the broken
+   title in the first setup. Still to check on DEV: the repair menus `new_source` and `windows_without_room` carry
+   `{area}` in their titles (a different dialog; Felix's M3 click review saw no error).
 3. **WP2, technical documentation** (section "Documentation package" below), in a fresh session on a new branch.
    WP0, WP1 and WP3 are done and released with 0.3.0.
-4. **Bug: menu titles with a placeholder** (found in the screenshots, 2026-10-19). The window type step's title "Add
-   window: {area}" (en and de, config flow and window subentry) renders as "Translation [formatjs Error:
-   MISSING_VALUE]": the backend sends `area` (checked through the flow API on DEV), but the frontend does not fill
-   placeholders into a menu step's title; menu descriptions work. Narrowed down: the error showed in the first-setup
-   dialog (config flow, with a help icon); the same step reached through **Add window** on the integration page
-   (subentry flow) shows "Add window: Bathroom" correctly, so the config-flow dialog is the one that drops the
-   placeholder. Not reproducible on DEV while the entry exists. Fix proposal: plain title, area into the
-   description; on a fix branch off `main`. The repair menus `new_source` and `windows_without_room` also carry
-   `{area}` in their titles; check them on DEV. Related UI text: the setup preview says "no outdoor side, the weather
-   service steps in" for a side without an outdoor area, but the logic takes the neighbouring sides first, then the
-   opposite side, then the weather service (`logic/outdoor.py` `fallback_chain`).
-5. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
-   `windows`, even when empty (decide: keep or drop when empty). Found during WP1: the reason `ok` is translated but
-   never written (dead entry, rule 4; `tests/test_docs.py` requires it in the reference while it exists); the `plan`
-   and `reconfigure` step descriptions say "Simply leave out …" (banned word; change when the text is touched anyway);
-   diagnostics redact nothing (no secrets in them; the reference says so; proposal: keep). Found during WP3 (decide):
-   **Add window** in an area that is not a room creates the room with the suggested sources even when there are none,
-   so a room with an empty temperature list exists (DEV's living room), while the room form requires at least one
-   source; `any_cover_to_close` counts every window, also windows without a cover whose `cover` sensor is disabled
-   (the skill documents the current behaviour).
-6. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
+4. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
    `open` for days (not built; needs a requirement and a mockup first, rule 8).
 
 DEV notes: since 2026-10-19 DEV runs the `main` state with the room readings (see the end), and its areas and its
@@ -119,6 +102,21 @@ two sections (dew point, recommendation) and could follow them, and no link or s
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-19: findings from the documentation work fixed on `fix/doc-findings` (one Sonnet implementer, reviewed;
+  decisions by Felix). Window type step: plain title, area in the description (the config-flow dialog does not fill
+  placeholders into menu titles), guard test for menu titles. Add window refuses an area that is not a room and has
+  no temperature sensor; the repair "Recreate the room" aborts with the same hint and keeps the issue (so a room
+  without sources can only come from older versions). The setup preview names the real chain for a direction
+  without an outdoor side. `any_cover_to_close` writes `windows` only when it lists a window; it still counts every
+  window, also windows without a cover (Felix: keep, for covers Home Assistant does not know). The dead reason `ok`
+  and "Simply"/"einfach" in the plan text are gone; diagnostics stay unredacted (Felix agreed). New entity test for
+  R13. Side effect: a window whose room was deleted cannot be reconfigured while its area has no temperature sensor;
+  the repair still deletes it. 829 tests green. DEV: deployed with restart; through the flow API the living room
+  (no temperature sensor) is refused with `no_room_temperature`, the kitchen proceeds to the type step; en and de
+  texts served. Two core warnings ("Failed to load integration for translation: climate_hub.sensor/number") predate
+  the deploy and come from Home Assistant's translation helper. Verified on DEV: yes (flow API; click review
+  pending).
 
 - 2026-10-19: documentation merged and release 0.3.0 (Felix's go). `docs/documentation` fast-forwarded into `main`
   and deleted; DEV's server language back to `de`. Before the push, a scan of the 17 unpushed commits found a room
