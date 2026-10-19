@@ -23,6 +23,11 @@ _LINK_PATTERNS = (
     re.compile(r"""\bsrcset\s*=\s*["']([^"']+)["']"""),
 )
 _EXTERNAL = ("http:", "https:", "mailto:")
+# README images use absolute URLs into the main branch (HACS renders no relative ones);
+# they must name a file that exists in the repository.
+_RAW_MAIN = (
+    "https://raw.githubusercontent.com/patchingfailed/home_assistant_climate_hub/main/"
+)
 
 
 def _backticked(text: str) -> set[str]:
@@ -134,9 +139,13 @@ def _targets(path: Path) -> list[tuple[int, str]]:
 def test_relative_links_resolve(path: Path) -> None:
     problems = []
     for number, target in _targets(path):
+        where = f"{path.relative_to(ROOT)}:{number}: {target}"
+        if target.startswith(_RAW_MAIN):
+            if not (ROOT / target.removeprefix(_RAW_MAIN)).exists():
+                problems.append(f"{where} (file not in the repository)")
+            continue
         if target.startswith(_EXTERNAL):
             continue
-        where = f"{path.relative_to(ROOT)}:{number}: {target}"
         file_part, _, anchor = target.partition("#")
         linked = (path.parent / file_part).resolve() if file_part else path
         if not linked.exists():

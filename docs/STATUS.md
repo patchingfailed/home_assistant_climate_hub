@@ -25,15 +25,23 @@ Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` i
    1. DEV is prepared: server language switched from `de` to `en` (2026-10-19, Felix's go) so that device names and
       entity IDs come out English; floors First floor and Outside. After the walkthrough, switch the server language
       back to `de` (Settings → System → General, or WebSocket `config/core/update` with `language`).
-   2. Felix deletes the DEV entry, sets his profile language to English and follows the README from "First setup"
-      word by word, noting every deviation, missing hint or guess; takes the screenshots from the shot list on the
-      way (kept outside the repository; Felix has it); then adds a room, an outdoor side and a window along "Adding
-      and changing later".
-   3. Claude checks the images for private details (rule 13), embeds them with absolute `raw.githubusercontent.com`
-      URLs on `main`, folds in Felix's deviations, runs `tests/test_docs.py`, then merges `docs/documentation` into
-      `main` after Felix has looked (push is a separate go). The merge carries WP3 as well; WP2 follows on a new
-      branch.
-3. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
+   2. Done 2026-10-19: Felix rebuilt DEV from the README and took the screenshots. Four are embedded
+      (`setup-start`, `setup-rooms`, `room-form`, `integration-page`). Open: Felix's notes on deviations from the
+      README; five images need a decision or a retake: `setup-plan` (shows Garden on two sides, which validation
+      rejects), `setup-preview` (shows source names with a room name that hints at the location), `room-sensors`
+      (taken right after the rebuild: seven values `unknown`; retake after 30 min with the room's main side set),
+      `room-readings` (labels keep the old German area words; DEV aliases would remove them), `window-type` (shows
+      the menu-title bug, item 3 below).
+   3. Then: fold in the notes, embed the remaining images, run `tests/test_docs.py`, merge `docs/documentation` into
+      `main` after Felix has looked (push is a separate go), switch DEV's server language back. The merge carries
+      WP3 as well; WP2 follows on a new branch.
+3. **Bug: menu titles with a placeholder** (found in the screenshots, 2026-10-19). The window type step's title "Add
+   window: {area}" (en and de, config flow and window subentry) renders as "Translation [formatjs Error:
+   MISSING_VALUE]": the backend sends `area` (checked through the flow API on DEV), but the frontend does not fill
+   placeholders into a menu step's title; menu descriptions work. Fix proposal: plain title, area into the
+   description; on a fix branch off `main`. The repair menus `new_source` and `windows_without_room` also carry
+   `{area}` in their titles; check them on DEV.
+4. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
    `windows`, even when empty (decide: keep or drop when empty). Found during WP1: the reason `ok` is translated but
    never written (dead entry, rule 4; `tests/test_docs.py` requires it in the reference while it exists); the `plan`
    and `reconfigure` step descriptions say "Simply leave out …" (banned word; change when the text is touched anyway);
@@ -42,7 +50,7 @@ Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` i
    so a room with an empty temperature list exists (DEV's living room), while the room form requires at least one
    source; `any_cover_to_close` counts every window, also windows without a cover whose `cover` sensor is disabled
    (the skill documents the current behaviour).
-4. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
+5. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
    `open` for days (not built; needs a requirement and a mockup first, rule 8).
 
 DEV notes: since 2026-10-19 DEV runs the `main` state with the room readings (see the end), and its areas and its
@@ -119,6 +127,13 @@ two sections (dew point, recommendation) and could follow them, and no link or s
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-19: Felix's screenshots reviewed one by one for private details (none of the user name, URL bar or
+  address; one location hint in source names, see Next 2) and for correctness. Four embedded in the README with
+  absolute `raw.githubusercontent.com` URLs on `main`; the logo moved to absolute URLs as well, since HACS may not
+  render relative ones. `tests/test_docs.py` now checks that such URLs into `main` name a file in the repository
+  (negative check done). Found the menu-title bug (Next 3). Images sit in `docs/assets/screenshots/`; the ones not
+  yet embedded stay untracked. 822 tests green. Verified on DEV: yes (flow API check of the window type step).
 
 - 2026-10-19: room readings documented on `docs/documentation` after merging `main` (STATUS merged without a
   conflict). `docs/reference.md`: three room entities, their existence and meaning, a new section "Readings and
