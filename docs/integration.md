@@ -560,7 +560,11 @@ as `closed` / `ajar` / `tilted` / `open`); the UI translates them (E4).
 Attribute rules (E6): `reason` only when not `primary`, `offset` only on a fallback or weather stage. The room's derived
 absolute humidity and dew point take `source`, `stage` and `reason` from the weaker of their two inputs (temperature or
 humidity; stage order primary < fallback < none, a tie goes to humidity) and carry no `offset`, because the offsets
-belong to the inputs. `readings` (R16) maps each source's label to its raw value in rank order (`null` when not valid); the label comes from `labels.source_labels` (adapter: friendly name, area name and aliases) and logic §16. `devices` (R17) maps each heating or cooling device's label to `mode`, `setpoint` (or `setpoint_low`, `setpoint_high`) and `current`, leaving out what the device does not report. `offset`, `per_region`, `readings` and `devices` are `_unrecorded_attributes`; offsets and statuses of all candidates live in diagnostics, not in attributes.
+belong to the inputs. `readings` (R16) maps each source's label to its raw value in rank order (`null` when not valid);
+the label comes from `labels.source_labels` (adapter: friendly name, area name and aliases) and logic §16. `devices`
+(R17) maps each heating or cooling device's label to `mode`, `setpoint` (or `setpoint_low`, `setpoint_high`) and
+`current`, leaving out what the device does not report. `offset`, `per_region`, `readings` and `devices` are
+`_unrecorded_attributes`; offsets and statuses of all candidates live in diagnostics, not in attributes.
 Attribute values `stage`, `reason`, `open_leaves` are translated through `state_attributes`.
 
 ### 8.4 Entity lifecycle
