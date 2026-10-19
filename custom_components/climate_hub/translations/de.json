@@ -431,6 +431,42 @@
       "window_open_since": {
         "name": "Fenster offen seit"
       },
+      "temperature_spread": {
+        "name": "Temperaturspanne",
+        "state_attributes": {
+          "readings": {
+            "name": "Messpunkte"
+          }
+        }
+      },
+      "humidity_spread": {
+        "name": "Feuchtespanne",
+        "state_attributes": {
+          "readings": {
+            "name": "Messpunkte"
+          }
+        }
+      },
+      "setpoint_deviation": {
+        "name": "Abweichung vom Soll",
+        "state_attributes": {
+          "device": {
+            "name": "Gerät"
+          },
+          "setpoint": {
+            "name": "Sollwert"
+          },
+          "setpoint_low": {
+            "name": "Sollwert unten"
+          },
+          "setpoint_high": {
+            "name": "Sollwert oben"
+          },
+          "devices": {
+            "name": "Geräte"
+          }
+        }
+      },
       "state": {
         "name": "Zustand",
         "state": {
@@ -1000,7 +1036,7 @@
             },
             "climate": {
               "name": "Heizen und Kühlen",
-              "description": "Sie werden nur gelesen, nie gesteuert. Läuft eines, während ein Fenster länger als zum Stoßlüften offen ist, gibt es eine Warnung.",
+              "description": "Sie werden nur gelesen, nie gesteuert. Ihr Sollwert wird mit der Raumtemperatur verglichen. Läuft eines, während ein Fenster länger als zum Stoßlüften offen ist, gibt es eine Warnung.",
               "data": {
                 "climate_devices": "Heiz- und Klimageräte"
               },
@@ -1011,10 +1047,12 @@
             "advanced": {
               "name": "Erweitert",
               "data": {
-                "max_age": "Höchstalter einer Messung"
+                "max_age": "Höchstalter einer Messung",
+                "show_readings": "Messpunkte einzeln zeigen"
               },
               "data_description": {
-                "max_age": "In Minuten. Leer heißt: Standardwert des Hubs."
+                "max_age": "In Minuten. Leer heißt: Standardwert des Hubs.",
+                "show_readings": "Temperaturspanne und Feuchtespanne mit dem Wert jeder Quelle. Für Räume mit mehreren Zonen, z. B. Bett und Schreibtisch."
               }
             }
           },
@@ -1047,7 +1085,7 @@
             },
             "climate": {
               "name": "Heizen und Kühlen",
-              "description": "Sie werden nur gelesen, nie gesteuert. Läuft eines, während ein Fenster länger als zum Stoßlüften offen ist, gibt es eine Warnung.",
+              "description": "Sie werden nur gelesen, nie gesteuert. Ihr Sollwert wird mit der Raumtemperatur verglichen. Läuft eines, während ein Fenster länger als zum Stoßlüften offen ist, gibt es eine Warnung.",
               "data": {
                 "climate_devices": "Heiz- und Klimageräte"
               },
@@ -1058,10 +1096,12 @@
             "advanced": {
               "name": "Erweitert",
               "data": {
-                "max_age": "Höchstalter einer Messung"
+                "max_age": "Höchstalter einer Messung",
+                "show_readings": "Messpunkte einzeln zeigen"
               },
               "data_description": {
-                "max_age": "In Minuten. Leer heißt: Standardwert des Hubs."
+                "max_age": "In Minuten. Leer heißt: Standardwert des Hubs.",
+                "show_readings": "Temperaturspanne und Feuchtespanne mit dem Wert jeder Quelle. Für Räume mit mehreren Zonen, z. B. Bett und Schreibtisch."
               }
             }
           },

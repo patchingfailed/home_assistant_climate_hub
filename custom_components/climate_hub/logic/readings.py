@@ -15,6 +15,11 @@ _SPLIT = re.compile(r"[\s_\-]+")
 _CLIMATE_PREFIX = "climate."
 
 
+def tokens(text: str) -> list[str]:
+    """Split at runs of whitespace, `_` and `-`, without empty tokens."""
+    return [t for t in _SPLIT.split(text) if t]
+
+
 def _is_metric_word(token: str, metric_words: Collection[str]) -> bool:
     folded = token.casefold()
     return any(
@@ -27,10 +32,9 @@ def _is_metric_word(token: str, metric_words: Collection[str]) -> bool:
 def _label(
     full_name: str, area_words: Collection[str], metric_words: Collection[str]
 ) -> str:
-    tokens = [t for t in _SPLIT.split(full_name) if t]
     kept = [
         t
-        for t in tokens
+        for t in tokens(full_name)
         if t.casefold() not in area_words and not _is_metric_word(t, metric_words)
     ]
     if not kept:

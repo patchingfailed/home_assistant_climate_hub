@@ -100,7 +100,7 @@ class ClimateHubEntity(CoordinatorEntity[ClimateHubCoordinator]):
     """Base of all Climate Hub entities."""
 
     _attr_has_entity_name = True
-    _unrecorded_attributes = frozenset({"offset", "per_region"})
+    _unrecorded_attributes = frozenset({"offset", "per_region", "readings", "devices"})
 
     entity_description: ClimateHubDescription
 

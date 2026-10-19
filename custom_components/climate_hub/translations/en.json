@@ -431,6 +431,42 @@
       "window_open_since": {
         "name": "Window open since"
       },
+      "temperature_spread": {
+        "name": "Temperature spread",
+        "state_attributes": {
+          "readings": {
+            "name": "Readings"
+          }
+        }
+      },
+      "humidity_spread": {
+        "name": "Humidity spread",
+        "state_attributes": {
+          "readings": {
+            "name": "Readings"
+          }
+        }
+      },
+      "setpoint_deviation": {
+        "name": "Deviation from setpoint",
+        "state_attributes": {
+          "device": {
+            "name": "Device"
+          },
+          "setpoint": {
+            "name": "Setpoint"
+          },
+          "setpoint_low": {
+            "name": "Setpoint low"
+          },
+          "setpoint_high": {
+            "name": "Setpoint high"
+          },
+          "devices": {
+            "name": "Devices"
+          }
+        }
+      },
       "state": {
         "name": "State",
         "state": {
@@ -1000,7 +1036,7 @@
             },
             "climate": {
               "name": "Heating and cooling",
-              "description": "They are only read, never controlled. If one is running while a window is open longer than needed for a burst of ventilation, there is a warning.",
+              "description": "They are only read, never controlled. Their setpoint is compared with the room temperature. If one is running while a window is open longer than needed for a burst of ventilation, there is a warning.",
               "data": {
                 "climate_devices": "Heating and cooling devices"
               },
@@ -1011,10 +1047,12 @@
             "advanced": {
               "name": "Advanced",
               "data": {
-                "max_age": "Maximum age of a measurement"
+                "max_age": "Maximum age of a measurement",
+                "show_readings": "Show individual readings"
               },
               "data_description": {
-                "max_age": "In minutes. Empty means the hub default."
+                "max_age": "In minutes. Empty means the hub default.",
+                "show_readings": "Temperature spread and humidity spread with the value of every source. For rooms with several zones, e.g. bed and desk."
               }
             }
           },
@@ -1047,7 +1085,7 @@
             },
             "climate": {
               "name": "Heating and cooling",
-              "description": "They are only read, never controlled. If one is running while a window is open longer than needed for a burst of ventilation, there is a warning.",
+              "description": "They are only read, never controlled. Their setpoint is compared with the room temperature. If one is running while a window is open longer than needed for a burst of ventilation, there is a warning.",
               "data": {
                 "climate_devices": "Heating and cooling devices"
               },
@@ -1058,10 +1096,12 @@
             "advanced": {
               "name": "Advanced",
               "data": {
-                "max_age": "Maximum age of a measurement"
+                "max_age": "Maximum age of a measurement",
+                "show_readings": "Show individual readings"
               },
               "data_description": {
-                "max_age": "In minutes. Empty means the hub default."
+                "max_age": "In minutes. Empty means the hub default.",
+                "show_readings": "Temperature spread and humidity spread with the value of every source. For rooms with several zones, e.g. bed and desk."
               }
             }
           },
