@@ -1,42 +1,59 @@
 # Status
 
-Updated 2026-10-18. The only place for project status.
+Updated 2026-10-19. The only place for project status.
 
 ## Now
 
 All three milestones are built, verified on DEV by Felix and merged into `main`: M1 (rooms and outdoor sides), M2
 (windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). PROD runs since
-2026-10-16 (0.1.0, copied by hand); release 0.2.0 with the audit fixes is published but not yet on PROD. 750 tests
+2026-10-16 (0.1.0, copied by hand); release 0.2.0 with the audit fixes is published but not yet on PROD. 759 tests
 green. Plan and build order: `docs/integration.md`.
 
 Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` is open for the documentation package
-(local, WP0 done, WP1 drafted); it merges into `main` after WP1. `spike/native-ui` stays local as a reference and
-is never merged. The repository is public (Felix's go, 2026-10-16).
+(local, WP0 done, WP1 drafted, WP3 built); it merges into `main` after Felix's README walkthrough.
+`spike/native-ui` stays local as a reference and is never merged. The repository is public (Felix's go, 2026-10-16).
 
 ## Next
 
 1. **PROD to HACS** (Felix, on PROD): HA backup; HACS → ⋮ → custom repositories → this repository, type
    Integration; download v0.2.0; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
    gets releases; `deploy.ps1 -Instance Prod` stays as an emergency path (Felix, 2026-10-16).
-2. **Documentation package**, planned with Felix on 2026-10-18 (section below). WP0 done; WP1 drafted and verified
-   against the code. Next: Felix deletes the DEV entry and sets Climate Hub up again from the README alone (English
-   UI), taking the screenshots from the shot list on the way; then images in, merge into `main`.
+2. **Documentation package**, planned with Felix on 2026-10-18 (section below). WP0 done; WP1 drafted, verified
+   against the code, entry points corrected from Felix's screenshot; WP3 (agent skill) built on the same branch at
+   Felix's request, because he wants to use it on PROD now. Continue here:
+   1. DEV is prepared: server language switched from `de` to `en` (2026-10-19, Felix's go) so that device names and
+      entity IDs come out English; floors First floor and Outside. After the walkthrough, switch the server language
+      back to `de` (Settings → System → General, or WebSocket `config/core/update` with `language`).
+   2. Felix deletes the DEV entry, sets his profile language to English and follows the README from "First setup"
+      word by word, noting every deviation, missing hint or guess; takes the screenshots from the shot list on the
+      way (kept outside the repository; Felix has it); then adds a room, an outdoor side and a window along "Adding
+      and changing later".
+   3. Claude checks the images for private details (rule 13), embeds them with absolute `raw.githubusercontent.com`
+      URLs on `main`, folds in Felix's deviations, runs `tests/test_docs.py`, then merges `docs/documentation` into
+      `main` after Felix has looked (push is a separate go). The merge carries WP3 as well; WP2 follows on a new
+      branch.
 3. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
    `windows`, even when empty (decide: keep or drop when empty). Found during WP1: the reason `ok` is translated but
    never written (dead entry, rule 4; `tests/test_docs.py` requires it in the reference while it exists); the `plan`
    and `reconfigure` step descriptions say "Simply leave out …" (banned word; change when the text is touched anyway);
-   diagnostics redact nothing (no secrets in them; the reference says so; proposal: keep).
+   diagnostics redact nothing (no secrets in them; the reference says so; proposal: keep). Found during WP3 (decide):
+   **Add window** in an area that is not a room creates the room with the suggested sources even when there are none,
+   so a room with an empty temperature list exists (DEV's living room), while the room form requires at least one
+   source; `any_cover_to_close` counts every window, also windows without a cover whose `cover` sensor is disabled
+   (the skill documents the current behaviour).
 4. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
    `open` for days (not built; needs a requirement and a mockup first, rule 8).
 
-DEV notes: DEV has one weather entity with a forecast service (met.no); its other weather entities are mirrors
-without one, so the daily strategy stays unknown with them. The `*_klima_*` entities without attributes on DEV are
-mirrors of another instance (`remote_homeassistant`), not Climate Hub's. DEV's
-mirrored sensors update only when their value changes, so a steady one turns stale after `max_age` and, after the
-repair delay, raises a real outage issue; that is DEV's mirror, not a bug. Outage tests: a state-only sensor set via
-`POST /api/states` (owned by no integration, so nothing overwrites it), first in a room's list, then `unavailable`;
-the repair delay goes down to 1 h in S9. New-source tests: move a mirrored sensor into a room's area; one that was in
-the area when the room was last saved counts as seen and raises nothing.
+DEV notes: since 2026-10-18 DEV runs 0.2.0, and its areas and its outdoor floor carry English names (area IDs unchanged)
+for the README walkthrough; since 2026-10-19 the six indoor areas sit on a floor "First floor", the outdoor areas on
+"Outside". DEV's server language is English (`en`) for the walkthrough; normally German (`de`). DEV has one weather
+entity with a forecast service (met.no); its other weather entities are mirrors without one, so the daily strategy stays
+unknown with them. The `*_klima_*` entities without attributes on DEV are mirrors of another instance
+(`remote_homeassistant`), not Climate Hub's. DEV's mirrored sensors update only when their value changes, so a steady
+one turns stale after `max_age` and, after the repair delay, raises a real outage issue; that is DEV's mirror, not a
+bug. Outage tests: a state-only sensor set via `POST /api/states` (owned by no integration, so nothing overwrites it),
+first in a room's list, then `unavailable`; the repair delay goes down to 1 h in S9. New-source tests: move a mirrored
+sensor into a room's area; one that was in the area when the room was last saved counts as seen and raises nothing.
 
 ## Documentation package (planned 2026-10-18)
 
@@ -79,16 +96,10 @@ before an image is committed, check it for private details (rule 13: device name
 check that images render in HACS' info view (relative paths may not; then absolute URLs). Done when the verifier
 passed and someone set up Climate Hub on DEV using only the README, every step as written.
 
-**WP3 Agent context.** `docs/agent/climate-hub/SKILL.md`, self-contained, about 150–250 lines: object model; finding
-entities by platform `climate_hub` and `translation_key`, not by entity ID pattern (IDs are generated in the instance
-language); raw states and reasons with their meaning; provenance through `source`, `stage`, `reason`, `offset`; only
-the three comfort numbers are writable, everything else goes through the UI flows, never `.storage`; rules (never touch
-unique IDs, recommendations are advice, no cover automation unless asked, automations tolerate `unavailable` after a
-reload); recipes (diagnose a value, explain a recommendation, one dashboard template for every room, automations on
-recommendation plus reason and on the `any_*` sensors). Open for the outline: whether the repository should also be
-installable as a Claude Code plugin. Done when a fresh Sonnet session with only the skill and read access to DEV solves
-five tasks (explain a value, explain a `close`, list open windows, draft an automation, set the comfort range for the
-night), each answer checked against DEV.
+**WP3 Agent context.** Done 2026-10-19: `docs/agent/climate-hub/SKILL.md` (450 lines, most of it tables; the planned
+150–250 counted prose). A copy lives in Felix's user skills (`~/.claude/skills/climate-hub/`); it is a copy, so it
+needs a refresh when the skill changes. Still open: whether the repository should also be installable as a Claude Code
+plugin.
 
 **WP2 Technical documentation.** Rework `logic.md` and `integration.md` from build specs into the description of the
 built system. Each section: what happens, how (formula or Mermaid flow), constants with values, why (ADR, requirement,
@@ -107,6 +118,25 @@ two sections (dew point, recommendation) and could follow them, and no link or s
 
 ## Recently done
 
+- 2026-10-19: WP3, the agent skill (Felix asked for it to work on PROD; the planned WP3 paragraph served as the
+  outline). Drafted by a Sonnet worker; Claude added the diagnostics REST route and a health-check recipe. Verifier
+  against code and the Home Assistant source: 4 wrong (among them `reason` and `offset` on outdoor side sensors, which
+  appear only at `none` and `weather`, and the diagnostics wrapper `data`) and 6 imprecise statements, all fixed.
+  Field test: a fresh Sonnet session with only the skill and read access to DEV solved the five planned tasks plus a
+  health check, rendered both templates on DEV, and listed 17 gaps (mapping room names through areas, a registry
+  reader, the offset glide, how far to trust a value, health-check rows for empty source lists, sides without
+  humidity sources and long-open windows, the night range with both values); all folded in. Spot checks of its
+  answers against DEV matched; the skill's registry snippet ran against DEV and found the 117 entities. The reference
+  now names the diagnostics wrapper too. 759 tests green. Verified on DEV: yes (read-only field test).
+
+- 2026-10-18: WP1 follow-up. Felix's screenshot of the integration page corrected the README entry points: the add
+  buttons sit at the top of the page (and in ⋮ of the entry), the options open with the gear icon (⋮ → System options
+  is Home Assistant's own dialog), a subentry card's gear opens its reconfigure form and its ⋮ offers Rename and
+  Delete (Rename changes only the card title and repair texts). DEV prepared for the walkthrough: 0.2.0 deployed with
+  restart, entry loaded, log clean; areas and the outdoor floor renamed to English through the WebSocket API. Found: device names
+  follow the server language, not the profile language (pitfall added to the project skill). Verified on DEV: partly
+  (deploy and load; README walkthrough pending).
+
 - 2026-10-18: WP1 drafted (outline approved by Felix). README rewritten (sober intro, requirements, first setup as
   click steps, defaults, adding later, what you get, expected behaviour, troubleshooting from real cases, limits,
   "Development and AI use"); new `docs/reference.md` (every entity, state, reason, attribute, setting, repair,
@@ -115,9 +145,9 @@ two sections (dew point, recommendation) and could follow them, and no link or s
   against code): README 8 wrong or imprecise plus 4 minor, reference 3 wrong and 5 imprecise, all fixed. Among them:
   the room pre-check rule (an outside-word floor beats a climate entity), the reload timer (1 s after the first
   change), the cover hold (15 min dwell of the current wish, not of the new one) and the `new_source` check (start
-  and 5 s after a registry change, not every evaluation). Code facts that the specs state differently, for WP2: offsets use an 8 h time constant, not a 24 h
-  window; the Daily strategy entity does not exist without a weather entity. 756 tests green. Verified on DEV: no
-  (Felix's README walkthrough pending).
+  and 5 s after a registry change, not every evaluation). Code facts that the specs state differently, for WP2:
+  offsets use an 8 h time constant, not a 24 h window; the Daily strategy entity does not exist without a weather
+  entity. 756 tests green. Verified on DEV: no (Felix's README walkthrough pending).
 
 - 2026-10-18: WP0 of the documentation package. "Docs" section in CLAUDE.md with the writing rules; beyond the plan:
   present tense for what is built, one name per concept, prose wrapped at 120. Decided with Felix: bold only for UI

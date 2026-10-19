@@ -77,6 +77,7 @@ Invoke-RestMethod "http://${DevHost}:8123/api/states/sensor.arbeitszimmer_klima_
 | "Cannot update and reload entry with update listeners" | `async_update_reload_and_abort` while an update listener is registered | `async_update_and_abort`; the listener reloads |
 | Entity ID `sensor.kuche_kuche_klima_…` | HA puts the area in front of new entity IDs (default `entity_id_parts`) and does not strip it from the device name | Device names without the area |
 | Device stays in the old area after a room's area changed | `suggested_area` only places a new device | `device_registry.async_update_device(device_id, area_id=…)` on area change |
+| Device names stay German although the profile is English | The device registry translates `translation_key` once, at creation, with the server language (`hass.config.language`) | Set Settings → System → General → language before the devices are created; existing devices keep their name |
 | `deploy.ps1 -Restart` prints a connection error | HA closes the connection while restarting | Expected; the script waits for `/api/config` afterwards |
 
 ## Workflow decision tree
