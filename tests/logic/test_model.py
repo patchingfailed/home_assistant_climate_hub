@@ -322,3 +322,11 @@ def test_build_house_is_independent_of_input_order():
 
     assert build(0) == build(1)
     assert list(build(1).rooms) == ["r1", "r2"]
+
+
+@pytest.mark.parametrize(
+    ("extra", "expected"), [({}, True), ({"show_readings": False}, False)]
+)
+def test_parse_room_show_readings(extra, expected):
+    data = {"area": "a1", "temperature": ["sensor.t"], **extra}
+    assert parse_room("r1", data, SETTINGS, NO_FOLLOW).show_readings is expected

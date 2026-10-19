@@ -238,7 +238,12 @@ async def test_derived_room_sensors_carry_the_weaker_input(
 
 
 def test_unrecorded_attributes() -> None:
-    assert {"offset", "per_region"} <= ClimateHubEntity._unrecorded_attributes
+    assert {
+        "offset",
+        "per_region",
+        "readings",
+        "devices",
+    } <= ClimateHubEntity._unrecorded_attributes
 
 
 async def test_missing_humidity_removes_entities(

@@ -37,6 +37,7 @@ CONF_TEMPERATURE = "temperature"
 CONF_HUMIDITY = "humidity"
 CONF_PRESSURE = "pressure"
 CONF_CLIMATE_DEVICES = "climate_devices"
+CONF_SHOW_READINGS = "show_readings"
 CONF_TYPE = "type"
 CONF_NAME = "name"
 CONF_LEAF = "leaf"
@@ -84,6 +85,7 @@ class RoomModel:
     climate_devices: tuple[str, ...]
     max_age: timedelta  # own override or the hub value
     window_ids: tuple[str, ...]
+    show_readings: bool = True  # R16: spread entities with per-source readings
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,6 +178,7 @@ def parse_room(
         climate_devices=tuple(data.get(CONF_CLIMATE_DEVICES, ())),
         max_age=_max_age(data, settings),
         window_ids=(),
+        show_readings=bool(data.get(CONF_SHOW_READINGS, True)),
     )
 
 

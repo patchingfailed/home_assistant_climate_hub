@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from functools import partial
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -38,19 +39,25 @@ from .entity import (
     rounded,
 )
 from .entity import PARALLEL_UPDATES as PARALLEL_UPDATES
+from .labels import source_labels
 from .logic.comfort import Position, Relation, Trend
+from .logic.const import HUMIDITY_WORDS, TEMPERATURE_WORDS
 from .logic.cover import CoverAdvice
 from .logic.engine import RoomResult, WindowResult
 from .logic.house import HouseValue
 from .logic.model import HouseModel, RoomModel, WindowModel
 from .logic.outdoor import HouseOutdoor, OutdoorValue
 from .logic.recommendation import Recommendation
-from .logic.sources import Metric, Resolution, Stage
+from .logic.sources import Metric, Resolution, Stage, Status
 from .logic.strategy import Strategy, StrategyResult
 from .logic.window import Level
 
 _TEMPERATURE = SensorDeviceClass.TEMPERATURE
 _HUMIDITY = SensorDeviceClass.HUMIDITY
+
+
+# Entity IDs and metric words to labels (R16)
+type Labeller = Callable[[Sequence[str], Collection[str]], Mapping[str, str]]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -59,6 +66,7 @@ class ClimateHubSensorDescription(SensorEntityDescription, ClimateHubDescription
 
     value_fn: Callable[[Any], StateType | datetime]
     attrs_fn: Callable[[Any], Mapping[str, Any]] | None = None
+    labelled_attrs_fn: Callable[[Any, Labeller], Mapping[str, Any]] | None = None
 
 
 def _value(item: StrEnum | None) -> str | None:
@@ -128,6 +136,57 @@ def _outdoor_attrs(
     )
 
 
+def _readings(
+    resolution: Resolution, label: Labeller, words: Collection[str], digits: int
+) -> dict[str, Any]:
+    """Value of every source in rank order, None while a source is not `ok` (R16)."""
+    names = label([c.entity_id for c in resolution.candidates], words)
+    return {
+        "readings": {
+            names[c.entity_id]: rounded(c.value, digits)
+            if c.status is Status.OK
+            else None
+            for c in resolution.candidates
+        }
+    }
+
+
+def _temperature_readings(room: RoomResult, label: Labeller) -> dict[str, Any]:
+    return _readings(room.temperature, label, TEMPERATURE_WORDS, 2)
+
+
+def _humidity_readings(room: RoomResult, label: Labeller) -> dict[str, Any]:
+    return _readings(room.humidity, label, HUMIDITY_WORDS, 1)
+
+
+def _setpoint_attrs(room: RoomResult, label: Labeller) -> dict[str, Any]:
+    """The counting device and setpoint, and every device's own state (R17)."""
+    point = room.setpoint
+    names = label([entity_id for entity_id, _ in room.climate], TEMPERATURE_WORDS)
+    ranged = point.low != point.high
+    devices = {
+        names[entity_id]: present(
+            {
+                "mode": device.hvac_mode,
+                "setpoint": rounded(device.target, 2),
+                "setpoint_low": rounded(device.target_low, 2),
+                "setpoint_high": rounded(device.target_high, 2),
+                "current": rounded(device.current, 2),
+            }
+        )
+        for entity_id, device in room.climate
+    }
+    return present(
+        {
+            "device": point.device,
+            "setpoint": None if ranged else rounded(point.low, 2),
+            "setpoint_low": rounded(point.low, 2) if ranged else None,
+            "setpoint_high": rounded(point.high, 2) if ranged else None,
+            "devices": devices or None,
+        }
+    )
+
+
 # Existence predicates (I7, I12)
 
 
@@ -137,6 +196,21 @@ def _has(metric: Metric) -> Callable[[HouseModel, Subject], bool]:
         return bool(room.sources[metric])
 
     return exists
+
+
+def _has_readings(metric: Metric) -> Callable[[HouseModel, Subject], bool]:
+    """Spread entities: switched on and at least two sources (R16)."""
+
+    def exists(_model: HouseModel, room: Subject) -> bool:
+        assert isinstance(room, RoomModel)
+        return room.show_readings and len(room.sources[metric]) >= 2
+
+    return exists
+
+
+def _has_climate_devices(_model: HouseModel, room: Subject) -> bool:
+    assert isinstance(room, RoomModel)
+    return bool(room.climate_devices)
 
 
 def _outdoor_known(model: HouseModel, _subject: Subject) -> bool:
@@ -219,6 +293,7 @@ def _measurement(
     value_fn: Callable[[Any], float | None],
     *,
     attrs_fn: Callable[[Any], Mapping[str, Any]] | None = None,
+    labelled_attrs_fn: Callable[[Any, Labeller], Mapping[str, Any]] | None = None,
     exists_fn: Callable[[HouseModel, Subject], bool] = always,
 ) -> ClimateHubSensorDescription:
     return ClimateHubSensorDescription(
@@ -230,6 +305,7 @@ def _measurement(
         suggested_display_precision=precision,
         value_fn=lambda result: rounded(value_fn(result), digits),
         attrs_fn=attrs_fn,
+        labelled_attrs_fn=labelled_attrs_fn,
         exists_fn=exists_fn,
     )
 
@@ -465,6 +541,39 @@ SENSORS: tuple[ClimateHubSensorDescription, ...] = (
         lambda r: r.windows.open_since,
         exists_fn=has_windows,
     ),
+    _measurement(
+        "temperature_spread",
+        _ROOM,
+        SensorDeviceClass.TEMPERATURE_DELTA,
+        _CELSIUS,
+        2,
+        1,
+        lambda r: r.temperature_spread,
+        labelled_attrs_fn=_temperature_readings,
+        exists_fn=_has_readings(Metric.TEMPERATURE),
+    ),
+    _measurement(
+        "humidity_spread",
+        _ROOM,
+        _HUMIDITY,
+        PERCENTAGE,
+        1,
+        0,
+        lambda r: r.humidity_spread,
+        labelled_attrs_fn=_humidity_readings,
+        exists_fn=_has_readings(Metric.HUMIDITY),
+    ),
+    _measurement(
+        "setpoint_deviation",
+        _ROOM,
+        SensorDeviceClass.TEMPERATURE_DELTA,
+        _CELSIUS,
+        2,
+        1,
+        lambda r: r.setpoint.deviation,
+        labelled_attrs_fn=_setpoint_attrs,
+        exists_fn=_has_climate_devices,
+    ),
     # Window
     _options_enum(
         "state",
@@ -562,5 +671,12 @@ class ClimateHubSensor(ClimateHubEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
         result = self.subject_result
-        attrs_fn = self.entity_description.attrs_fn
-        return None if result is None or attrs_fn is None else attrs_fn(result)
+        if result is None:
+            return None
+        description = self.entity_description
+        if description.labelled_attrs_fn is not None:
+            room = self.coordinator.model.rooms[self._subject_id]
+            labeller = partial(source_labels, self.hass, room.area_id)
+            return description.labelled_attrs_fn(result, labeller)
+        attrs_fn = description.attrs_fn
+        return None if attrs_fn is None else attrs_fn(result)

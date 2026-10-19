@@ -13,11 +13,11 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import translation
 from homeassistant.util import dt as dt_util
 
 from ..const import DOMAIN
+from ..labels import entity_name
 from ..logic import const as logic_const
 from ..logic import model as m
 from ..logic.cover import CoverAdvice, CoverResult
@@ -82,15 +82,6 @@ async def async_texts(hass: HomeAssistant) -> Texts:
 def area_name(hass: HomeAssistant, area_id: str) -> str:
     area = ar.async_get(hass).async_get_area(area_id)
     return area_id if area is None else area.name
-
-
-def entity_name(hass: HomeAssistant, entity_id: str) -> str:
-    """The friendly name, else the registry name, else the entity ID."""
-    state = hass.states.get(entity_id)
-    if state is not None and (name := state.attributes.get("friendly_name")):
-        return str(name)
-    entry = er.async_get(hass).async_get(entity_id)
-    return str((entry and (entry.name or entry.original_name)) or entity_id)
 
 
 @dataclass(frozen=True, slots=True)

@@ -37,7 +37,7 @@ def _form(
     humidity: list[str] | None = None,
     pressure: list[str] | None = None,
     climate: list[str] | None = None,
-    **advanced: int,
+    **advanced: float | bool,
 ) -> dict[str, Any]:
     return {
         "area": area,
@@ -153,6 +153,7 @@ async def test_save_stores_exactly_the_documented_keys(
         "humidity": [],
         "pressure": [],
         "climate_devices": [house.kitchen_thermostat],
+        "show_readings": True,
     }
 
 
@@ -168,6 +169,51 @@ async def test_max_age_is_stored_as_minutes(
     data = _room(hub, f"room_{house.bedroom}").data
     assert data["max_age"] == 25
     assert isinstance(data["max_age"], int)
+
+
+async def test_add_with_the_switch_off_stores_show_readings_false(
+    hass: HomeAssistant, house: House, hub: MockConfigEntry
+) -> None:
+    result = await _init(hass, hub)
+    result = await _configure(hass, result, {"area": house.bedroom})
+    result = await _configure(
+        hass,
+        result,
+        _form(house.bedroom, [house.bedroom_temp], show_readings=False),
+    )
+    result = await _configure(hass, result, {"next_step_id": "room_save"})
+    assert _room(hub, f"room_{house.bedroom}").data["show_readings"] is False
+
+
+async def test_new_room_form_has_the_switch_on(
+    hass: HomeAssistant, house: House, hub: MockConfigEntry
+) -> None:
+    result = await _init(hass, hub)
+    result = await _configure(hass, result, {"area": house.bedroom})
+    marker, _ = field(result, "advanced.show_readings")
+    assert marker.default() is True
+
+
+async def test_reconfigure_shows_the_switch_and_stores_the_change(
+    hass: HomeAssistant, house: House, hub: MockConfigEntry
+) -> None:
+    # The stored living room predates the switch: it opens on
+    result = await _init(hass, hub, "reconfigure", subentry_id="room_living")
+    assert suggested(result, "advanced.show_readings") is True
+    sources = [house.living_temp, house.living_air_temp]
+    result = await _configure(
+        hass, result, _form(house.living_room, sources, show_readings=False)
+    )
+    result = await _configure(hass, result, {"next_step_id": "room_save"})
+    assert hub.subentries["room_living"].data["show_readings"] is False
+
+    result = await _init(hass, hub, "reconfigure", subentry_id="room_living")
+    assert suggested(result, "advanced.show_readings") is False
+    result = await _configure(
+        hass, result, _form(house.living_room, sources, show_readings=True)
+    )
+    result = await _configure(hass, result, {"next_step_id": "room_save"})
+    assert hub.subentries["room_living"].data["show_readings"] is True
 
 
 async def test_area_change_reopens_with_new_suggestions(
@@ -313,6 +359,7 @@ async def test_reconfigure_opens_the_form_and_updates(
         "humidity": [],
         "pressure": [],
         "climate_devices": [],
+        "show_readings": True,
         "max_age": 30,
     }
     assert sub.title == "Wohnzimmer"

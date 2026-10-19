@@ -23,6 +23,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import translation
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     EntitySelector,
     EntitySelectorConfig,
     NumberSelector,
@@ -313,6 +314,9 @@ def flatten(user_input: Mapping[str, Any], *, climate: bool) -> dict[str, Any]:
         data[m.CONF_CLIMATE_DEVICES] = list(
             user_input.get(SECTION_CLIMATE, {}).get(m.CONF_CLIMATE_DEVICES, ())
         )
+        data[m.CONF_SHOW_READINGS] = bool(
+            user_input.get(SECTION_ADVANCED, {}).get(m.CONF_SHOW_READINGS, True)
+        )
     if (
         max_age := user_input.get(SECTION_ADVANCED, {}).get(m.CONF_MAX_AGE)
     ) is not None:
@@ -331,6 +335,7 @@ def nest(data: Mapping[str, Any], *, climate: bool) -> dict[str, Any]:
             m.CONF_PRESSURE,
             m.CONF_CLIMATE_DEVICES,
             m.CONF_MAX_AGE,
+            m.CONF_SHOW_READINGS,
         )
     }
     values[SECTION_HUMIDITY_PRESSURE] = {
@@ -340,8 +345,13 @@ def nest(data: Mapping[str, Any], *, climate: bool) -> dict[str, Any]:
         values[SECTION_CLIMATE] = {
             m.CONF_CLIMATE_DEVICES: data.get(m.CONF_CLIMATE_DEVICES, [])
         }
+    advanced: dict[str, Any] = {}
+    if climate:
+        advanced[m.CONF_SHOW_READINGS] = data.get(m.CONF_SHOW_READINGS, True)
     if m.CONF_MAX_AGE in data:
-        values[SECTION_ADVANCED] = {m.CONF_MAX_AGE: data[m.CONF_MAX_AGE]}
+        advanced[m.CONF_MAX_AGE] = data[m.CONF_MAX_AGE]
+    if advanced:
+        values[SECTION_ADVANCED] = advanced
     return values
 
 
@@ -490,9 +500,15 @@ class SourceFlow(ConfigSubentryFlow):
                 ),
                 {"collapsed": self.source == SOURCE_RECONFIGURE},
             )
+        advanced: dict[Any, Any] = {
+            probatio.Optional(m.CONF_MAX_AGE): max_age_selector()
+        }
+        if self._climate:
+            advanced[probatio.Optional(m.CONF_SHOW_READINGS, default=True)] = (
+                BooleanSelector()
+            )
         fields[probatio.Required(SECTION_ADVANCED)] = section(
-            probatio.Schema({probatio.Optional(m.CONF_MAX_AGE): max_age_selector()}),
-            {"collapsed": True},
+            probatio.Schema(advanced), {"collapsed": True}
         )
         return probatio.Schema(fields)
 

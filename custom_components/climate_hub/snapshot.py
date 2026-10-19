@@ -121,8 +121,19 @@ def read_climate_device(hass: HomeAssistant, entity_id: str) -> ClimateDevice:
     state = hass.states.get(entity_id)
     if state is None:
         return ClimateDevice(hvac_action=None, hvac_mode=None)
+    unit = hass.config.units.temperature_unit
+
+    def temperature(attribute: str) -> float | None:
+        value = _number(state.attributes.get(attribute))
+        return None if value is None else _convert(value, Metric.TEMPERATURE, unit)
+
     return ClimateDevice(
-        hvac_action=state.attributes.get("hvac_action"), hvac_mode=state.state
+        hvac_action=state.attributes.get("hvac_action"),
+        hvac_mode=state.state,
+        target=temperature("temperature"),
+        target_low=temperature("target_temp_low"),
+        target_high=temperature("target_temp_high"),
+        current=temperature("current_temperature"),
     )
 
 

@@ -135,6 +135,7 @@ Types in this order (S5 ⋮ order): `room`, `region`, `window`. Direction values
 | `humidity`, `pressure` | list of entity IDs | ranked sources; empty means "follow the temperature devices" (R3) |
 | `climate_devices` | list of entity IDs | heating and cooling devices (R15) |
 | `max_age` | int minutes or absent | override of the hub value |
+| `show_readings` | bool or absent | spread entities (R16); absent counts as `true` (rooms saved before 2026-10-19) |
 
 **Region** (**frozen** keys). Subentry `unique_id` `region_<direction>`. Title „{direction} · {area}" („Norden ·
 Straße"), direction name from translations.
@@ -184,6 +185,7 @@ class RoomModel:
     climate_devices: tuple[str, ...]
     max_age: timedelta                       # own override or the hub value
     window_ids: tuple[str, ...]
+    show_readings: bool = True               # R16: spread entities with per-source readings
 
 @dataclass(frozen=True, slots=True)
 class RegionModel:
@@ -327,6 +329,9 @@ class RoomResult:
     recommendation: RecommendationResult
     windows: RoomWindows | None
     cooling_down: bool | None; heating_up: bool | None; open_while_conditioning: bool | None
+    temperature_spread: float | None; humidity_spread: float | None   # R16, logic §16
+    setpoint: Setpoint                                                # R17, logic §16
+    climate: tuple[tuple[str, ClimateDevice], ...]                    # heating and cooling devices, configured order
 
 @dataclass(frozen=True, slots=True)
 class RegionResult: own: RegionOwn; values: OutdoorValues
@@ -368,7 +373,7 @@ Builds the engine `Snapshot` from `hass.states` for one `HouseModel`. Functions 
 |---|---|
 | Sensor reading | `state.state` as float, converted from `unit_of_measurement` with `TemperatureConverter` / `PressureConverter` to °C / hPa; humidity needs `%`. `reported_at = state.last_reported` (R4). Status: no state → `missing`, `unavailable`, `unknown`, not a number → `not_numeric`, unit not convertible → `unit`. |
 | `climate` reading | attributes `current_temperature` / `current_humidity` (R5), temperature unit from `hass.config.units`. A missing attribute is `unknown`. Never `temperature` (setpoint). |
-| Climate device (A12) | `ClimateDevice(hvac_action=attributes.get("hvac_action"), hvac_mode=state.state)` |
+| Climate device (A12, R17) | `ClimateDevice(hvac_action=attributes.get("hvac_action"), hvac_mode=state.state, target=temperature, target_low=target_temp_low, target_high=target_temp_high, current=current_temperature)`; the four temperatures converted from `hass.config.units.temperature_unit` to °C, a missing or non-numeric attribute is `None`. The setpoint feeds only R17, never a source value (R5). |
 | Contact | `Contact(raw=state.state, last_changed=state.last_changed)`; no state → `raw=None` |
 | Cover | `cover.cover_position(state.state, attributes.get("current_position"))` |
 | Weather | `WeatherReadings` from attributes `temperature`, `humidity`, `pressure` with `temperature_unit` / `pressure_unit`, `reported_at = last_reported`; `clouds = cloud_coverage` |
@@ -523,6 +528,9 @@ as `closed` / `ajar` / `tilted` / `open`); the UI translates them (E4).
 | `open_while_conditioning` | binary_sensor | – | – | windows and climate devices |
 | `window` | sensor | ENUM levels | – | windows |
 | `window_open_since` | sensor | TIMESTAMP | – | windows |
+| `temperature_spread` | sensor | TEMPERATURE_DELTA °C, measurement, 1 | `readings` | two or more temperature sources and `show_readings` (R16) |
+| `humidity_spread` | sensor | HUMIDITY %, measurement, 0 | `readings` | two or more humidity sources (after follow, R3) and `show_readings` (R16) |
+| `setpoint_deviation` | sensor | TEMPERATURE_DELTA °C, measurement, 1 | `device`, `setpoint` or `setpoint_low` + `setpoint_high`, `devices` | climate devices (R17) |
 
 **Region device:** `temperature`, `humidity`, `pressure`, `absolute_humidity`, `dew_point` from the direction's
 `OutdoorValues` (so they show neighbour and weather stages too), attributes `source` (own winner), `stage`, `regions`,
@@ -552,7 +560,11 @@ as `closed` / `ajar` / `tilted` / `open`); the UI translates them (E4).
 Attribute rules (E6): `reason` only when not `primary`, `offset` only on a fallback or weather stage. The room's derived
 absolute humidity and dew point take `source`, `stage` and `reason` from the weaker of their two inputs (temperature or
 humidity; stage order primary < fallback < none, a tie goes to humidity) and carry no `offset`, because the offsets
-belong to the inputs. `offset` and `per_region` are `_unrecorded_attributes`; the full candidate list lives in diagnostics, never in attributes.
+belong to the inputs. `readings` (R16) maps each source's label to its raw value in rank order (`null` when not valid);
+the label comes from `labels.source_labels` (adapter: friendly name, area name and aliases) and logic §16. `devices`
+(R17) maps each heating or cooling device's label to `mode`, `setpoint` (or `setpoint_low`, `setpoint_high`) and
+`current`, leaving out what the device does not report. `offset`, `per_region`, `readings` and `devices` are
+`_unrecorded_attributes`; offsets and statuses of all candidates live in diagnostics, not in attributes.
 Attribute values `stage`, `reason`, `open_leaves` are translated through `state_attributes`.
 
 ### 8.4 Entity lifecycle
@@ -613,7 +625,8 @@ region) and the windows added via `add_window` (window mixin, §9.5; M2).
 
 `user` (area, add only; errors `already_room`, `is_region`) → `room_form` / `room_form_changed` (fields `area`,
 `side`, `temperature`; sections `humidity_pressure`, `climate` expanded on add and collapsed on edit, `advanced` with
-`max_age`; error `no_temperature`) → `room_preview` (menu `room_save`, `room_adjust`). `reconfigure` opens the form
+`max_age` and the boolean `show_readings` (default on, R16; rooms only, the region form has no such field); error
+`no_temperature`) → `room_preview` (menu `room_save`, `room_adjust`). `reconfigure` opens the form
 directly. Save: `async_create_entry(title, data, unique_id)` or `async_update_and_abort(entry, subentry, title=...,
 data=..., unique_id=...)`. When the sources were just suggested, the preview lists what was not taken and why.
 

@@ -138,6 +138,61 @@ async def test_climate_device(hass: HomeAssistant, house: House) -> None:
     assert (gone.hvac_action, gone.hvac_mode) == (None, None)
 
 
+async def test_climate_device_setpoints_and_current(
+    hass: HomeAssistant, house: House
+) -> None:
+    device = snap.read_climate_device(hass, house.living_thermostat)
+    assert (device.target, device.current) == (21.0, 22.6)
+    assert (device.target_low, device.target_high) == (None, None)
+    set_value(
+        hass,
+        house.living_thermostat,
+        "heat_cool",
+        target_temp_low=19.5,
+        target_temp_high=23,
+    )
+    device = snap.read_climate_device(hass, house.living_thermostat)
+    assert (device.target_low, device.target_high) == (19.5, 23.0)
+
+
+async def test_climate_device_temperatures_convert_from_the_instance_unit(
+    hass: HomeAssistant, house: House
+) -> None:
+    hass.config.units = US_CUSTOMARY_SYSTEM
+    set_value(
+        hass,
+        house.living_thermostat,
+        "heat",
+        temperature=68,
+        target_temp_low=50,
+        target_temp_high=77,
+        current_temperature=71.6,
+    )
+    device = snap.read_climate_device(hass, house.living_thermostat)
+    assert device.target == pytest.approx(20.0)
+    assert device.target_low == pytest.approx(10.0)
+    assert device.target_high == pytest.approx(25.0)
+    assert device.current == pytest.approx(22.0)
+
+
+async def test_climate_device_missing_or_non_numeric_temperatures(
+    hass: HomeAssistant, house: House
+) -> None:
+    attrs = dict(hass.states.get(house.living_thermostat).attributes)
+    del attrs["current_temperature"]
+    attrs["temperature"] = "warm"
+    hass.states.async_set(house.living_thermostat, "heat", attrs)
+    device = snap.read_climate_device(hass, house.living_thermostat)
+    assert (device.target, device.current) == (None, None)
+    gone = snap.read_climate_device(hass, "climate.gone")
+    assert (gone.target, gone.target_low, gone.target_high, gone.current) == (
+        None,
+        None,
+        None,
+        None,
+    )
+
+
 # Contacts, covers, weather, sun
 
 
