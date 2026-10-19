@@ -141,8 +141,10 @@ Everything set during the first setup stays editable.
   - **Add room** asks for the **Area**, then shows **Room: {area}** with the **Main side**, the **Temperature sources,
     most important first** (drag to reorder), and the sections **Humidity and pressure**, **Heating and cooling** and
     **Advanced**. Empty humidity and pressure lists follow the devices of the temperature sources. Heating and cooling
-    devices are only read. The preview before **Save** shows the current value and the fallbacks. Fields:
-    [room form](docs/reference.md#room-form).
+    devices are only read; their setpoint is compared with the room temperature. **Advanced** holds **Show individual
+    readings** (on by default): with at least two sources it adds the Temperature spread and Humidity spread entities,
+    which list the value of every source; switched off, both disappear. The preview before **Save** shows the current
+    value and the fallbacks. Fields: [room form](docs/reference.md#room-form).
   - **Add outdoor side** asks for the **Direction** (only free directions are offered) and the **Outdoor area**, then
     shows the form with the sources and the sections **Humidity and pressure** and **Advanced**.
     Fields: [outdoor side form](docs/reference.md#outdoor-side-form).
@@ -178,7 +180,7 @@ from the subentry, so renaming an area or a device does not break history.
 
 | Device | Entities (English names) | Details |
 |---|---|---|
-| Room | Temperature, Humidity, Pressure, Absolute humidity, Dew point, Outside temperature, Outside humidity, Outside temperature difference, Outside humidity difference, Outside, Comfort range, Trend, Recommendation; with windows also Window, Window open since, Cooling down, Heating up; with windows and heating or cooling devices also Open while heating/cooling | [room entities](docs/reference.md#room-entities) |
+| Room | Temperature, Humidity, Pressure, Absolute humidity, Dew point, Outside temperature, Outside humidity, Outside temperature difference, Outside humidity difference, Outside, Comfort range, Trend, Recommendation; with windows also Window, Window open since, Cooling down, Heating up; with windows and heating or cooling devices also Open while heating/cooling; with at least two sources and the switch Show individual readings on (the default) Temperature spread and Humidity spread; with heating or cooling devices Deviation from setpoint | [room entities](docs/reference.md#room-entities), [readings and setpoint](docs/reference.md#readings-and-setpoint) |
 | Outdoor side | Temperature, Humidity, Pressure, Absolute humidity, Dew point | [outdoor side entities](docs/reference.md#outdoor-side-entities) |
 | Window | State, Open since, Cover | [window entities](docs/reference.md#window-entities) |
 | Hub | Comfort temperature min, Comfort temperature max, Threshold, Daily strategy (with a weather entity), Indoor average, Outdoor, and with at least one window Anywhere cooling down, Anywhere heating up, Anywhere cover to close (plus Anywhere open while heating/cooling with heating or cooling devices) | [hub entities](docs/reference.md#hub-entities) |
@@ -187,6 +189,13 @@ In a room, Humidity, Absolute humidity and Dew point exist only with a humidity 
 source. The outside entities of a room exist when at least one outdoor side or a weather entity is configured;
 Outside humidity difference also needs a humidity source. An outdoor side always has all five entities. The Cover
 sensor of a window is disabled by default and enabled when the window has a cover assigned.
+
+Temperature spread and Humidity spread show how far a room's sources disagree: the highest minus the lowest valid
+value, with the value of every source, before any correction, in the attribute `readings`. That helps in a room with
+zones, such as bed and desk. A thermostat counts only when the room has fewer than two other sensors, because it
+measures at the radiator. Deviation from setpoint is the room temperature minus the setpoint of the first heating or
+cooling device in `heat`, `cool`, `heat_cool` or `auto` that reports a setpoint; negative means colder than the
+setpoint, and with a setpoint range it is 0 inside the range.
 
 Further reading: [object model](docs/reference.md#object-model), the attributes that show where a value came from
 ([provenance attributes](docs/reference.md#provenance-attributes)), and [diagnostics](docs/reference.md#diagnostics)
@@ -243,7 +252,12 @@ for the full decision chain of every value.
   that face another side take it from their own **Facing**.
 - One comfort range for the whole house. There is no range per room.
 - Climate Hub does not control anything: not heating or cooling devices, not covers, not windows. It reads them and
-  recommends.
+  recommends. It reads a setpoint and never sets one.
+- A spread needs two valid values. With one of two sensors out it is `unknown`; it does not fall back to the
+  thermostat. Deviation from setpoint uses the first device in the list that regulates and reports a setpoint; a second
+  device's setpoint is shown in the attribute `devices` but does not count.
+- Source labels in `readings` drop the area name and metric words, which are known in English and German only; a name
+  in another language keeps its metric word.
 - No energy model: no heat exchange or solar gain per window. Cover and window recommendations follow rules with the
   thresholds above.
 - No heat index, humidex or similar comfort indices.

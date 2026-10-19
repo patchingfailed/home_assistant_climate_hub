@@ -83,6 +83,8 @@ machine (a disabled entity is missing). On its result `device_id(entity_id)`, `d
 | `strategy` | enum sensor on the hub with `prevent_heat_up` in `options` |
 | `indoor_average`, `outdoor` | numeric hub sensors; `outdoor` has the attribute `stage`, `indoor_average` has `minimum` and no `stage` |
 | `any_cover_to_close` | hub binary sensor with the attribute `windows` |
+| `temperature_spread`, `humidity_spread` | room sensors with the attribute `readings`; `device_class` `temperature_delta`, respectively `humidity` |
+| `setpoint_deviation` | room sensor with the attribute `devices` |
 
 Not identifiable by template: the room sensors `temperature`, `dew_point` and `outside_temperature` (all device class
 `temperature`), and the hub binary sensors `any_cooling_down`, `any_heating_up` and `any_open_while_conditioning`. Get
@@ -96,6 +98,9 @@ Entities exist only when the configuration needs them, and are removed otherwise
   service exists. `humidity_difference` also needs a humidity source.
 - `window`, `window_open_since`, `cooling_down`, `heating_up`: the room has a window. `open_while_conditioning`: also a
   heating or cooling device.
+- `temperature_spread`, `humidity_spread`: at least 2 sources of that metric and the room switch **Show individual
+  readings** on (default on; rooms saved before the switch existed count as on). `setpoint_deviation`: at least one
+  heating or cooling device, independent of the switch.
 - Hub: `strategy` needs a weather service; `indoor_average` a room; `outdoor` an outdoor side or a weather service;
   `any_cooling_down`, `any_heating_up` and `any_cover_to_close` a window; `any_open_while_conditioning` a room with a
   window and a heating or cooling device.
@@ -124,6 +129,9 @@ Room device:
 | `window` | `closed`, `ajar`, `tilted`, `open` (most open window of the room) | none |
 | `window_open_since` | timestamp when the earliest ventilating window started | none |
 | `cooling_down`, `heating_up`, `open_while_conditioning` | `on`, `off` | none |
+| `temperature_spread` | °C, highest minus lowest valid source value | `readings` |
+| `humidity_spread` | %, highest minus lowest valid source value | `readings` |
+| `setpoint_deviation` | °C, room temperature minus setpoint; negative is colder | `device`, `setpoint`, `setpoint_low`, `setpoint_high`, `devices` |
 
 Outdoor side device (always all five):
 
@@ -202,6 +210,23 @@ candidate's `learned` flag in the diagnostics, and expect the glide during the f
 `neighbour` and `opposite` come from another side of the house (sun and wind differ). `weather` is the corrected
 weather service, the coarsest stage. `none` is no value.
 
+## Readings and setpoint
+
+- `readings` (on both spreads): label → value of every source in rank order, before any offset; `null` while a source
+  is not valid. It shows the sources side by side, which the room value with its single `source` does not.
+- The spread uses only non-`climate` sources when the room has at least 2 of them configured (a thermostat measures
+  at the radiator), otherwise all. Fewer than 2 valid values: `unknown`, so with one of two sensors out the spread
+  stays empty.
+- `setpoint_deviation` takes the first device of the room's list with `hvac_mode` `heat`, `cool`, `heat_cool` or
+  `auto` and a setpoint. Single setpoint: room temperature minus setpoint (`setpoint`). Range (`setpoint_low`,
+  `setpoint_high`; only when the device reports no single setpoint): 0 inside, else the distance to the nearer
+  limit. `device` names that device; `devices` maps every device's label to its `mode`, setpoint(s) and `current`
+  reading. `unknown` without such a device (for example all `off`) or without a room temperature. Climate Hub never
+  sets a setpoint.
+- Labels are the friendly name without the area's words and without metric words (English and German only); empty or
+  duplicate labels come from the entity ID, then the full name, then the entity ID itself.
+- `readings` and `devices` are not recorded; the states have long-term statistics.
+
 ## Recommendation and cover reasons
 
 The `recommendation` state follows the wish and the window state: a wish for an open window gives `open`, or `keep_open`
@@ -259,7 +284,7 @@ Everything else is configuration and goes through the Home Assistant UI. Tell th
 |---|---|
 | Weather service, area sync, `max_age`, burst duration, humidity threshold, outage delay | **Settings → Devices & services → Climate Hub**, gear icon (**Configure**) next to the entry. Not **System options** in ⋮. |
 | Add a room, outdoor side or window | Same page, **Add room**, **Add outdoor side**, **Add window** at the top. |
-| Sources and their order, main side, cover, contacts, facing | The gear icon on the card of the room, outdoor side or window (**Reconfigure …**). |
+| Sources and their order, main side, cover, contacts, facing, **Show individual readings** (room, section **Advanced**) | The gear icon on the card of the room, outdoor side or window (**Reconfigure …**). |
 | Rename or delete one item | ⋮ on its card. Deleting a room keeps its windows; a repair offers to recreate the room. |
 | House plan (outdoor area and rooms per direction) | ⋮ next to the entry, **Reconfigure**. |
 
@@ -291,6 +316,8 @@ APIs or config-entry endpoints to change the configuration.
 4. `stage` `neighbour`, `opposite`, `weather` or `none` on a room's outside value: the room's outdoor side has failed
    or does not exist. Check the main side of the room (`no_side`) and the `stage` of that side's sensors.
 5. A large `offset` means a lower-ranked source differs from the first by that amount. It is learned, not a fault.
+   `readings` on the room's `temperature_spread` or `humidity_spread` shows every source's own value side by side
+   (`null` = not valid), which tells which source is off.
 6. Check Settings → Repairs. `outage`, `outage_fallback` and `outage_none` appear after the outage delay (default 6 h,
    counted from the moment a source is judged invalid; 40 min plus 6 h for a silent sensor). They are not fixable from
    the issue; check battery and connection. `new_source` offers a sensor of the area as a source. `windows_without_room`
@@ -335,6 +362,8 @@ Collect the entities from the registry and the diagnostics, then check. Each fin
 | Window open for days, or `cooling_down` / `heating_up` on for hours | Ask the user. A contact that came off its magnet keeps reporting `open`; check the contact entity itself. |
 | `strategy` missing | Set **Weather service** under **Configure**. |
 | `strategy` `unknown` | No forecast service, a failed fetch without an earlier forecast, an hourly forecast with fewer than 12 points in the next 24 h, or a daily one without today: choose another weather entity under **Configure**. |
+| Large `temperature_spread` | `readings` shows which source differs. Either the room has zones (bed and desk) or a sensor sits at a radiator, a window or in the sun; ask the user, and reorder the sources if the first one is the outlier. |
+| `setpoint_deviation` `unknown` in a room with heating or cooling devices | No device is in `heat`, `cool`, `heat_cool` or `auto` with a setpoint (normal while heating is off), or the room temperature is missing. |
 | `cover` sensor disabled on a window with a cover | The user disabled it; enable it in the entity settings. |
 | `any_cover_to_close` on because of windows without a cover | Expected: it counts every window. An automation can filter `windows` by enabled `cover` sensors. |
 
@@ -384,6 +413,21 @@ content: |-
 
 Limit: the table has no temperature, because `temperature` cannot be told from `dew_point` by template. For a
 temperature column take the entity IDs from the registry route and put them into an entities or tile card.
+
+The individual readings of every room, from the `readings` attribute of each `temperature_spread` (rooms with the
+switch off or with one source have none):
+
+```yaml
+type: markdown
+content: |-
+  {%- for e in integration_entities('climate_hub')
+      if state_attr(e, 'device_class') == 'temperature_delta' and state_attr(e, 'readings') is not none %}
+  **{{ area_name(e) }}** (spread {{ states(e) ~ ' °C' if is_number(states(e)) else states(e) }})
+  {%- for label, value in state_attr(e, 'readings').items() %}
+  - {{ label }}: {{ value ~ ' °C' if value is not none else 'no value' }}
+  {%- endfor %}
+  {% endfor %}
+```
 
 ### Automations
 

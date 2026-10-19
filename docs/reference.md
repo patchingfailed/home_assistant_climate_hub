@@ -47,9 +47,13 @@ Device "Climate" of a room. `Enabled` is "yes" for every entity in this section.
 | Cooling down | `cooling_down` | binary_sensor | none | `on` / `off` | none | yes |
 | Heating up | `heating_up` | binary_sensor | none | `on` / `off` | none | yes |
 | Open while heating/cooling | `open_while_conditioning` | binary_sensor | none | `on` / `off` | none | yes |
+| Temperature spread | `temperature_spread` | sensor | °C / `temperature_delta` | number (highest minus lowest source value) | `readings` | yes |
+| Humidity spread | `humidity_spread` | sensor | % / `humidity` | number (highest minus lowest source value) | `readings` | yes |
+| Deviation from setpoint | `setpoint_deviation` | sensor | °C / `temperature_delta` | number (room temperature minus setpoint) | `device`, `setpoint`, `setpoint_low`, `setpoint_high`, `devices` | yes |
 
-Measurement sensors (all numeric ones above) have state class `measurement`. Values are rounded to 2 decimals
-(temperatures, absolute humidity, dew point, differences) or 1 decimal (humidity, pressure).
+Measurement sensors (all numeric ones above) have state class `measurement`, so their states get long-term
+statistics. Values are rounded to 2 decimals (temperatures, absolute humidity, dew point, differences, temperature
+spread, deviation from setpoint) or 1 decimal (humidity, pressure, humidity spread).
 
 Created when:
 
@@ -62,6 +66,10 @@ Created when:
   weather service is configured.
 - `window`, `window_open_since`, `cooling_down`, `heating_up`: the room has at least one window.
 - `open_while_conditioning`: the room has at least one window and at least one heating or cooling device.
+- `temperature_spread`: the room has at least 2 temperature sources and **Show individual readings** is on (the
+  default; rooms saved before the switch existed count as on). `humidity_spread`: the same for the humidity sources
+  (its own list, or the devices of the temperature sources when the list is empty). Switching it off removes both.
+- `setpoint_deviation`: the room has at least one heating or cooling device, independent of the switch.
 
 Meaning of the room-specific states:
 
@@ -82,6 +90,18 @@ Meaning of the room-specific states:
   cooling device of the room is active (`hvac_action` is `heating`, `preheating`, `cooling` or `drying`; without an
   action, `hvac_mode` is one of `heat`, `cool`, `heat_cool`, `auto`, `dry`).
 - The three binary sensors are `unknown` while the window state is unknown.
+- `temperature_spread` is the highest minus the lowest valid value of the room's temperature sources, before any
+  offset. `climate` entities count only when the room has fewer than 2 other temperature sources configured; a
+  thermostat measures at the radiator, not in a zone of the room. With fewer than 2 valid values the state is
+  `unknown`: when one of two sensors fails, the spread stays empty instead of falling back to the thermostat.
+  `humidity_spread` is the same for the humidity sources. The value of every source is in `readings`, see
+  [Readings and setpoint](#readings-and-setpoint).
+- `setpoint_deviation` compares the room temperature with the setpoint of the first device in **Heating and
+  cooling** whose `hvac_mode` is `heat`, `cool`, `heat_cool` or `auto` and that reports a setpoint. With a single
+  setpoint it is the room temperature minus the setpoint; with a range (`target_temp_low` and `target_temp_high`, used
+  when the device reports no single setpoint) it is 0 inside the range and otherwise the distance to the nearer
+  limit. Negative means colder than the setpoint. It is `unknown` without such a device or without a room
+  temperature. Climate Hub only reads the setpoint.
 
 ## Outdoor side entities
 
@@ -219,6 +239,27 @@ Which attributes appear:
 The first seven values come from the status of the first source. The last three are used only for outside values at
 stage `none`. The fusion rules are in [`logic.md`](logic.md#4-module-sources-r2-r4-r5-r7-r8-o2-o5-e6) and
 [`logic.md`](logic.md#5-module-outdoor-o1o7-adr-003-scenarios-3-and-4).
+
+## Readings and setpoint
+
+Attributes of the room sensors `temperature_spread`, `humidity_spread` and `setpoint_deviation`. `readings` and
+`devices` are excluded from the recorder; the states themselves are recorded with statistics.
+
+| Attribute | Sensor | Meaning |
+|---|---|---|
+| `readings` | `temperature_spread`, `humidity_spread` | Label → value of every source in rank order, before any offset (°C with 2 decimals, % with 1). `null` while the source is not valid (status other than `ok`, see `reason` under [Provenance attributes](#provenance-attributes)). |
+| `device` | `setpoint_deviation` | Entity ID of the device whose setpoint counts. Absent when no device counts. |
+| `setpoint` | `setpoint_deviation` | The setpoint of that device in °C, for a single setpoint. |
+| `setpoint_low`, `setpoint_high` | `setpoint_deviation` | The setpoint range of that device in °C, instead of `setpoint`, when it regulates to a range. |
+| `devices` | `setpoint_deviation` | Label → state of every heating or cooling device of the room, in list order: `mode` (its `hvac_mode`), `setpoint` or `setpoint_low` and `setpoint_high`, and `current` (its own temperature reading), each only when the device reports it. |
+
+A label is the source's friendly name without the words of the room's area name and aliases and without metric words
+(temperature: "temperature", "temperatur", "temp"; humidity: "humidity", "luftfeuchtigkeit", "luftfeuchte",
+"feuchtigkeit", "feuchte", "rh"; a word of at least 4 letters also counts when it starts one of them, so "Feucht"
+counts). The `devices` labels use the temperature words. The metric words are English and German only. When a label
+is empty or shared by two sources, it is built the same way from the entity ID with every word capitalised
+(`sensor.station_kitchen_temp` in the area Kitchen gives "Station"); still empty or shared, the full name; a full
+name that is still shared, the entity ID.
 
 ## Recommendation reasons
 
@@ -366,8 +407,9 @@ that is not already a room and not an outdoor side.
 | Temperature sources, most important first | `temperature` | entity list, ordered, at least 1 | suggested from the area | If the top source fails, the next one takes over; its typical deviation from the top source is compensated. |
 | Humidity sources | `humidity` | entity list, ordered, optional | empty | Section "Humidity and pressure". Empty means the humidity entities of the same devices as the temperature sources. |
 | Pressure sources | `pressure` | entity list, ordered, optional | empty | Same section and rule as humidity. |
-| Heating and cooling devices | `climate_devices` | climate entities, optional | suggested from the area | Section "Heating and cooling". Only read, never controlled; used for `open_while_conditioning`. |
+| Heating and cooling devices | `climate_devices` | climate entities, optional | suggested from the area | Section "Heating and cooling". Only read, never controlled. Their setpoint is compared with the room temperature (`setpoint_deviation`; the first device in a regulating mode counts); used for `open_while_conditioning`. |
 | Maximum age of a measurement | `max_age` | number, minutes | empty (hub value) | Section "Advanced". 1 to 1440. Overrides the hub option for this room. |
+| Show individual readings | `show_readings` | switch | on | Section "Advanced". Creates `temperature_spread` and `humidity_spread` with the value of every source, for rooms with several zones such as bed and desk. Off removes both; `setpoint_deviation` stays. |
 
 ### Outdoor side form
 

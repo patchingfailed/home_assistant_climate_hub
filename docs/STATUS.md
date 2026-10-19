@@ -6,8 +6,9 @@ Updated 2026-10-19. The only place for project status.
 
 All three milestones are built, verified on DEV by Felix and merged into `main`: M1 (rooms and outdoor sides), M2
 (windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). PROD runs since
-2026-10-16 (0.1.0, copied by hand); release 0.2.0 with the audit fixes is published but not yet on PROD. 759 tests
-green. Plan and build order: `docs/integration.md`.
+2026-10-16 (0.1.0, copied by hand); release 0.2.0 with the audit fixes is published but not yet on PROD. Room readings
+(R16, R17) merged into `main` on 2026-10-19 (section at the end). 822 tests green. Plan and build order:
+`docs/integration.md`.
 
 Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` is open for the documentation package
 (local, WP0 done, WP1 drafted, WP3 built); it merges into `main` after Felix's README walkthrough.
@@ -44,16 +45,17 @@ Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` i
 4. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
    `open` for days (not built; needs a requirement and a mockup first, rule 8).
 
-DEV notes: since 2026-10-18 DEV runs 0.2.0, and its areas and its outdoor floor carry English names (area IDs unchanged)
-for the README walkthrough; since 2026-10-19 the six indoor areas sit on a floor "First floor", the outdoor areas on
-"Outside". DEV's server language is English (`en`) for the walkthrough; normally German (`de`). DEV has one weather
-entity with a forecast service (met.no); its other weather entities are mirrors without one, so the daily strategy stays
-unknown with them. The `*_klima_*` entities without attributes on DEV are mirrors of another instance
-(`remote_homeassistant`), not Climate Hub's. DEV's mirrored sensors update only when their value changes, so a steady
-one turns stale after `max_age` and, after the repair delay, raises a real outage issue; that is DEV's mirror, not a
-bug. Outage tests: a state-only sensor set via `POST /api/states` (owned by no integration, so nothing overwrites it),
-first in a room's list, then `unavailable`; the repair delay goes down to 1 h in S9. New-source tests: move a mirrored
-sensor into a room's area; one that was in the area when the room was last saved counts as seen and raises nothing.
+DEV notes: since 2026-10-19 DEV runs the `main` state with the room readings (see the end), and its areas and its
+outdoor floor carry English names (area IDs unchanged) for the README walkthrough; since 2026-10-19 the six indoor areas
+sit on a floor "First floor", the outdoor areas on "Outside". DEV's server language is English (`en`) for the
+walkthrough; normally German (`de`). DEV has one weather entity with a forecast service (met.no); its other weather
+entities are mirrors without one, so the daily strategy stays unknown with them. The `*_klima_*` entities without
+attributes on DEV are mirrors of another instance (`remote_homeassistant`), not Climate Hub's. DEV's mirrored sensors
+update only when their value changes, so a steady one turns stale after `max_age` and, after the repair delay, raises a
+real outage issue; that is DEV's mirror, not a bug. Outage tests: a state-only sensor set via `POST /api/states` (owned
+by no integration, so nothing overwrites it), first in a room's list, then `unavailable`; the repair delay goes down to
+1 h in S9. New-source tests: move a mirrored sensor into a room's area; one that was in the area when the room was last
+saved counts as seen and raises nothing.
 
 ## Documentation package (planned 2026-10-18)
 
@@ -118,6 +120,17 @@ two sections (dew point, recommendation) and could follow them, and no link or s
 
 ## Recently done
 
+- 2026-10-19: room readings documented on `docs/documentation` after merging `main` (STATUS merged without a
+  conflict). `docs/reference.md`: three room entities, their existence and meaning, a new section "Readings and
+  setpoint" (attributes, label rules, recorder exclusion), the room form switch **Show individual readings** and the
+  new **Heating and cooling** text. Agent skill: entities, template identification, existence, a readings section,
+  diagnose and health-check additions, a dashboard template over `readings` (rendered on DEV). README: "What you
+  get", the switch under "Adding and changing later", three limits. Written from the code; a verifier found no wrong
+  statement and two imprecisions (a range counts only without a single setpoint; "that reports a setpoint" in the
+  README), both fixed. 822 tests green. Found on DEV: since its areas were renamed to English, the source labels keep
+  the old German area words ("Arbeitszimmer", "Küche Heizung"), because labels drop only the current area name and
+  aliases. Verified on DEV: yes (template rendered, attributes read).
+
 - 2026-10-19: WP3, the agent skill (Felix asked for it to work on PROD; the planned WP3 paragraph served as the
   outline). Drafted by a Sonnet worker; Claude added the diagnostics REST route and a health-check recipe. Verifier
   against code and the Home Assistant source: 4 wrong (among them `reason` and `offset` on outdoor side sensors, which
@@ -133,9 +146,9 @@ two sections (dew point, recommendation) and could follow them, and no link or s
   buttons sit at the top of the page (and in ⋮ of the entry), the options open with the gear icon (⋮ → System options
   is Home Assistant's own dialog), a subentry card's gear opens its reconfigure form and its ⋮ offers Rename and
   Delete (Rename changes only the card title and repair texts). DEV prepared for the walkthrough: 0.2.0 deployed with
-  restart, entry loaded, log clean; areas and the outdoor floor renamed to English through the WebSocket API. Found: device names
-  follow the server language, not the profile language (pitfall added to the project skill). Verified on DEV: partly
-  (deploy and load; README walkthrough pending).
+  restart, entry loaded, log clean; areas and the outdoor floor renamed to English through the WebSocket API. Found:
+  device names follow the server language, not the profile language (pitfall added to the project skill). Verified on
+  DEV: partly (deploy and load; README walkthrough pending).
 
 - 2026-10-18: WP1 drafted (outline approved by Felix). README rewritten (sober intro, requirements, first setup as
   click steps, defaults, adding later, what you get, expected behaviour, troubleshooting from real cases, limits,
@@ -354,9 +367,9 @@ Open:
 2. Decisions taken without Felix, to confirm: an outage of one of two sensors leaves the spread empty instead of
    counting the thermostat; only `heat`, `cool`, `heat_cool` and `auto` count as regulating; negative deviation
    means colder than the setpoint; metric words are known in English and German only.
-3. The new entities and attributes go into `docs/reference.md`, `README.md` and the agent skill
-   (`docs/agent/climate-hub/SKILL.md`), which exist only on `docs/documentation`: that branch merges `main` first.
+3. Done 2026-10-19 on `docs/documentation` (after merging `main`): the entities, attributes and the switch are in
+   `docs/reference.md` (section "Readings and setpoint"), `README.md` and the agent skill.
 
-DEV note: since 2026-10-19 DEV runs this state (copied from a `git archive` export of the branch HEAD), not 0.2.0. Because
-DEV's server language is English, the new entities have English entity IDs there
+DEV note: since 2026-10-19 DEV runs this state (copied from a `git archive` export of the branch HEAD), not 0.2.0.
+Because DEV's server language is English, the new entities have English entity IDs there
 (`sensor.study_climate_temperature_spread`); the README walkthrough on DEV now shows these three entities as well.
