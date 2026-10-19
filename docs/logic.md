@@ -1160,8 +1160,10 @@ Rules:
 1. **Labels.** The full name (friendly name) splits into tokens at whitespace, `_` and `-`. Tokens that equal an area
    word (the adapter passes the area name and its aliases) or a metric word (§13) are dropped, compared case-folded; a
    token of 4 or more characters that starts a metric word counts as one (`Temp`, not `Tempo`). The rest is joined with
-   spaces and starts upper case. Nothing left: the full name. A label that two entities share: both get their full
-   names; a full name that two entities share: both get their entity IDs.
+   spaces and starts upper case. A label that is empty or that two entities share is built the same way from the
+   entity ID's object part instead, every word upper case: many friendly names are only the room („Badezimmer"), while
+   the ID tells the sensors apart (`sensor.wetter_badezimmer_temp`; found on DEV, 2026-10-19). Still empty or shared:
+   the full name; a full name that two entities share: the entity ID.
 2. **Spread.** The pool is the candidates that are not `climate` entities when there are at least two of them, else
    all candidates. The spread is the highest minus the lowest raw value of the pool members with status `ok`; fewer
    than two such values give `None`. Raw values carry no offset: a difference between zones is real. The pool depends
@@ -1177,11 +1179,13 @@ Rules:
 | Wetter Arbeitszimmer Temp | Arbeitszimmer | temperature | Wetter |
 | Luftmeter Arbeitszimmer Temperatur | Arbeitszimmer | temperature | Luftmeter |
 | schlafzimmer_bett_temp | Schlafzimmer | temperature | Bett |
-| Arbeitszimmer (a `climate` entity) | Arbeitszimmer | temperature | Arbeitszimmer (nothing left) |
+| Arbeitszimmer (`sensor.wetter_arbeitszimmer_temp`) | Arbeitszimmer | temperature | Wetter (from the ID) |
+| Arbeitszimmer (`climate.arbeitszimmer`) | Arbeitszimmer | temperature | Arbeitszimmer (nothing left of name and ID) |
+| Badezimmer ×3 (`sensor.isttemperatur_badezimmer`, `sensor.wetter_badezimmer_temp`, `climate.badezimmer`) | Bathroom | temperature | Isttemperatur Badezimmer, Wetter Badezimmer, Badezimmer (shared label: from the IDs) |
 | Wohnzimmer-Sensor Temperatur | Wohnzimmer | temperature | Sensor |
 | Tempo Sensor | Büro | temperature | Tempo Sensor |
 | Wetter Badezimmer Feuchte | Badezimmer | humidity | Wetter |
-| Sensor Küche Temp, Sensor Küche Temperatur | Küche | temperature | both full names (same label) |
+| Sensor Küche Temp, Sensor Küche Temperatur (`sensor.sensor_kuche_temp`, `sensor.sensor_kuche_temperatur`) | Küche | temperature | both full names (same label from name and ID) |
 
 | Candidates (status) | Spread |
 |---|---|

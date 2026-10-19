@@ -24,7 +24,6 @@ from custom_components.climate_hub.logic.sources import Candidate, Status
             "Luftmeter",
         ),
         ("schlafzimmer_bett_temp", "Schlafzimmer", TEMPERATURE_WORDS, "Bett"),
-        ("Arbeitszimmer", "Arbeitszimmer", TEMPERATURE_WORDS, "Arbeitszimmer"),
         ("Wohnzimmer-Sensor Temperatur", "Wohnzimmer", TEMPERATURE_WORDS, "Sensor"),
         ("Tempo Sensor", "Küche", TEMPERATURE_WORDS, "Tempo Sensor"),
         ("Sensor Tempera", "Küche", TEMPERATURE_WORDS, "Sensor"),
@@ -37,7 +36,6 @@ from custom_components.climate_hub.logic.sources import Candidate, Status
         ),
         ("  Sensor RH ", "Küche", HUMIDITY_WORDS, "Sensor"),
         ("Sensor Rhein", "Küche", HUMIDITY_WORDS, "Sensor Rhein"),
-        ("  Temperatur ", "Küche", TEMPERATURE_WORDS, "Temperatur"),
     ],
 )
 def test_single_label(name, area, words, expected):
@@ -56,27 +54,93 @@ def test_labels_keep_input_order():
     [
         (
             [
-                ("sensor.a", "Sensor Küche Temp"),
-                ("sensor.b", "Sensor Küche Temperatur"),
+                ("sensor.sensor_kuche_temp", "Sensor Küche Temp"),
+                ("sensor.sensor_kuche_temperatur", "Sensor Küche Temperatur"),
             ],
-            {"sensor.a": "Sensor Küche Temp", "sensor.b": "Sensor Küche Temperatur"},
-        ),
-        (
-            [("sensor.a", "Sensor Küche Temp"), ("sensor.b", "Sensor Küche Temp")],
-            {"sensor.a": "sensor.a", "sensor.b": "sensor.b"},
+            {
+                "sensor.sensor_kuche_temp": "Sensor Küche Temp",
+                "sensor.sensor_kuche_temperatur": "Sensor Küche Temperatur",
+            },
         ),
         (
             [
-                ("sensor.a", "Sensor Küche Temp"),
-                ("sensor.b", "Sensor Küche Temp"),
-                ("sensor.c", "Fenster Küche Temp"),
+                ("sensor.kuche_temp", "Sensor Küche Temp"),
+                ("sensor.kuche_temperatur", "Sensor Küche Temp"),
             ],
-            {"sensor.a": "sensor.a", "sensor.b": "sensor.b", "sensor.c": "Fenster"},
+            {
+                "sensor.kuche_temp": "sensor.kuche_temp",
+                "sensor.kuche_temperatur": "sensor.kuche_temperatur",
+            },
+        ),
+        (
+            [
+                ("sensor.kuche_temp", "Sensor Küche Temp"),
+                ("sensor.kuche_temperatur", "Sensor Küche Temp"),
+                ("sensor.fenster_kuche_temp", "Fenster Küche Temp"),
+            ],
+            {
+                "sensor.kuche_temp": "sensor.kuche_temp",
+                "sensor.kuche_temperatur": "sensor.kuche_temperatur",
+                "sensor.fenster_kuche_temp": "Fenster",
+            },
         ),
     ],
 )
 def test_label_collisions(names, expected):
     assert labels(names, ["Küche"], TEMPERATURE_WORDS) == expected
+
+
+BATHROOM = [
+    ("sensor.isttemperatur_badezimmer", "Badezimmer"),
+    ("sensor.wetter_badezimmer_temp", "Badezimmer"),
+    ("climate.badezimmer", "Badezimmer"),
+]
+
+
+@pytest.mark.parametrize(
+    ("names", "area", "expected"),
+    [
+        # nothing left of the name: the entity ID tells the sensor
+        (
+            [("sensor.wetter_arbeitszimmer_temp", "Arbeitszimmer")],
+            "Arbeitszimmer",
+            {"sensor.wetter_arbeitszimmer_temp": "Wetter"},
+        ),
+        # nothing left of the name or the ID: the full name
+        (
+            [("climate.arbeitszimmer", "Arbeitszimmer")],
+            "Arbeitszimmer",
+            {"climate.arbeitszimmer": "Arbeitszimmer"},
+        ),
+        (
+            [("sensor.temperatur", "  Temperatur ")],
+            "Küche",
+            {"sensor.temperatur": "Temperatur"},
+        ),
+        # three sources named only after the room (DEV, 2026-10-19)
+        (
+            BATHROOM,
+            "Badezimmer",
+            {
+                "sensor.isttemperatur_badezimmer": "Isttemperatur",
+                "sensor.wetter_badezimmer_temp": "Wetter",
+                "climate.badezimmer": "Badezimmer",
+            },
+        ),
+        # the area has another name than the sources
+        (
+            BATHROOM,
+            "Bathroom",
+            {
+                "sensor.isttemperatur_badezimmer": "Isttemperatur Badezimmer",
+                "sensor.wetter_badezimmer_temp": "Wetter Badezimmer",
+                "climate.badezimmer": "Badezimmer",
+            },
+        ),
+    ],
+)
+def test_labels_from_entity_ids(names, area, expected):
+    assert labels(names, [area], TEMPERATURE_WORDS) == expected
 
 
 def cand(entity_id, value, status=Status.OK):

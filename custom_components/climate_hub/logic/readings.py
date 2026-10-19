@@ -29,18 +29,34 @@ def _is_metric_word(token: str, metric_words: Collection[str]) -> bool:
     )
 
 
+def _capital(token: str) -> str:
+    return token[0].upper() + token[1:] if token[0].islower() else token
+
+
 def _label(
-    full_name: str, area_words: Collection[str], metric_words: Collection[str]
+    full_name: str,
+    area_words: Collection[str],
+    metric_words: Collection[str],
+    *,
+    every_word: bool = False,
 ) -> str:
+    """The name without area and metric words, empty when nothing is left.
+
+    `every_word` capitalises each word, for labels from lower-case entity IDs."""
     kept = [
         t
         for t in tokens(full_name)
         if t.casefold() not in area_words and not _is_metric_word(t, metric_words)
     ]
     if not kept:
-        return full_name.strip()
-    label = " ".join(kept)
-    return label[0].upper() + label[1:] if label[0].islower() else label
+        return ""
+    if every_word:
+        return " ".join(_capital(t) for t in kept)
+    return _capital(" ".join(kept))
+
+
+def _unique(label: str, counts: Counter[str]) -> bool:
+    return bool(label) and counts[label] == 1
 
 
 def labels(
@@ -50,21 +66,30 @@ def labels(
 ) -> dict[str, str]:
     """Short label per entity: the name without area and metric words (R16).
 
-    `names` are (entity ID, full name) pairs in rank order. A label that several
-    entities share falls back to their full names; a full name that is still shared
-    falls back to the entity ID."""
+    `names` are (entity ID, full name) pairs in rank order. A label that is empty or
+    that several entities share is taken from the entity ID instead, because many
+    friendly names are only the room ("Badezimmer") while the ID tells the sensors
+    apart (`sensor.wetter_badezimmer_temp`). Still empty or shared: the full name;
+    a full name that is still shared: the entity ID."""
     areas = {w.casefold() for w in area_words}
     metrics = [w.casefold() for w in metric_words]
     full = {entity_id: name.strip() for entity_id, name in names}
-    short = {entity_id: _label(name, areas, metrics) for entity_id, name in names}
-    short_counts = Counter(short.values())
-    named = {
-        entity_id: full[entity_id] if short_counts[label] > 1 else label
-        for entity_id, label in short.items()
+    first = {entity_id: _label(name, areas, metrics) for entity_id, name in names}
+    counts = Counter(first.values())
+    second = {
+        entity_id: label
+        if _unique(label, counts)
+        else _label(entity_id.partition(".")[2], areas, metrics, every_word=True)
+        for entity_id, label in first.items()
     }
-    named_counts = Counter(named.values())
+    counts = Counter(second.values())
+    named = {
+        entity_id: label if _unique(label, counts) else full[entity_id] or entity_id
+        for entity_id, label in second.items()
+    }
+    counts = Counter(named.values())
     return {
-        entity_id: entity_id if named_counts[label] > 1 else label
+        entity_id: label if counts[label] == 1 else entity_id
         for entity_id, label in named.items()
     }
 

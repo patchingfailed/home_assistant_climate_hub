@@ -169,10 +169,10 @@ async def test_setpoint_deviation_skips_a_device_that_is_off(
     state = _state(hass, SETPOINT)
     assert state.attributes["device"] == house.kitchen_thermostat
     assert float(state.state) == 1.4
-    # Both are named "Thermostat": the labels fall back to the entity IDs
+    # Both are named "Thermostat": the labels come from the entity IDs
     devices = state.attributes["devices"]
-    assert devices[house.living_thermostat]["mode"] == "off"
-    assert devices[house.kitchen_thermostat]["mode"] == "heat"
+    assert devices["Thermostat"]["mode"] == "off"
+    assert devices["Kueche Thermostat"]["mode"] == "heat"
 
 
 async def test_setpoint_without_a_regulating_device_is_unknown(
