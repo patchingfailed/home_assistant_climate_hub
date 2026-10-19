@@ -44,6 +44,8 @@ English and German translations are included.
 - Temperature sensors, and optionally humidity and pressure sensors, assigned to areas. An entity reaches an area
   through its device or directly. `climate` entities in the area count as temperature sources and, when they report
   it, as humidity sources.
+- For outdoor values: an area per side of the house that has an outdoor sensor, see
+  [Areas for the outside](#areas-for-the-outside).
 - Optional: a weather entity that provides a forecast through `weather.get_forecasts` (hourly or daily). It feeds the
   daily strategy and the outside values when all sensors of an outdoor side fail. Without a forecast the Daily
   strategy sensor is `unknown`; without a weather entity the sensor does not exist.
@@ -71,6 +73,21 @@ restart. Then continue with step 4 above.
 Only one Climate Hub entry exists per Home Assistant instance. The setup dialog creates it together with the rooms,
 outdoor sides and windows you confirm. Nothing is created before the last step.
 
+### Areas for the outside
+
+Climate Hub finds every sensor through its Home Assistant area, the outdoor sensors too. Home Assistant has no notion
+of a side of the house, so Climate Hub uses areas for that as well: an outdoor side is an area that holds the outdoor
+sensors of one side. Before the setup, create one area per side where an outdoor sensor hangs, for example "Garden"
+for the south side and "Street" for the north side, and assign the outdoor temperature sensor (and humidity or
+pressure sensors, if any) to it, through its device or directly.
+
+Put these areas on a floor whose name contains an outside word, for example a floor "Outside". Step 2 then lists
+them without a check mark, so they do not become rooms, and step 3 offers them as outdoor areas. Only an area that
+is not a room and has a temperature sensor appears there. A side without an outdoor area takes its values from the
+neighbouring sides, then the opposite side, then the weather entity.
+
+### Steps
+
 1. Open **Settings → Devices & services → Add integration → Climate Hub**. The dialog **Set up Climate Hub** counts what
    it found: areas with a climate sensor or thermostat, areas with a temperature sensor that could be outside, window
    and door contacts, and weather services.
@@ -85,17 +102,22 @@ outdoor sides and windows you confirm. Nothing is created before the last step.
 2. **Which areas are rooms?** lists the areas that have a temperature source, as "floor · area" (areas without a floor
    read "no floor"). An area on a floor whose name contains an outside word (Outside, Outdoor, Garden, Yard, Patio,
    Terrace, Balcony, or the German equivalents) is not pre-checked. Any other area is pre-checked when it has a
-   `climate` entity or sits on a floor. Check the rooms and select **Submit**.
+   `climate` entity or sits on a floor. Check the rooms, leave the outdoor areas unchecked (they become outdoor sides
+   in step 3) and select **Submit**.
 
    ![Dialog Which areas are rooms?: rooms on the first floor checked, outdoor areas unchecked](https://raw.githubusercontent.com/patchingfailed/home_assistant_climate_hub/main/docs/assets/screenshots/setup-rooms.png)
 3. **House plan** has four sections: **North**, **East**, **South** and **West**.
-   - **Outdoor area**: the outdoor area whose sensors measure that side. Leave it empty for a side without one, for
-     example a wall on the neighbour's property. The weather entity then stands in.
+   - **Outdoor area**: the outdoor area whose sensors measure that side (see
+     [Areas for the outside](#areas-for-the-outside)). Leave it empty for a side without one, for example a wall on the
+     neighbour's property; rooms on that side then take the values of the neighbouring sides, then the opposite side,
+     then the weather entity.
    - **Rooms on this side**: the rooms whose windows face that way. A room belongs to one side only; the outside air
      of its recommendation comes from there. Leave out interior rooms: they get no main side, and their
      recommendation is `none` with the reason `no_side`.
 
    An outdoor area can serve one side only. Select **Submit**.
+
+   ![Dialog House plan: per direction an outdoor area and the rooms on that side](https://raw.githubusercontent.com/patchingfailed/home_assistant_climate_hub/main/docs/assets/screenshots/setup-plan.png)
 4. **Preview** shows what would be created, with live values: per room the current value, its source, the fallbacks
    ready and the entities that were not taken with a reason (for example a fridge sensor: "not a room value"); per
    outdoor side the value and its fallback chain; the weather service line; the windows added so far. Choose
@@ -103,10 +125,14 @@ outdoor sides and windows you confirm. Nothing is created before the last step.
    - **Add window (optional)** to add a window, see below,
    - **Change rooms** to return to step 2,
    - **Change house plan** to return to step 3.
+
+   ![Dialog Preview: rooms with value, source, fallbacks and a sensor not taken; outdoor sides with their fallback chain; the menu](https://raw.githubusercontent.com/patchingfailed/home_assistant_climate_hub/main/docs/assets/screenshots/setup-preview.png)
 5. Optional, repeatable: **Add window (optional)**. Windows are never guessed, because they depend on how the contacts
    are mounted.
    1. **Add window**: pick the **Room**.
    2. Pick the type: **Single window or door**, **Double leaf** or **Pass-through**.
+
+      ![Dialog Add window: the three window types with their descriptions](https://raw.githubusercontent.com/patchingfailed/home_assistant_climate_hub/main/docs/assets/screenshots/window-type.png)
    3. Fill in the form. A single window takes a **Contact**; a double leaf takes **Left leaf**, **Right leaf** and
       **Contact between the leaves (optional)**; a pass-through takes **Inner opening** and **Outer opening**. **Name**
       stays empty for a name based on the room. **Show all contacts** lists every contact in the house instead of
@@ -198,12 +224,16 @@ source. The outside entities of a room exist when at least one outdoor side or a
 Outside humidity difference also needs a humidity source. An outdoor side always has all five entities. The Cover
 sensor of a window is disabled by default and enabled when the window has a cover assigned.
 
+![Sensors of a room device: measurements, outside values, comfort range, recommendation, trend, spread and deviation from setpoint](https://raw.githubusercontent.com/patchingfailed/home_assistant_climate_hub/main/docs/assets/screenshots/room-sensors.png)
+
 Temperature spread and Humidity spread show how far a room's sources disagree: the highest minus the lowest valid
 value, with the value of every source, before any correction, in the attribute `readings`. That helps in a room with
 zones, such as bed and desk. A thermostat counts only when the room has fewer than two other sensors, because it
 measures at the radiator. Deviation from setpoint is the room temperature minus the setpoint of the first heating or
 cooling device in `heat`, `cool`, `heat_cool` or `auto` that reports a setpoint; negative means colder than the
 setpoint, and with a setpoint range it is 0 inside the range.
+
+![Details of Temperature spread: the attribute Readings with the value of each source](https://raw.githubusercontent.com/patchingfailed/home_assistant_climate_hub/main/docs/assets/screenshots/room-readings.png)
 
 Further reading: [object model](docs/reference.md#object-model), the attributes that show where a value came from
 ([provenance attributes](docs/reference.md#provenance-attributes)), and [diagnostics](docs/reference.md#diagnostics)

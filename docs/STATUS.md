@@ -25,22 +25,23 @@ Branches (CLAUDE.md rule 14): `main` is the current line. `docs/documentation` i
    1. DEV is prepared: server language switched from `de` to `en` (2026-10-19, Felix's go) so that device names and
       entity IDs come out English; floors First floor and Outside. After the walkthrough, switch the server language
       back to `de` (Settings → System → General, or WebSocket `config/core/update` with `language`).
-   2. Done 2026-10-19: Felix rebuilt DEV from the README and took the screenshots. Four are embedded
-      (`setup-start`, `setup-rooms`, `room-form`, `integration-page`). Open: Felix's notes on deviations from the
-      README; five images need a decision or a retake: `setup-plan` (shows Garden on two sides, which validation
-      rejects), `setup-preview` (shows source names with a room name that hints at the location), `room-sensors`
-      (taken right after the rebuild: seven values `unknown`; retake after 30 min with the room's main side set),
-      `room-readings` (labels keep the old German area words; DEV aliases would remove them), `window-type` (shows
-      the menu-title bug, item 3 below).
-   3. Then: fold in the notes, embed the remaining images, run `tests/test_docs.py`, merge `docs/documentation` into
-      `main` after Felix has looked (push is a separate go), switch DEV's server language back. The merge carries
-      WP3 as well; WP2 follows on a new branch.
+   2. Done 2026-10-19: Felix rebuilt DEV from the README and took the screenshots; all nine are embedded
+      (`setup-preview` with the location hint blurred by Felix, `room-sensors` and `window-type` retaken;
+      `setup-plan` and `room-readings` kept as they are by Felix's choice). His one note, folded in: the README now
+      explains up front that outdoor sides need Home Assistant areas of their own ("Areas for the outside").
+   3. Open: Felix's go for the merge of `docs/documentation` into `main` (push is a separate go); then switch DEV's
+      server language back to `de`. The merge carries WP3 as well; WP2 follows on a new branch.
 3. **Bug: menu titles with a placeholder** (found in the screenshots, 2026-10-19). The window type step's title "Add
    window: {area}" (en and de, config flow and window subentry) renders as "Translation [formatjs Error:
    MISSING_VALUE]": the backend sends `area` (checked through the flow API on DEV), but the frontend does not fill
-   placeholders into a menu step's title; menu descriptions work. Fix proposal: plain title, area into the
+   placeholders into a menu step's title; menu descriptions work. Narrowed down: the error showed in the first-setup
+   dialog (config flow, with a help icon); the same step reached through **Add window** on the integration page
+   (subentry flow) shows "Add window: Bathroom" correctly, so the config-flow dialog is the one that drops the
+   placeholder. Not reproducible on DEV while the entry exists. Fix proposal: plain title, area into the
    description; on a fix branch off `main`. The repair menus `new_source` and `windows_without_room` also carry
-   `{area}` in their titles; check them on DEV.
+   `{area}` in their titles; check them on DEV. Related UI text: the setup preview says "no outdoor side, the weather
+   service steps in" for a side without an outdoor area, but the logic takes the neighbouring sides first, then the
+   opposite side, then the weather service (`logic/outdoor.py` `fallback_chain`).
 4. **Audit leftovers** (small): an entity-level test for the R13 attribute; `any_cover_to_close` always carries
    `windows`, even when empty (decide: keep or drop when empty). Found during WP1: the reason `ok` is translated but
    never written (dead entry, rule 4; `tests/test_docs.py` requires it in the reference while it exists); the `plan`
@@ -127,6 +128,13 @@ two sections (dew point, recommendation) and could follow them, and no link or s
   leaves existing cover automations untouched.
 
 ## Recently done
+
+- 2026-10-19: README walkthrough closed. The remaining five screenshots embedded (Felix blurred the location hint in
+  `setup-preview` and retook `room-sensors` and `window-type`). New README section "Areas for the outside" (Felix's
+  note): an outdoor side is a Home Assistant area per side of the house, best on a floor named with an outside word;
+  requirements and steps 2 and 3 point to it. Step 3 corrected: a side without an outdoor area takes the neighbouring
+  sides first, not the weather entity (checked in `logic/outdoor.py`). The skill's health check names the area as
+  the remedy. 822 tests green. Verified on DEV: yes (README walkthrough by Felix).
 
 - 2026-10-19: Felix's screenshots reviewed one by one for private details (none of the user name, URL bar or
   address; one location hint in source names, see Next 2) and for correctness. Four embedded in the README with

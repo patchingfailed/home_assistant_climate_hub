@@ -355,7 +355,7 @@ Collect the entities from the registry and the diagnostics, then check. Each fin
 | Many `stale` readings | Raise `max_age` for the room or side, or in the hub options. |
 | Room with `no_side` that has windows | It most likely lacks its main side: set **Main side** in **Reconfigure room** or in the house plan (⋮ → **Reconfigure**). Rooms without an outside wall keep None; ask the user. |
 | Outside humidity or pressure at `weather` while the side's temperature is `primary` | The outdoor side has no humidity or pressure source: add them under **Humidity and pressure** on the side's card. |
-| Outside values at `neighbour`, `opposite` or `weather` throughout | No outdoor side for that direction, or its sources failed: add an outdoor area in the house plan, or check the side. |
+| Outside values at `neighbour`, `opposite` or `weather` throughout | No outdoor side for that direction, or its sources failed. An outdoor side is a Home Assistant area: create one for that side, assign its outdoor sensor, then pick it in the house plan; or check the side's sources. |
 | Room without a `humidity` entity | No humidity source, so no `dry_room` advice: add one under **Humidity and pressure** on the room's card. |
 | Open repairs | Recipe "Diagnose a value". |
 | Window `state` `unknown` | **Reconfigure window**: check the contact, assign its texts in **Assign states**. |
