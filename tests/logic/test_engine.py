@@ -37,6 +37,7 @@ from custom_components.climate_hub.logic.outdoor import (
     WeatherReadings,
 )
 from custom_components.climate_hub.logic.psychro import absolute_humidity
+from custom_components.climate_hub.logic.readings import Setpoint
 from custom_components.climate_hub.logic.recommendation import (
     ClimateDevice,
     Reason,
@@ -1182,3 +1183,23 @@ def test_outage_timer_survives_a_failed_evaluation_of_its_room(monkeypatch):
     assert not result.failures
     (outage,) = result.house.outages
     assert (outage.entity_id, outage.invalid_since) == ("r1/sensor.a", at(0))
+
+
+def test_room_result_carries_spread_setpoint_and_devices():
+    model = house(
+        [room("r1", ["sensor.a", "sensor.b", "climate.x"], devices=["climate.x"])],
+        weather=None,
+    )
+    thermostat = ClimateDevice("heating", "heat", target=23.0, current=22.0)
+    result, _ = run(
+        model,
+        {("sensor.a", T): 21.0, ("sensor.b", T): 22.0, ("climate.x", T): 25.0},
+        EngineState.empty(),
+        START,
+        climate={"climate.x": thermostat},
+    )
+    r1 = result.rooms["r1"]
+    assert r1.temperature_spread == 1.0  # the thermostat is outside the pool
+    assert r1.humidity_spread is None
+    assert r1.setpoint == Setpoint("climate.x", 23.0, 23.0, -2.0)
+    assert r1.climate == (("climate.x", thermostat),)

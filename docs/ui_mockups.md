@@ -342,9 +342,13 @@ Not planned.
   temperature" (R3), which the description says. If those devices deliver no humidity or pressure, the list is
   pre-filled at creation from the area's sensors of that metric (R3, R6). The preview always names the active source.
 - ▸ Heizen und Kühlen: „Heiz- und Klimageräte" (`climate` entities, multiple), pre-filled with the area's `climate`
-  entities (R15). Description: „Sie werden nur gelesen, nie gesteuert. Läuft eines, während ein Fenster länger
-  als zum Stoßlüften offen ist, gibt es eine Warnung." Open while adding, collapsed when editing.
-- ▸ Erweitert: „Höchstalter einer Messung" (minutes; empty = hub default).
+  entities (R15). Description: „Sie werden nur gelesen, nie gesteuert. Ihr Sollwert wird mit der Raumtemperatur
+  verglichen. Läuft eines, während ein Fenster länger als zum Stoßlüften offen ist, gibt es eine Warnung." Open
+  while adding, collapsed when editing. (Setpoint sentence added 2026-10-19, R17.)
+- ▸ Erweitert: „Höchstalter einer Messung" (minutes; empty = hub default) and „Messpunkte einzeln zeigen" (switch,
+  default on; added 2026-10-19, R16). Help text: „Temperaturspanne und Feuchtespanne mit dem Wert jeder Quelle.
+  Für Räume mit mehreren Zonen, etwa Bett und Schreibtisch." Off removes both entities. A room saved before the
+  switch existed counts as on.
 - Errors: area already a room or an outdoor side (as in step 1), no temperature source („Wähle mindestens eine
   Temperaturquelle.").
 - When the sources were just suggested, the preview also lists what was not taken and why (as in S4).
@@ -682,6 +686,9 @@ carry no area (ADR-005, ADR-007). The device column shows the device name and, i
 | | Offen bei Heizen/Kühlen | binary_sensor (only with windows and heating/cooling devices, A12) | |
 | | Fenster | enum: zu / angelehnt / gekippt / offen, most open window of the room (only with windows, W9) | `sensor.wohnzimmer_klima_fenster` |
 | | Fenster offen seit | sensor, timestamp, earliest open window (only with windows) | |
+| | Temperaturspanne | sensor, °C: highest minus lowest current sensor value (+ `readings` attribute; only with two or more temperature sources and „Messpunkte einzeln zeigen" on, R16; added 2026-10-19) | `sensor.schlafzimmer_klima_temperaturspanne` |
+| | Feuchtespanne | sensor, %: the same for humidity (R16) | `sensor.schlafzimmer_klima_feuchtespanne` |
+| | Abweichung vom Soll | sensor, °C: room temperature minus the setpoint of the first regulating heating or cooling device (+ `device`, `setpoint`, `devices`; only with heating or cooling devices, R17; added 2026-10-19) | `sensor.schlafzimmer_klima_abweichung_vom_soll` |
 | Fenster (Wohnzimmer) | Zustand | enum: zu / angelehnt / gekippt / offen (+ open leaves attribute) | `sensor.wohnzimmer_fenster_zustand` |
 | | Offen seit | sensor, timestamp | |
 | | Rollladen | enum: schließen / geschlossen lassen / öffnen / offen lassen / keine (+ reason: Sonne, Hitze, Kälte, Sonnenwärme …); enabled by default only with a cover (SH1, SH2; renamed from „Beschattung" 2026-10-13) | `sensor.wohnzimmer_fenster_rollladen` |
@@ -695,6 +702,22 @@ carry no area (ADR-005, ADR-007). The device column shows the device name and, i
 Every measurement carries `source`, `stage`, `reason` and, for fallbacks, `offset` as attributes (E6). A room's absolute
 humidity and dew point carry `source`, `stage` and `reason` of their weaker input (temperature or humidity; stage order
 primary < fallback < none, a tie goes to humidity), without `offset`.
+
+Spread and setpoint deviation as the attribute view of Home Assistant shows them (bedroom with two sensors, a radiator
+thermostat and an air conditioner; added 2026-10-19):
+
+```
+Temperaturspanne            1,6 °C          Abweichung vom Soll        −0,8 °C
+  readings                                    device     climate.schlafzimmer
+    Bett          19.2                        setpoint   20.0
+    Schreibtisch  20.8                        devices
+    Thermostat    22.4                          Thermostat   mode heat, setpoint 20.0, current 22.4
+                                                Klimaanlage  mode off, current 20.9
+```
+
+The thermostat stays out of the spread (two sensors exist) but is listed. Labels are the source names without the
+area and the metric word (R16); the raw values carry no offset, because a difference between zones is real. The
+deviation uses the thermostat: the air conditioner is `off`.
 
 The hub's „Irgendwo …" binary sensors exist only when at least one window exists („Irgendwo offen bei Heizen/Kühlen":
 a room with windows and heating or cooling devices), like the room entities marked „only with windows". Entities that

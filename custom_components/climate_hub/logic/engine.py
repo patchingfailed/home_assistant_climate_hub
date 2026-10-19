@@ -50,6 +50,7 @@ from .outdoor import (
     resolve_direction,
 )
 from .psychro import absolute_humidity, dew_point
+from .readings import Setpoint, setpoint_deviation, spread
 from .recommendation import (
     ClimateDevice,
     GoalState,
@@ -186,6 +187,11 @@ class RoomResult:
     cooling_down: bool | None
     heating_up: bool | None
     open_while_conditioning: bool | None
+    temperature_spread: float | None
+    humidity_spread: float | None
+    setpoint: Setpoint
+    # heating and cooling devices in configured order, missing ones as `_NO_DEVICE`
+    climate: tuple[tuple[str, ClimateDevice], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -441,6 +447,10 @@ def _evaluate_room(
         prev.goal,
         now,
     )
+    devices = tuple(
+        (entity_id, snap.climate.get(entity_id, _NO_DEVICE))
+        for entity_id in room.climate_devices
+    )
     cooling_down = heating_up = conditioning = None
     if aggregated is not None:
         cooling_down, heating_up = warnings(
@@ -453,12 +463,9 @@ def _evaluate_room(
             burst_duration=settings.burst_duration,
             now=now,
         )
-        if room.climate_devices:
+        if devices:
             conditioning = open_while_conditioning(
-                devices=tuple(
-                    snap.climate.get(entity_id, _NO_DEVICE)
-                    for entity_id in room.climate_devices
-                ),
+                devices=tuple(device for _, device in devices),
                 ventilating=aggregated.ventilating,
                 ventilating_since=aggregated.open_since,
                 burst_duration=settings.burst_duration,
@@ -482,6 +489,10 @@ def _evaluate_room(
         cooling_down=cooling_down,
         heating_up=heating_up,
         open_while_conditioning=conditioning,
+        temperature_spread=spread(temperature.candidates),
+        humidity_spread=spread(humidity.candidates),
+        setpoint=setpoint_deviation(t_in, devices),
+        climate=devices,
     )
     state = RoomState(
         source_states, trend_state, position, relation, dryness, trend, goal

@@ -96,6 +96,12 @@ class RecommendationResult:
 class ClimateDevice:
     hvac_action: str | None
     hvac_mode: str | None
+    # Values in °C: `target` is the single setpoint, `target_low`/`target_high` the
+    # range of `heat_cool`; `current` is the device's own reading.
+    target: float | None = None
+    target_low: float | None = None
+    target_high: float | None = None
+    current: float | None = None
 
 
 def _outside_colder_harm(inp: RoomInput) -> bool:

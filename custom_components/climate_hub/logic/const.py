@@ -69,3 +69,11 @@ COVER_CLOSED_POSITION = 50
 
 # House (§12)
 DEFAULT_REPAIR_DELAY = timedelta(hours=6)
+
+# Readings (§16)
+TEMPERATURE_WORDS = frozenset({"temperature", "temperatur", "temp"})
+HUMIDITY_WORDS = frozenset(
+    {"humidity", "luftfeuchtigkeit", "luftfeuchte", "feuchtigkeit", "feuchte", "rh"}
+)
+REGULATING_MODES = frozenset({"heat", "cool", "heat_cool", "auto"})
+LABEL_PREFIX_MIN = 4  # a shorter token only counts as a metric word when it equals one

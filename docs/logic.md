@@ -1102,6 +1102,8 @@ Rules:
 | Cover counts as closed | position ≤ 50 % | no | SH2 |
 | Plausible values at setup | room 8–40 °C, region −40–60 °C, 0–100 %, 800–1100 hPa | no | R6 |
 | Comfort range defaults | 20 / 24 °C, threshold 2 °C | number entities | H2, D14 |
+| Metric words for labels | temperature: `temperature`, `temperatur`, `temp`; humidity: `humidity`, `luftfeuchtigkeit`, `luftfeuchte`, `feuchtigkeit`, `feuchte`, `rh`; a token of 4 or more characters that starts one of them counts too | no | R16 |
+| Regulating modes for the setpoint | `heat`, `cool`, `heat_cool`, `auto` | no | R17 |
 
 ## 14. Not in this spec
 
@@ -1130,5 +1132,69 @@ Contract the built modules expect from the adapter:
 
 Built (milestone M1, 2026-10-15), module by module with its tests, in this order (later modules use earlier ones):
 `const` + `psychro` → `sources` → `outdoor` → `comfort` → `strategy` → `window` → `recommendation` → `cover` →
-`prefill` → `house`. A module is done when its table cases pass, `ruff check` is clean, and it imports nothing from
+`prefill` → `house`; `readings` (§16) followed on 2026-10-19. A module is done when its table cases pass, `ruff check` is clean, and it imports nothing from
 `homeassistant` (`tests/logic/test_purity.py`).
+
+## 16. Module `readings` (R16, R17)
+
+Added 2026-10-19. Shows what the fused room value hides: the values of the individual sources and how far the room is
+from its heating or cooling setpoint.
+
+```python
+def labels(names: Sequence[tuple[str, str]], area_words: Collection[str],
+           metric_words: Collection[str]) -> dict[str, str]          # entity ID -> label, input order
+def spread(candidates: Sequence[Candidate]) -> float | None         # Resolution.candidates (§4)
+
+@dataclass(frozen=True, slots=True)
+class Setpoint:
+    device: str | None; low: float | None; high: float | None       # low == high for a single setpoint
+    deviation: float | None                                         # room temperature − setpoint
+
+def setpoint_deviation(t_room: float | None,
+                       devices: Sequence[tuple[str, ClimateDevice]]) -> Setpoint
+```
+
+`ClimateDevice` (§9) gains `target`, `target_low`, `target_high` and `current` in °C, all optional.
+
+Rules:
+1. **Labels.** The full name (friendly name) splits into tokens at whitespace, `_` and `-`. Tokens that equal an area
+   word (the adapter passes the area name and its aliases) or a metric word (§13) are dropped, compared case-folded; a
+   token of 4 or more characters that starts a metric word counts as one (`Temp`, not `Tempo`). The rest is joined with
+   spaces and starts upper case. Nothing left: the full name. A label that two entities share: both get their full
+   names; a full name that two entities share: both get their entity IDs.
+2. **Spread.** The pool is the candidates that are not `climate` entities when there are at least two of them, else
+   all candidates. The spread is the highest minus the lowest raw value of the pool members with status `ok`; fewer
+   than two such values give `None`. Raw values carry no offset: a difference between zones is real. The pool depends
+   on the configured sources, not on which ones are currently valid, so an outage gives `None` instead of switching
+   to the thermostat.
+3. **Setpoint.** The first device in configured order whose `hvac_mode` is regulating (§13) and that has a setpoint
+   counts: `target`, else `target_low` and `target_high` (sorted). Deviation: room temperature minus `high` above
+   `high`, minus `low` below `low`, `0` in between; `None` without a room temperature. No such device: all fields
+   `None`.
+
+| Name | Area | Metric | Label |
+|---|---|---|---|
+| Wetter Arbeitszimmer Temp | Arbeitszimmer | temperature | Wetter |
+| Luftmeter Arbeitszimmer Temperatur | Arbeitszimmer | temperature | Luftmeter |
+| schlafzimmer_bett_temp | Schlafzimmer | temperature | Bett |
+| Arbeitszimmer (a `climate` entity) | Arbeitszimmer | temperature | Arbeitszimmer (nothing left) |
+| Wohnzimmer-Sensor Temperatur | Wohnzimmer | temperature | Sensor |
+| Tempo Sensor | Büro | temperature | Tempo Sensor |
+| Wetter Badezimmer Feuchte | Badezimmer | humidity | Wetter |
+| Sensor Küche Temp, Sensor Küche Temperatur | Küche | temperature | both full names (same label) |
+
+| Candidates (status) | Spread |
+|---|---|
+| sensor 19.2, sensor 20.8 | 1.6 |
+| sensor 21.0, climate 22.6 | 1.6 (fewer than two sensors: all count) |
+| sensor 19.2, sensor 20.8, climate 22.4 | 1.6 (climate left out) |
+| sensor 19.2, sensor `stale`, climate 22.4 | `None` (one valid sensor) |
+
+| Devices (mode, setpoint) | Room | Device | Deviation |
+|---|---|---|---|
+| heat 20.0 | 19.2 | first | −0.8 |
+| off 22.0, heat 20.0 | 21.0 | second | 1.0 |
+| dry 22.0 | 21.0 | – | `None` |
+| heat_cool 20.0–24.0 | 22.0 | first | 0 |
+| heat_cool 20.0–24.0 | 25.5 | first | 1.5 |
+| heat 20.0 | `None` | first | `None` |
