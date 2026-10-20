@@ -310,19 +310,19 @@ def test_case_14_reports_humidity_after_ventilating():
 
 
 @pytest.mark.parametrize(
-    ("strategy", "t_in", "t_out", "rh_out", "rec"),
+    ("strategy", "t_in", "t_out", "rh_out", "rec", "reason"),
     [
-        (S.NEUTRAL, 24.6, 19.0, 70, R.OPEN),  # case 15
-        (S.PREVENT_COOL_DOWN, 21.0, 5.0, 80, R.CLOSE),  # case 16
+        (S.NEUTRAL, 24.6, 19.0, 70, R.OPEN, Reason.COOL_ROOM),  # case 15
+        (S.PREVENT_COOL_DOWN, 21.0, 5.0, 80, R.CLOSE, Reason.OUTSIDE_COLDER),  # 16
     ],
     ids=["case15", "case16"],
 )
-def test_no_windows_only_open_or_close(strategy, t_in, t_out, rh_out, rec):
+def test_no_windows_only_open_or_close(strategy, t_in, t_out, rh_out, rec, reason):
     inp, _ = room(
         t_in=t_in, t_out=t_out, rh_out=rh_out, strategy=strategy, has_windows=False
     )
     result, _ = recommend(inp, None, at(9, 0))
-    assert result.recommendation == rec
+    assert (result.recommendation, result.reason) == (rec, reason)
 
 
 @pytest.mark.parametrize("prev", [None, GOAL_COOL])
