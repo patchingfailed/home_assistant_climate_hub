@@ -161,7 +161,8 @@ def _humidity_goal(
     if goal is None:
         pause_running = pause_until is not None and now < pause_until
         if inp.rh_in > inp.humidity_threshold and drier and not pause_running:
-            return (Goal.BURST if harm else Goal.DRY), now, pause_until
+            # an expired pause must not end this goal's own burst early
+            return (Goal.BURST if harm else Goal.DRY), now, None
         return None, None, pause_until
     if not (inp.rh_in > inp.humidity_threshold - HUMIDITY_RELEASE and drier):
         return None, None, pause_until

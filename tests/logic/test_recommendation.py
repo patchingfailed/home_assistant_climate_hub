@@ -429,6 +429,30 @@ def test_pause_blocks_restart_after_goal_ended():
     assert result.reason == Reason.BURST_DRY
 
 
+def test_new_burst_after_an_expired_pause_gets_its_own_pause():
+    kwargs = dict(
+        t_in=21.0, t_out=3.0, rh_in=68, rh_out=85.0, strategy=S.PREVENT_COOL_DOWN
+    )
+    expired = GoalState(None, None, at(8, 13))
+    inp, _ = room(ventilating=False, **kwargs)
+    result, state = recommend(inp, expired, at(9, 0))
+    assert (result.reason, state.goal, state.pause_until) == (
+        Reason.BURST_DRY,
+        G.BURST,
+        None,
+    )
+    inp, _ = room(ventilating=True, ventilating_since=at(9, 2), **kwargs)
+    result, state = recommend(inp, state, at(9, 12))
+    assert result.reason == Reason.BURST_DONE
+    inp, _ = room(ventilating=False, **kwargs)
+    result, state = recommend(inp, state, at(9, 13))
+    assert (result.recommendation, result.reason) == (
+        R.KEEP_CLOSED,
+        Reason.BURST_DONE,
+    )
+    assert state.pause_until == at(10, 13)
+
+
 def test_dry_goal_turns_into_burst_when_it_becomes_harmful():
     inp, _ = room(
         t_in=21.0,
