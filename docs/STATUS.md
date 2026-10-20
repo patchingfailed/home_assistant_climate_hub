@@ -1,14 +1,15 @@
 # Status
 
-Updated 2026-10-19. The only place for project status.
+Updated 2026-10-20. The only place for project status.
 
 ## Now
 
 All three milestones are built, verified on DEV by Felix and merged into `main`: M1 (rooms and outdoor sides), M2
 (windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). PROD runs since
 2026-10-16 (0.1.0, copied by hand). Release 0.3.0 (2026-10-19) carries the room readings (R16, R17; section at the end)
-and the user documentation, 0.3.1 the fixes from the documentation work; neither is on PROD yet. 829 tests green. Plan
-and build order: `docs/integration.md`.
+and the user documentation, 0.3.1 the fixes from the documentation work, 0.3.2 (2026-10-20) a README header that HACS
+renders (the HA Markdown sanitizer escapes `<picture>` and `<source>`, so the README uses one `<img>` of the icon); none
+of them is on PROD yet. 829 tests green. Plan and build order: `docs/integration.md`.
 
 Branches (CLAUDE.md rule 14): `main` is the current line; `docs/documentation` and `fix/doc-findings` were merged into
 it on 2026-10-19 and deleted. `spike/native-ui` stays local as a reference and is never merged. The repository is public
@@ -17,7 +18,7 @@ it on 2026-10-19 and deleted. `spike/native-ui` stays local as a reference and i
 ## Next
 
 1. **PROD to HACS** (Felix, on PROD): HA backup; HACS → ⋮ → custom repositories → this repository, type
-   Integration; download v0.3.1; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
+   Integration; download v0.3.2; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
    gets releases; `deploy.ps1 -Instance Prod` stays as an emergency path (Felix, 2026-10-16).
 2. **WP2, technical documentation** (section "Documentation package" below), in a fresh session on a new branch.
    WP0, WP1 and WP3 are done and released with 0.3.0.
