@@ -80,7 +80,7 @@ _FORECAST_FEATURES = (
 
 
 def default_options(weather: str | None, area_sync: bool) -> dict[str, Any]:
-    """All option keys; the weather entity is absent when there is none (§3.1)."""
+    """All option keys (integration §3.1); no `weather` key without a weather entity."""
     options: dict[str, Any] = {m.CONF_AREA_SYNC: area_sync, **DEFAULT_TIMING}
     if weather:
         options[m.CONF_WEATHER] = weather

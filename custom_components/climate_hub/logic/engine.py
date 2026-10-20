@@ -83,7 +83,7 @@ from .window import (
     window_level,
 )
 
-# Inputs (§4.1)
+# Inputs (integration §4.1)
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,7 +118,7 @@ class Snapshot:
     sun_elevation: float | None
 
 
-# State, persisted (§4.2)
+# State, persisted (integration §4.2)
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,7 +165,7 @@ class EngineState:
         return cls({}, {}, {}, HubState(None, None, None, None))
 
 
-# Results (§4.5)
+# Results (integration §4.5)
 
 
 @dataclass(frozen=True, slots=True)

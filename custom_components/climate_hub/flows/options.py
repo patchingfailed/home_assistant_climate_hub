@@ -69,7 +69,7 @@ def options_schema() -> probatio.Schema:
 
 
 def flatten_options(user_input: Mapping[str, Any]) -> dict[str, Any]:
-    """Form input to the flat options (§3.1)."""
+    """Form input to the flat options (integration §3.1)."""
     timing = user_input.get(SECTION_TIMING, {})
     options: dict[str, Any] = {m.CONF_AREA_SYNC: bool(user_input[m.CONF_AREA_SYNC])}
     if weather := user_input.get(m.CONF_WEATHER):

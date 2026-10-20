@@ -271,7 +271,7 @@ class WindowSteps:
         return str(self._draft.values[m.CONF_AREA])
 
     def _window_data(self, texts: Texts) -> dict[str, Any]:
-        """The data to save, exactly the keys of §3.2."""
+        """The data to save, exactly the keys of integration §3.2."""
         draft, values = self._draft, self._draft.values
         data: dict[str, Any] = {
             m.CONF_AREA: self._area,

@@ -1,4 +1,7 @@
-"""Shared entity code: descriptions, base entity, device sync, stale cleanup (§8)."""
+"""Shared entity code: descriptions, base entity, device sync, stale cleanup.
+
+Specified in docs/integration.md §8.
+"""
 
 from __future__ import annotations
 

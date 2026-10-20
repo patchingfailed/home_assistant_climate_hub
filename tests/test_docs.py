@@ -1,21 +1,27 @@
-"""Guards for the user documentation: completeness, banned words, relative links.
+"""Guards for the documentation: completeness, banned words, links, section references.
 
 Plain file reads, no Home Assistant fixtures.
 """
 
+import ast
 import json
 import re
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-EN_JSON = ROOT / "custom_components" / "climate_hub" / "translations" / "en.json"
+PACKAGE = ROOT / "custom_components" / "climate_hub"
+EN_JSON = PACKAGE / "translations" / "en.json"
 REFERENCE = ROOT / "docs" / "reference.md"
 AGENT_SKILL = ROOT / "docs" / "agent" / "climate-hub" / "SKILL.md"
+LOGIC = ROOT / "docs" / "logic.md"
+INTEGRATION = ROOT / "docs" / "integration.md"
+SPECS = {"logic": LOGIC, "integration": INTEGRATION}
 
-# Files the banned-word and link checks cover; later work adds files here.
-CHECKED_FILES = (ROOT / "README.md", REFERENCE, AGENT_SKILL)
+# Files the banned-word and link checks cover.
+CHECKED_FILES = (ROOT / "README.md", REFERENCE, AGENT_SKILL, LOGIC, INTEGRATION)
 
 _LINK_PATTERNS = (
     re.compile(r"\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)"),
@@ -153,3 +159,143 @@ def test_relative_links_resolve(path: Path) -> None:
         elif anchor and linked.suffix == ".md" and anchor not in _anchors(linked):
             problems.append(f"{where} (no such heading)")
     assert not problems, "broken links:\n" + "\n".join(problems)
+
+
+# Section references such as "logic.md §5 rule 8", "integration §8.3" or
+# "§4 rules 4 and 7", chained with commas, "and", "or" or an en dash (a range).
+_SEP = r"\s*(?:,|and|or|\u2013)\s*"
+_REF = rf"§\s?(\d+(?:\.\d+)?)(?:\s+(?:rules?|steps?)\s+(\d+(?:{_SEP}\d+)*))?"
+_REF_ITEM = re.compile(_REF)
+_REF_CHAIN = re.compile(rf"{_REF}(?:{_SEP}{_REF})*")
+# The document named right before a chain; names other than the two specs are skipped.
+_DOC_BEFORE = re.compile(
+    r"\b(logic|integration|mockups|ui_mockups|requirements|reference|architecture)"
+    r"(?:\.md)?`?\s*$"
+)
+_AMBIGUOUS = "ambiguous"
+
+
+def _citing_files() -> list[Path]:
+    """Files whose section references are checked; STATUS.md is a dated log."""
+    files = [ROOT / "README.md", ROOT / "CLAUDE.md"]
+    files += sorted(p for p in (ROOT / "docs").rglob("*.md") if p.name != "STATUS.md")
+    files += sorted((ROOT / ".claude" / "skills").rglob("*.md"))
+    files += sorted(PACKAGE.rglob("*.py")) + sorted((ROOT / "tests").rglob("*.py"))
+    # this file's own patterns and messages are examples, not references
+    return [f for f in files if f != Path(__file__).resolve()]
+
+
+def _references(path: Path) -> Iterator[tuple[int, str, str, list[int]]]:
+    """(line, spec, section, rule or step numbers) of every reference to a spec.
+
+    A bare `§N` belongs to the spec it appears in; in Python it belongs to the one spec
+    the file names, and is ambiguous when the file names none or both. Other Markdown
+    files number their own sections, so their bare references are skipped.
+    """
+    text = path.read_text(encoding="utf-8")
+    chains = []
+    for chain in _REF_CHAIN.finditer(text):
+        named = _DOC_BEFORE.search(text[max(0, chain.start() - 40) : chain.start()])
+        chains.append((chain, named.group(1) if named else None))
+    named_specs = {doc for _, doc in chains if doc in SPECS}
+    own = next((name for name, spec in SPECS.items() if spec == path), None)
+    if own is None and path.suffix == ".py":
+        own = next(iter(named_specs)) if len(named_specs) == 1 else _AMBIGUOUS
+    for chain, doc in chains:
+        spec = doc if doc is not None else own
+        if spec is None or (spec not in SPECS and spec != _AMBIGUOUS):
+            continue
+        line = text.count("\n", 0, chain.start()) + 1
+        for item in _REF_ITEM.finditer(chain.group(0)):
+            numbers = [int(n) for n in re.findall(r"\d+", item.group(2) or "")]
+            yield line, spec, item.group(1), numbers
+
+
+def _sections(path: Path) -> dict[str, list[str]]:
+    """Lines outside code fences per numbered heading; `##` includes its `###`."""
+    sections: dict[str, list[str]] = {}
+    keys: list[str] = []
+    in_fence = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        heading = re.match(r"(#{2,3})\s+(\d+(?:\.\d+)?)\.?\s", line)
+        if heading:
+            level, number = heading.groups()
+            keys = [number] if len(level) == 2 else [*keys[:1], number]
+            sections[number] = []
+            continue
+        if line.startswith("## "):
+            keys = []
+        for key in keys:
+            sections[key].append(line)
+    return sections
+
+
+def _numbered_items(lines: list[str]) -> set[int]:
+    return {int(m.group(1)) for line in lines if (m := re.match(r"(\d+)\.\s", line))}
+
+
+def test_section_references_are_found() -> None:
+    found = {
+        (spec, path) for path in _citing_files() for _, spec, _, _ in _references(path)
+    }
+    assert {spec for spec, _ in found} >= set(SPECS)
+    assert len(found) >= 40
+
+
+def test_section_references_resolve() -> None:
+    sections = {name: _sections(path) for name, path in SPECS.items()}
+    problems = []
+    for path in _citing_files():
+        for line, spec, section, numbers in _references(path):
+            where = f"{path.relative_to(ROOT)}:{line}: §{section}"
+            if spec == _AMBIGUOUS:
+                problems.append(f"{where} (bare §: name logic.md or integration.md)")
+            elif section not in sections[spec]:
+                problems.append(f"{where} (no such section in {spec}.md)")
+            elif missing := set(numbers) - _numbered_items(sections[spec][section]):
+                items = ", ".join(map(str, sorted(missing)))
+                problems.append(f"{where} (no rule or step {items} in {spec}.md)")
+    assert not problems, "dead section references:\n" + "\n".join(problems)
+
+
+def _module_constants(path: Path) -> list[str]:
+    """Upper-case names assigned at module level."""
+    names = []
+    for node in ast.parse(path.read_text(encoding="utf-8")).body:
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, ast.AnnAssign):
+            targets = [node.target]
+        else:
+            continue
+        names += [t.id for t in targets if isinstance(t, ast.Name) and t.id.isupper()]
+    return names
+
+
+def test_logic_constants_are_listed() -> None:
+    listed = _backticked("\n".join(_sections(LOGIC)["13"]))
+    names = _module_constants(PACKAGE / "logic" / "const.py")
+    missing = [n for n in names if n not in listed]
+    assert not missing, f"docs/logic.md §13 lacks: {', '.join(missing)}"
+
+
+# Identifiers, not tunable values
+_ADAPTER_NAMES_NOT_DOCUMENTED = {
+    "DOMAIN",
+    "LOGGER",
+    "SUBENTRY_ROOM",
+    "SUBENTRY_REGION",
+    "SUBENTRY_WINDOW",
+}
+
+
+def test_adapter_constants_are_documented() -> None:
+    documented = _backticked(INTEGRATION.read_text(encoding="utf-8"))
+    names = _module_constants(PACKAGE / "const.py")
+    missing = [n for n in names if n not in documented | _ADAPTER_NAMES_NOT_DOCUMENTED]
+    assert not missing, f"docs/integration.md lacks: {', '.join(missing)}"
