@@ -8,20 +8,21 @@ All three milestones are built, verified on DEV by Felix and merged into `main`:
 (windows) and M3 (repairs: source outages, new sources, windows without a room; merged 2026-10-16). PROD runs since
 2026-10-16 (0.1.0, copied by hand). Release 0.3.0 (2026-10-19) carries the room readings (R16, R17; section at the end)
 and the user documentation, 0.3.1 the fixes from the documentation work, 0.3.2 (2026-10-20) a README header that HACS
-renders (the HA Markdown sanitizer escapes `<picture>` and `<source>`, so the README uses one `<img>` of the icon); none
-of them is on PROD yet. 829 tests green. Plan and build order: `docs/integration.md`.
+renders (the HA Markdown sanitizer escapes `<picture>` and `<source>`, so the README uses one `<img>` of the icon),
+0.3.3 (2026-10-20) the technical documentation (WP2) and a fix of the pause after a burst; none of them is on PROD
+yet. 838 tests green. Build history: git log; the system as built: `docs/logic.md`, `docs/integration.md`.
 
-Branches (CLAUDE.md rule 14): `main` is the current line; `docs/documentation` and `fix/doc-findings` were merged into
-it on 2026-10-19 and deleted. `spike/native-ui` stays local as a reference and is never merged. The repository is public
-(Felix's go, 2026-10-16).
+Branches (CLAUDE.md rule 14): `main` is the current line and pushed; `docs/documentation`, `fix/doc-findings` (both
+2026-10-19) and `docs/technical` (2026-10-20, merged as three rebuilt commits) were merged into it and deleted.
+`spike/native-ui` stays local as a reference and is never merged. The repository is public (Felix's go, 2026-10-16).
 
 ## Next
 
 1. **PROD to HACS** (Felix, on PROD): HA backup; HACS → ⋮ → custom repositories → this repository, type
-   Integration; download v0.3.2; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
+   Integration; download v0.3.3; restart. Same folder, so entry, unique IDs and history stay. From then on PROD only
    gets releases; `deploy.ps1 -Instance Prod` stays as an emergency path (Felix, 2026-10-16).
-2. **WP2, technical documentation** (section "Documentation package" below), in a fresh session on a new branch.
-   WP0, WP1 and WP3 are done and released with 0.3.0.
+2. **Mermaid labels** (optional): GitHub renders all 10 diagrams, but clips the longer transition labels of the
+   goal state diagram in logic §9; shorter labels would read better.
 3. **Small check on DEV**: the repair menus `new_source` and `windows_without_room` carry `{area}` in their titles
    (a different dialog from the config flow; Felix's M3 click review saw no error). Look at one when a repair is open.
 4. **PROD follow-up**: watch the first days (values, repairs, log). Optional idea: a hint for a contact that stays
@@ -94,6 +95,26 @@ rationale; the IDs stay as anchors. Representative table cases stay as worked ex
 values in full); the complete cases live in the tests. Done when the verifier checked every number, formula and
 threshold against the code, the reference values are recomputed with the code, Mermaid renders on GitHub, Felix read
 two sections (dew point, recommendation) and could follow them, and no link or section reference is dead.
+
+WP2 done 2026-10-20, released with 0.3.3: both files rewritten (Felix approved the outline and §3
+as the template: reasons inline at each rule, `### Rules / Examples` per module). No copied code: after reading §3
+and §9, Felix saw no benefit in the signature and dataclass blocks (the code is linked in every section, the copies
+drift, no test guards them), so they are gone, without a prose field list in their place; a "Survives a restart"
+paragraph names the persisted state, and integration §4.1 and §4.2 keep tables of inputs and persisted state.
+Section, rule and D/I numbers kept; logic §0 and integration §0 are decision indexes; logic §14 is the adapter
+contract plus the deferred requirements, logic §15 the module import graph and the purity test; integration's build
+order is gone and its old §16 is §15 "Not built". `tests/test_docs.py` now checks both files (banned words, links,
+anchors), every section reference in code, tests and docs (heading and numbered rule or step must exist; a bare `§`
+in Python counts only when the file names exactly one spec; `STATUS.md` is not scanned), every `logic/const.py` name
+in logic §13 and every adapter constant in integration.md. All 10 Mermaid diagrams render with mermaid-cli 11.12.0
+(local, system Chrome) and on GitHub. The workers' old-text-vs-code findings were folded into the
+text. Felix read logic §3 and §9 and found them good (2026-10-20). Three verifiers checked both files fact by fact
+and recomputed the example tables: every number matched; 26 findings (5 wrong, one of them the code bug below; the
+rest ambiguous or unverifiable) are fixed. The state replay of §9 found the code bug, fixed in `169c419`: a humidity
+goal that ended during the pause after a burst kept the expired `pause_until`, so the next burst (the next shower)
+returned to `BURST` at once instead of pausing 1 h (D7); a new humidity goal now clears it. Verified on DEV: no (pure
+logic, table test). The branch was rebuilt as three commits (fix, docs, test guard) before the merge, each green on
+its own.
 
 ## Open decisions
 
