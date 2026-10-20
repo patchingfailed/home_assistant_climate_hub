@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/patchingfailed/home_assistant_climate_hub/main/custom_components/climate_hub/brand/dark_logo@2x.png">
-    <img alt="Climate Hub" src="https://raw.githubusercontent.com/patchingfailed/home_assistant_climate_hub/main/custom_components/climate_hub/brand/logo@2x.png" width="420">
-  </picture>
+  <img alt="Climate Hub" src="https://raw.githubusercontent.com/patchingfailed/home_assistant_climate_hub/main/custom_components/climate_hub/brand/icon@2x.png" width="160">
 </p>
 
 # Climate Hub
