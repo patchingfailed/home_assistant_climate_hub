@@ -25,12 +25,11 @@ if (-not (Test-Path -LiteralPath $ConfigFile)) {
 if ($Instance -eq "Prod") {
   $answer = Read-Host "Really deploy to PROD ($ProdHost)? (yes/no)"
   if ($answer -ne "yes") { Write-Host "Aborted."; exit 1 }
-  $HostName = $ProdHost; $Target = $ProdTarget; $Token = $ProdToken
+  $BaseUrl = $ProdUrl; $Target = $ProdTarget; $Token = $ProdToken
 } else {
-  $HostName = $DevHost; $Target = $DevTarget; $Token = $DevToken
+  $BaseUrl = $DevUrl; $Target = $DevTarget; $Token = $DevToken
 }
 
-$BaseUrl = "http://${HostName}:8123"
 $Headers = @{ Authorization = "Bearer $Token"; "Content-Type" = "application/json" }
 
 if ($Logs) {
@@ -58,7 +57,7 @@ if ($Restart) {
   } catch {
     Write-Host "Restart call ended early (expected while HA restarts)."
   }
-  Write-Host "Restart of $HostName triggered, waiting for HA ..."
+  Write-Host "Restart of $BaseUrl triggered, waiting for HA ..."
   Start-Sleep -Seconds 10
   $deadline = (Get-Date).AddMinutes(5)
   while ((Get-Date) -lt $deadline) {

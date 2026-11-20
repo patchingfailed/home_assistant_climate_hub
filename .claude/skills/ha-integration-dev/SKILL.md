@@ -7,12 +7,15 @@ description: Development workflow for the Climate Hub Home Assistant custom inte
 
 ## Environment
 
-- Hosts, shares and tokens live **only** in `scripts/deploy.config.ps1`
-  (gitignored, template `deploy.config.example.ps1`). Never write IPs into any other file.
+- Instance URLs and tokens live **only** in `~/.config/ha/instances.env` (outside every repo; keys `HA_DEV_URL`,
+  `HA_DEV_TOKEN`, `HA_PROD_URL`, `HA_PROD_TOKEN`; environment variables of the same name win).
+  `scripts/deploy.config.ps1` (gitignored, a copy of `deploy.config.example.ps1`) reads that file and derives the
+  shares. Never write IPs or tokens into a repo file.
 - DEV is the target of every test. **Prod only after explicit user approval.**
-- PROD installs Climate Hub through HACS from GitHub releases (release steps in `CLAUDE.md`). DEV keeps
-  `deploy.ps1`; its `-Instance Prod` path is for emergencies only, because HACS then shows a stale version.
-- DEV UI: `http://<DevHost>:8123`.
+- PROD installs Climate Hub through HACS (the Marketplace from HA 2026.11) from GitHub releases (release steps in
+  `CLAUDE.md`). DEV keeps `deploy.ps1`; its `-Instance Prod` path is for emergencies only, because HACS then shows a
+  stale version.
+- DEV UI: `HA_DEV_URL`.
 
 ## Cycle
 
@@ -54,8 +57,8 @@ logger:
 ```powershell
 . .\scripts\deploy.config.ps1
 $h = @{ Authorization = "Bearer $DevToken" }
-Invoke-RestMethod "http://${DevHost}:8123/api/states/sensor.arbeitszimmer_klima_temperatur" -Headers $h
-(Invoke-RestMethod "http://${DevHost}:8123/api/states" -Headers $h) | Where-Object entity_id -like "*_klima_*"
+Invoke-RestMethod "$DevUrl/api/states/sensor.arbeitszimmer_klima_temperatur" -Headers $h
+(Invoke-RestMethod "$DevUrl/api/states" -Headers $h) | Where-Object entity_id -like "*_klima_*"
 ```
 
 ## Known pitfalls

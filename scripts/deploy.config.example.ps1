@@ -1,21 +1,28 @@
-# Copy as scripts/deploy.config.ps1 (gitignored) and fill in real values.
-# The ONLY place IPs/tokens are allowed to live.
+# Copy as scripts/deploy.config.ps1 (gitignored). It needs no edits: URLs and tokens come from
+# ~/.config/ha/instances.env (outside every repo), keys HA_DEV_URL, HA_DEV_TOKEN, HA_PROD_URL, HA_PROD_TOKEN.
+# Environment variables of the same name take precedence over the file.
 
-$DevHost  = "<dev-host-ip>"
-$ProdHost = "<prod-host-ip>"          # only use after explicit approval
+$InstancesFile = Join-Path $HOME ".config\ha\instances.env"
+$Instances = @{}
+if (Test-Path -LiteralPath $InstancesFile) {
+  Get-Content -LiteralPath $InstancesFile | ForEach-Object {
+    if ($_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$') { $Instances[$Matches[1]] = $Matches[2].Trim().Trim('"').Trim("'") }
+  }
+}
+function Get-InstanceValue([string]$Key) {
+  $fromEnv = [Environment]::GetEnvironmentVariable($Key)
+  if ($fromEnv) { $fromEnv } else { $Instances[$Key] }
+}
 
-# SMB share onto the HA config directory (Samba add-on)
+$DevUrl   = (Get-InstanceValue "HA_DEV_URL").TrimEnd("/")
+$ProdUrl  = (Get-InstanceValue "HA_PROD_URL").TrimEnd("/")   # only use after explicit approval
+$DevHost  = ([Uri]$DevUrl).Host
+$ProdHost = ([Uri]$ProdUrl).Host
+
+# SMB share onto the HA config directory (Samba app)
 $DevTarget  = "\\$DevHost\config\custom_components\climate_hub"
 $ProdTarget = "\\$ProdHost\config\custom_components\climate_hub"
 
-# Long-lived access token (HA profile -> Security) for REST: restart/reload/logs.
-# DEV: env var HA_DEV_TOKEN, else HA_TOKEN from the repo's .env (gitignored, also read by ha.py).
-$EnvFile = Join-Path (Split-Path $PSScriptRoot -Parent) ".env"
-$DotEnv = @{}
-if (Test-Path -LiteralPath $EnvFile) {
-  Get-Content -LiteralPath $EnvFile | ForEach-Object {
-    if ($_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$') { $DotEnv[$Matches[1]] = $Matches[2].Trim().Trim('"').Trim("'") }
-  }
-}
-$DevToken  = if ($env:HA_DEV_TOKEN) { $env:HA_DEV_TOKEN } else { $DotEnv["HA_TOKEN"] }
-$ProdToken = $env:HA_PROD_TOKEN
+# Long-lived access tokens (HA profile -> Security) for REST: restart, reload, logs
+$DevToken  = Get-InstanceValue "HA_DEV_TOKEN"
+$ProdToken = Get-InstanceValue "HA_PROD_TOKEN"
