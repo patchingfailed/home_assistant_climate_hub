@@ -10,7 +10,7 @@ All three milestones are built, verified on DEV by Felix and merged into `main`:
 and the user documentation, 0.3.1 the fixes from the documentation work, 0.3.2 (2026-10-20) a README header that HACS
 renders (the HA Markdown sanitizer escapes `<picture>` and `<source>`, so the README uses one `<img>` of the icon),
 0.3.3 (2026-10-20) the technical documentation (WP2) and a fix of the pause after a burst; none of them is on PROD
-yet. 0.4.0 (branch `chore/ha-2026-11`, 2026-11-26, not released yet) moves to Home Assistant 2026.11: tests on
+yet. 0.4.0 (released 2026-11-26) moves to Home Assistant 2026.11: tests on
 `pytest-homeassistant` 2026.11.3 (the old harness stops at 2026.10.4), minimum 2026.11.0 (ADR-008 amended), manifest
 `categories` for the Marketplace, README installs through the Marketplace, and one fix: a subentry whose area does
 not exist no longer places its device (the device registry rejects an unknown area from 2026.12.0b on, which failed
@@ -24,11 +24,10 @@ Branches (CLAUDE.md rule 14): `main` is the current line and pushed; `docs/docum
 
 ## Next
 
-1. **Release 0.4.0 and Marketplace** (Felix): look at `chore/ha-2026-11`, merge, tag `v0.4.0`. PROD needs Home
-   Assistant 2026.11 first (`hacs.json` minimum), then HA backup; **Settings → Marketplace → Add from link** →
-   this repository; install 0.4.0; restart. Same folder, so entry,
-   unique IDs and history stay. From then on PROD only gets releases; `deploy.ps1 -Instance Prod` stays as an
-   emergency path (Felix, 2026-10-16).
+1. **PROD to the Marketplace** (Felix, on PROD): PROD needs Home Assistant 2026.11 first (`hacs.json` minimum),
+   then HA backup; **Settings → Marketplace → Add from link** → this repository; install 0.4.0; restart. Same
+   folder, so entry, unique IDs and history stay. From then on PROD only gets releases; `deploy.ps1 -Instance Prod`
+   stays as an emergency path (Felix, 2026-10-16).
    Catalog: a PR to `hacs/default` from Felix's own account (the repository added to the `integration` file in
    alphabetical order; template with links to the release and to green HACS and hassfest runs without `ignore`).
    Felix submits it; Claude prepares the text (2026-11-26). Review takes months.
