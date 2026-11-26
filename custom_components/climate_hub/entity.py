@@ -156,6 +156,7 @@ def async_sync_devices(
 ) -> None:
     """Create or update the hub, room, region and window devices (§8.1, I15)."""
     devices = dr.async_get(hass)
+    areas = ar.async_get(hass)
     devices.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.entry_id)},
@@ -190,7 +191,12 @@ def async_sync_devices(
             identifiers={(DOMAIN, subject.id)},
             **naming,
         )
-        if coordinator.device_areas.get(subject.id) != subject.area_id:
+        # An area that no longer exists places nothing; the device registry rejects it
+        # from Home Assistant 2026.12 on, and the setup would fail.
+        if (
+            coordinator.device_areas.get(subject.id) != subject.area_id
+            and areas.async_get_area(subject.area_id) is not None
+        ):
             if device.area_id != subject.area_id:
                 devices.async_update_device(device.id, area_id=subject.area_id)
             coordinator.device_areas[subject.id] = subject.area_id

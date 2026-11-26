@@ -622,7 +622,9 @@ carry the area.
 
 Placement (I15): a new device gets its subentry's area. On later setups the device moves only if the subentry's area
 differs from `device_areas` in the Store (the area the integration last placed it in). A device the user moved by
-hand therefore stays where it is until the subentry's area changes. A window rename updates the device `name` (never
+hand therefore stays where it is until the subentry's area changes. A subentry whose area does not exist places
+nothing and records nothing in `device_areas`, so the device gets the area once an area with that ID exists again;
+from Home Assistant 2026.12 on the device registry rejects an unknown area, and the setup would fail. A window rename updates the device `name` (never
 `name_by_user`); entity IDs never change (CLAUDE.md rule 1).
 
 ### 8.2 Unique IDs and entity IDs

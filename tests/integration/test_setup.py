@@ -5,6 +5,8 @@ from unittest.mock import patch
 
 from homeassistant.config_entries import ConfigEntryState, ConfigSubentryData
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import (
     MockConfigEntry,
@@ -90,6 +92,31 @@ async def test_setup_and_unload(hass: HomeAssistant) -> None:
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
     assert entry.state is ConfigEntryState.NOT_LOADED
+
+
+async def test_missing_area_places_no_device(hass: HomeAssistant) -> None:
+    """The subentries' areas do not exist here: setup loads, no device gets an area."""
+    entry = await _setup(hass)
+    assert entry.state is ConfigEntryState.LOADED
+
+    devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+    assert {d.config_subentry_id for d in devices} == {
+        None,
+        "room1",
+        "region1",
+        "window1",
+    }
+    assert all(d.area_id is None for d in devices)
+
+    area = ar.async_get(hass).async_create("Living room")
+    assert area.id == "living_room"
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    room = dr.async_get(hass).async_get_device_by_identifier(
+        (DOMAIN, "room1"), entry.entry_id
+    )
+    assert room is not None
+    assert room.area_id == "living_room"
 
 
 async def test_burst_gives_one_reload(hass: HomeAssistant) -> None:

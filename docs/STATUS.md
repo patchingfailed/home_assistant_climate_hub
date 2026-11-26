@@ -12,9 +12,11 @@ renders (the HA Markdown sanitizer escapes `<picture>` and `<source>`, so the RE
 0.3.3 (2026-10-20) the technical documentation (WP2) and a fix of the pause after a burst; none of them is on PROD
 yet. 0.4.0 (branch `chore/ha-2026-11`, 2026-11-26, not released yet) moves to Home Assistant 2026.11: tests on
 `pytest-homeassistant` 2026.11.3 (the old harness stops at 2026.10.4), minimum 2026.11.0 (ADR-008 amended), manifest
-`categories` for the Marketplace, README installs through the Marketplace. The integration code is unchanged: 838
-tests green on 2026.11.3 without a deprecation warning from `climate_hub`, and DEV (2026.11) logs no warning. Build
-history: git log; the system as built: `docs/logic.md`, `docs/integration.md`.
+`categories` for the Marketplace, README installs through the Marketplace, and one fix: a subentry whose area does
+not exist no longer places its device (the device registry rejects an unknown area from 2026.12.0b on, which failed
+the whole setup; before, the device got a dangling area ID). 839 tests green on 2026.11.3 and on 2026.12.0b2 without
+a deprecation warning from `climate_hub`. Verified on DEV (2026.11.3, 2026-11-26): yes, entry loaded, no warning in
+the log. Build history: git log; the system as built: `docs/logic.md`, `docs/integration.md`.
 
 Branches (CLAUDE.md rule 14): `main` is the current line and pushed; `docs/documentation`, `fix/doc-findings` (both
 2026-10-19) and `docs/technical` (2026-10-20, merged as three rebuilt commits) were merged into it and deleted.
