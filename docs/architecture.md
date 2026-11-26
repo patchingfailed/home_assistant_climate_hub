@@ -113,7 +113,7 @@ Update 2026-10-16: a device the user moved to another area by hand stays there; 
 subentry's area itself changes (integration I15). A pass-through window gets the default name "Passage" /
 "Durchgang".
 
-## ADR-008: Minimum Home Assistant version 2026.10 (2026-10-14)
+## ADR-008: Minimum Home Assistant version 2026.11 (2026-10-14, amended 2026-11-26)
 
 **Context.** N6 asks for an exact minimum. The approved UI alone needs 2025.10: config subentries (2025.3), the
 sortable entity selector (2025.8) and menu option descriptions (2025.10). Later core changes matter more. Since 2026.6
@@ -132,6 +132,13 @@ test pin moves past the minimum, CI tests both.
 fallbacks. A manual install on an older release fails at import with a log error; there is no extra guard. Since 2026.8
 a device belongs to one config entry and at most one subentry, so every room, region and window device belongs to its
 own subentry only, as S5 already planned.
+
+**Amended 2026-11-26:** the minimum is 2026.11.0. No feature of the integration needs it; the code runs unchanged on
+2026.10 and 2026.11. Two things outside the code set it. From 2026.11 on, Home Assistant ships its own test package
+`pytest-homeassistant`, and `pytest-homeassistant-custom-component` stays at 2026.10.4 with a different import name, so
+testing 2026.10 next to 2026.11 would need a second test job and an import switch in every test module. The
+Marketplace, which installs from this repository, also exists only from 2026.11 on. The rule above stands for later
+rises: one test line, and a rise only when a feature or the test tooling needs it.
 
 ## ADR-009: Pure engine, one coordinator, reload on configuration change (2026-10-14)
 

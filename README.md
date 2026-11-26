@@ -38,7 +38,7 @@ The integration comes with English and German translations.
 
 ## Requirements
 
-- Home Assistant 2026.10.0 or newer.
+- Home Assistant 2026.11.0 or newer.
 - Temperature sensors assigned to areas, and humidity and pressure sensors if you have them. An entity belongs to an
   area through its device or directly. `climate` entities in the area count as temperature sources, and as humidity
   sources when they report humidity.
@@ -54,17 +54,24 @@ The integration comes with English and German translations.
 
 ## Installation
 
-### HACS (custom repository)
+### Marketplace
 
-1. In HACS, open the menu and choose **Custom repositories**.
-2. Add `https://github.com/patchingfailed/home_assistant_climate_hub` as category **Integration**.
-3. Install **Climate Hub** and restart Home Assistant.
-4. Go to **Settings → Devices & services → Add integration → Climate Hub**.
+Climate Hub is not in the Marketplace catalog yet, so it is added from its link. The Marketplace is open to
+administrators, and adding a link needs a GitHub connection (device sign-in, reads public data only).
+
+1. Go to **Settings → Marketplace**.
+2. In the upper-right corner, select **Add from link**.
+3. Under **GitHub link**, enter `patchingfailed/home_assistant_climate_hub` and select **Add**.
+4. Open **Climate Hub**, select **Install**, check the version and select **Install** again.
+5. The setup dialog opens. If it does not, go to **Settings → Devices & services → Add integration → Climate Hub**.
+
+Updates show up under **Settings → Updates**. After an update, Home Assistant needs a restart; a repair says so and
+can restart it.
 
 ### Manual
 
 Copy `custom_components/climate_hub` into the `custom_components` folder of your Home Assistant configuration and
-restart. Then continue with step 4 above.
+restart. Then add it under **Settings → Devices & services → Add integration → Climate Hub**.
 
 ## First setup
 
@@ -332,7 +339,7 @@ These checks run on every push to `main` and on every pull request:
 - `ruff check` and `ruff format --check` on Python 3.14
 - `pytest` on Python 3.14
 - hassfest, Home Assistant's own validation of an integration
-- the HACS action, which validates the repository for HACS
+- the HACS action, which validates the repository for the Marketplace
 
 Hassfest and the HACS check also run every day at 03:00 UTC, because their rules can change without a commit in this
 repository. A tag `v*` starts a workflow that compares the tag with the version in `manifest.json` and creates the

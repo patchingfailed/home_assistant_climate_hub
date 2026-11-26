@@ -1,7 +1,7 @@
 """pytest plugin: run Home Assistant tests on native Windows.
 
 `homeassistant.runner` imports `fcntl` and `homeassistant.util.resource` imports
-`resource` (both Unix-only). pytest-homeassistant-custom-component imports them while
+`resource` (both Unix-only). pytest-homeassistant imports them while
 loading its plugin, BEFORE any conftest.py runs, so pytest cannot start on Windows.
 This plugin installs harmless stubs first. It is loaded via `addopts = "-p win_compat"`
 in pyproject.toml; run `python -m pytest` so the repo root is on sys.path.

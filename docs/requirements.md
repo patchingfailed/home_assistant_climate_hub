@@ -213,7 +213,7 @@ cover automations keep working unchanged; they can adopt the recommendation step
 | N3 | Calculation logic is pure Python without Home Assistant imports and has table tests. Flows are tested end to end through the flow manager. |
 | N4 | Learned and timed state (offsets, open-since, trend, burst timers) survives restarts. |
 | N5 | No registry scans per update. Sources are resolved when the configuration or the registries change. |
-| N6 | Minimum Home Assistant version 2026.10.0 (ADR-008). |
+| N6 | Minimum Home Assistant version 2026.11.0 (ADR-008). |
 | N7 | Nothing is built that the UI cannot reach. No placeholders, no dormant code paths. |
 
 ## 6. Acceptance scenarios

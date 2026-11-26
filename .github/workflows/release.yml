@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # HACS offers releases, so the tag must match what Home Assistant shows.
+      # The Marketplace offers releases, so the tag must match what Home Assistant shows.
       - name: Tag matches the manifest version
         run: |
           version=$(python3 -c "import json; print(json.load(open('custom_components/climate_hub/manifest.json'))['version'])")

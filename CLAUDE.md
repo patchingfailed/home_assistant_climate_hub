@@ -37,10 +37,10 @@ ruff check . ; ruff format .
 .\scripts\deploy.ps1 -Logs       # climate_hub log lines from DEV
 ```
 
-Release (PROD installs releases through HACS): set `version` in `manifest.json`, commit, push `main`, then
+Release (PROD installs releases through the Marketplace): set `version` in `manifest.json`, commit, push `main`, then
 `git tag -a vX.Y.Z -m "<release notes>"` and `git push origin vX.Y.Z`; `.github/workflows/release.yml` checks the
 tag against the manifest and creates the GitHub release from the tag message. `deploy.ps1 -Instance Prod` is only an
-emergency path (HACS then shows a stale version).
+emergency path (the Marketplace then shows a stale version).
 
 ## Rules
 

@@ -5,7 +5,7 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    # Home Assistant and HACS change their rules without a commit here.
+    # Home Assistant and the Marketplace change their rules without a commit here.
     - cron: "0 3 * * *"
 
 jobs:

@@ -1,6 +1,6 @@
 """Shared pytest configuration.
 
-Windows fix: pytest-homeassistant-custom-component calls
+Windows fix: pytest-homeassistant calls
 ``pytest_socket.disable_socket(allow_unix_socket=True)`` in its
 ``pytest_runtest_setup`` hook (Linux assumption). Windows' Proactor event loop
 builds its self-pipe pair with AF_INET sockets, so every test would die in
@@ -24,11 +24,6 @@ if sys.platform == "win32":
         pass
 
     pytest_socket.disable_socket = _disable_socket_windows_noop
-
-
-@pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(enable_custom_integrations):
-    yield
 
 
 @pytest.fixture

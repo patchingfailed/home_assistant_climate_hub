@@ -2,7 +2,7 @@
 
 This file describes the Home Assistant layer around the pure logic of [logic.md](logic.md): manifest, hub entry with
 subentries, engine call, snapshot, coordinator, persistence, devices and entities, flows, repairs, area sync,
-translations, diagnostics and tests. It targets Home Assistant 2026.10 (ADR-008). Requirement IDs (R1, W11, ...) refer
+translations, diagnostics and tests. It targets Home Assistant 2026.11 (ADR-008). Requirement IDs (R1, W11, ...) refer
 to [requirements.md](requirements.md), ADRs to [architecture.md](architecture.md), screens (S1 to S11) to
 [ui_mockups.md](ui_mockups.md), logic sections to [logic.md](logic.md).
 
@@ -135,7 +135,10 @@ Code: [`manifest.json`](../custom_components/climate_hub/manifest.json), [`hacs.
   required.
 - `codeowners`, `documentation`, `issue_tracker`: the GitHub repository.
 - `version` is set at each release (CLAUDE.md "Release"); `.github/workflows/release.yml` checks the tag against it.
-- `hacs.json` carries `name` and `homeassistant` `2026.10.0` (ADR-008).
+- `categories` `helpers.calculate_value`, `sensors.temperature_humidity`, `climate.fans_ventilation`: where the
+  Marketplace lists the integration (Home Assistant's category rules put helpers first).
+- `hacs.json` carries `name` and `homeassistant` `2026.11.0` (ADR-008); the Marketplace offers a release only to
+  installations on that version or newer.
 - `ConfigFlow.VERSION = 1`, `MINOR_VERSION = 1` (config entry version; no migration exists yet).
 - `brand/` holds the icon and logo images; `.github/workflows/` has `ci.yml`, `validate.yml` (hassfest and HACS
   validation) and `release.yml`.

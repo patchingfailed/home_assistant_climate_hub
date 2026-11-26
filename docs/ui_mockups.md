@@ -761,7 +761,7 @@ click reviews on DEV through 2026-10-16). Nothing is left to approve here. The r
   follows the room's area; `suggested_area` only places a new device.
 - The new-sensor repair (R14) needs a registry listener, not only a check at setup.
 - The S3 house plan on a phone was not tested (accepted 2026-10-13).
-- Minimum Home Assistant version: 2026.10.0 (ADR-008). Implementation pitfalls are in the project skill
+- Minimum Home Assistant version: 2026.11.0 (ADR-008). Implementation pitfalls are in the project skill
   `ha-integration-dev`.
 
 Decisions behind the screens, for the record: first setup without windows and an optional windows step in S4 (W0);
