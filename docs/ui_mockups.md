@@ -118,15 +118,17 @@ Checked against Home Assistant core and frontend source on 2026-10-13.
 │   Außenwerte, wenn alle Außensensoren ausfallen.           │
 │                                                            │
 │ Bereiche aktuell halten  [■]                               │
-│   Trägt die Klimawerte der Räume und Außenseiten als       │
-│   Temperatur- und Feuchtesensor ihrer Bereiche ein. Dann   │
-│   zeigen Bereichskarten den zuverlässigen Wert.            │
+│   Trägt die Klimawerte der Räume und Außenseiten in leere  │
+│   Temperatur- und Feuchtefelder ihrer Bereiche ein. Einen  │
+│   Sensor, den du dort gewählt hast, ersetzt Climate Hub    │
+│   nur, wenn du zustimmst.                                  │
 │                                              [ Weiter ]    │
 └────────────────────────────────────────────────────────────┘
 ```
 
 - Weather: entity selector, domain `weather`, pre-filled with the first available entity that supports forecasts. Optional.
 - Area sync: R11, default on. Covers rooms and outdoor sides (text changed 2026-10-14, `docs/integration.md` I5).
+  Proposed 2026-11-27 (consent, R11): the help text above; the consent itself is asked in S4 and S6/S7.
 
 ### S2 Räume
 
@@ -225,14 +227,34 @@ Changed 2026-10-19: the hint lost its adverb („einfach" in German).
 │ **Fenster**                                                │
 │ • Noch keine. Mit Fenstern siehst du, was gerade offen     │
 │   ist, und bekommst Warnungen.                             │
+│ **Bereiche**                                               │
+│ • Wohnzimmer, Bad, Straße, Garten: Climate Hub trägt sich  │
+│   als Temperatur- und Feuchtesensor ein.                   │
+│ • Küche zeigt schon Klimasensor Küche Temperatur (Quelle 1 │
+│   dieses Raums). Bleibt, solange du nichts änderst.        │
 │ Quellen und Reihenfolge änderst du später pro Raum.        │
 │                                                            │
 │  > Anlegen                                                 │
+│  > Bereichssensoren ersetzen                               │
 │  > Fenster hinzufügen (optional)                           │
 │  > Räume ändern                                            │
 │  > Hausplan ändern                                         │
 └────────────────────────────────────────────────────────────┘
 ```
+
+**Bereiche** (proposed 2026-11-27, R11): only while „Bereiche aktuell halten" is on. Reads the areas'
+temperature and humidity fields now; nothing is written before „Anlegen".
+- One line for all areas whose fields are empty: „{Bereiche}: Climate Hub trägt sich als Temperatur- und
+  Feuchtesensor ein." An area whose room or side has no humidity sensor is named in „… trägt sich als
+  Temperatursensor ein." (a second line only when both groups exist).
+- One line per area with a sensor in a field: „{Bereich} zeigt schon {Sensor}. Bleibt, solange du nichts änderst."
+  If the sensor is one of the object's sources, its rank follows in brackets: „(Quelle 1 dieses Raums)" /
+  „(Quelle 2 dieser Außenseite)". Two different sensors: „{Bereich} zeigt schon {Sensor} und {Sensor}." An empty
+  second field of such an area is still filled; the line then ends „Das leere Feuchtefeld füllt Climate Hub."
+- After consent (S4a) the line becomes: „{Bereich}: Climate Hub ersetzt {Sensor}. Er kommt zurück, wenn du das
+  abwählst oder Climate Hub entfernst."
+- Without any area with a sensor there is no consent to give: „Bereichssensoren ersetzen" is not in the menu.
+- With the switch off the block reads: „Climate Hub trägt nichts in die Bereiche ein."
 
 - Shows what was **not** taken and why (P1, R6), with a short reason per entity: „kein Raumwert" (implausible
   value), „Nebenwert eines Kontakts" / „eines Bewegungsmelders", „Gerätetemperatur" (diagnostic), „abgeleiteter Wert"
@@ -253,6 +275,29 @@ Changed 2026-10-19: the hint lost its adverb („einfach" in German).
 - „Anlegen" creates the hub entry with all room, region and window subentries in one step. The success dialog says:
   „Fertig. Quellen änderst du pro Raum: ⋮ beim Raum → Rekonfigurieren. Weitere Fenster: ⋮ beim Eintrag Climate Hub →
   Fenster hinzufügen." The entry is called „Climate Hub", its device „Hausklima".
+
+### S4a Bereichssensoren ersetzen (proposed 2026-11-27, R11)
+
+```
+┌─ Bereichssensoren ersetzen ────────────────────────────────┐
+│ In diesen Bereichen hast du schon einen Sensor gewählt.    │
+│ Climate Hub kann sich dort stattdessen eintragen, dann     │
+│ zeigen Bereichskarten den kombinierten Wert. Der bisherige │
+│ Sensor kommt zurück, wenn du das wieder abwählst oder      │
+│ Climate Hub entfernst.                                     │
+│                                                            │
+│ Ersetzen in                                                │
+│   [ ] Küche: Klimasensor Küche Temperatur                  │
+│   [ ] Arbeitszimmer: Thermostat Arbeitszimmer, Luft-       │
+│       messer Arbeitszimmer Feuchte                         │
+│                                              [ Weiter ]    │
+└────────────────────────────────────────────────────────────┘
+```
+
+- Reached from S4 „Bereichssensoren ersetzen"; „Weiter" returns to S4, which shows the result.
+- Select with `multiple`, one option per area with a sensor in a field, label „{Bereich}: {Sensor}[, {Sensor}]".
+  Nothing is pre-selected the first time; coming back shows the current choice. Empty is allowed.
+- The choice is stored per room or outdoor side (`replace_area_sensor`) and stays editable in S6/S7.
 
 ## 4. Screens: objects
 
@@ -357,6 +402,12 @@ Not planned.
   default on; added 2026-10-19, R16). Help text: „Temperaturspanne und Feuchtespanne mit dem Wert jeder Quelle.
   Für Räume mit mehreren Zonen, etwa Bett und Schreibtisch." Off removes both entities. A room saved before the
   switch existed counts as on.
+- ▸ Erweitert, „Bereichssensor ersetzen" (switch, default off; proposed 2026-11-27, R11). Shown only while
+  „Bereiche aktuell halten" is on and the area holds a sensor that is not Climate Hub's, or Climate Hub replaced one
+  there with consent. Help text, area with a foreign sensor: „{Bereich} zeigt gerade {Sensor}. Eingeschaltet trägt
+  sich Climate Hub dort ein; der bisherige Sensor kommt zurück, wenn du ausschaltest oder Climate Hub entfernst."
+  After a replacement: „Climate Hub hat {Sensor} in {Bereich} ersetzt. Ausgeschaltet kommt er zurück." An area with
+  empty fields needs no consent; the switch is not shown. After an area change the form judges the new area.
 - Errors: area already a room or an outdoor side (as in step 1), no temperature source („Wähle mindestens eine
   Temperaturquelle.").
 - When the sources were just suggested, the preview also lists what was not taken and why (as in S4).
@@ -409,6 +460,7 @@ Not planned.
 - Direction: static labels, but only free directions are offered (when editing: the free ones plus its own). The error
   stays as a safeguard: „Für Norden gibt es schon eine Außenseite: Straße."
 - Area: same re-open rule as S6.
+- ▸ Erweitert: „Bereichssensor ersetzen", same switch, rules and texts as S6 (proposed 2026-11-27, R11).
 - Preview names the computed fallback chain: „Fällt Osten aus, springen Norden (Straße) und Süden (Garten) ein,
   dann Westen (Hof), dann der Wetterdienst."
 
@@ -616,6 +668,10 @@ bottom open means the left leaf is turned open; bottom closed means it is tilted
 ```
 
 The comfort range is not here. It lives on the device „Hausklima" as number entities (ADR-006).
+
+„Bereiche aktuell halten" carries the S1 help text (proposed 2026-11-27, R11). Switching it off clears every field
+that still holds Climate Hub's sensor and puts back the sensor it replaced there; switching it on again fills empty
+fields and, where a room or outdoor side has „Bereichssensor ersetzen" on, replaces again.
 
 If the chosen weather service is unavailable or delivers no forecast, saving first shows a check step (menu, agreed
 2026-10-15) with the same status line as S4 and the options „Trotzdem speichern" and „Anpassen". A working service

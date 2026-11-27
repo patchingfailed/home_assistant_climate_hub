@@ -22,7 +22,7 @@ changes to them (CLAUDE.md rule 1).
 | I2 | Every subentry or options change reloads the hub entry, a burst of changes gives one reload; comfort numbers re-evaluate only | §6.1, §6.3 |
 | I3 | House-level settings live in `entry.options`; `entry.data` stays empty | §3.1 |
 | I4 | New sources (R14): the Store remembers the entities of an area when its object was last saved | §10.2 |
-| I5 | Area sync (R11) clears a field only while it still holds the entity Climate Hub wrote | §11 |
+| I5 | Area sync (R11) fills empty fields, replaces a foreign sensor only with consent and puts it back; it touches a field only while it holds what Climate Hub expects there | §11 |
 | I6 | A cover added later enables the window's `cover` sensor; removing the cover changes nothing | §8.3, §8.4 |
 | I7 | Entities the configuration does not produce are not created and are removed from the entity registry | §8.3, §8.4 |
 | I8 | A comfort value that would make minimum >= maximum is rejected with a translated error | §6.3, §8.4 |
@@ -558,7 +558,7 @@ Content (`_dump`):
   "engine": { "rooms": {}, "regions": {}, "windows": {}, "hub": {} },
   "comfort": { "min": "float", "max": "float", "threshold": "float" },
   "seen": { "<subentry_id>": { "fingerprint": "<hash of subentry data>", "entities": ["sensor.x"] } },
-  "area_sync": { "<area_id>": { "temperature": "sensor.x", "humidity": "sensor.y" } },
+  "area_sync": { "<area_id>": { "temperature": { "entity_id": "sensor.x", "previous": "sensor.a" | null } } },
   "device_areas": { "<subentry_id>": "<area_id>" }
 }
 ```
@@ -913,20 +913,39 @@ Code: [`area_sync.py`](../custom_components/climate_hub/area_sync.py). Tests:
 
 1. Wanted state. While `area_sync` is on (absent counts as on), for every room and region the area's
    `temperature_entity_id` is the object's `temperature` sensor and `humidity_entity_id` its `humidity` sensor, if
-   that exists. The entity IDs come from the entity registry by unique ID. With `area_sync` off nothing is wanted.
+   that exists. The entity IDs come from the entity registry by unique ID. With `area_sync` off nothing is wanted. When
+   a room and a region share an area, the region's sensor and its `replace_area_sensor` decide.
 2. Timing. The sync runs once after the first successful evaluation (Home Assistant rejects an entity that has no
-   state yet or the wrong device class) and so on every setup. A `ValueError` from the area registry is logged at debug
-   level and the field is not recorded.
-3. Records. Written values are recorded in the Store (`area_sync`, saved with the delayed save).
-4. Clearing (I5). A recorded field that is no longer wanted (sync off, object deleted, entity gone) is cleared only if
-   it still holds the recorded entity ID, so a value the user set or changed is never removed. `async_remove_entry`
-   clears all recorded fields under the same rule. The previous value is not restored, because Climate Hub does not
-   store it.
-5. User changes. A field the user changed after Climate Hub wrote it (another sensor, or emptied) is left alone from
-   then on, so one area can opt out without switching the sync off. A field never written by Climate Hub is taken over
-   once (the S1 confirmation covers that).
+   state yet or the wrong device class) and so on every setup; a changed option or subentry reloads the entry. A
+   `ValueError` from the area registry is logged at debug level and the field is not recorded.
+3. Records. Each written field is recorded in the Store (`area_sync`, §7) with the entity written (`entity_id`) and
+   the sensor it replaced (`previous`, `null` for an empty field). Records written before 0.5.0 hold a bare entity ID
+   and load as `previous` `null`, which is what they replaced as far as Climate Hub knows.
+4. Writing, per wanted field: the first matching row of the decision table (`logic/area_sync.py`) applies.
 
-Tested: written on setup; cleared on sync off, room delete and entry removal; a field the user changed is left alone.
+   | # | Record | Field holds | `replace_area_sensor` | Action |
+   |---|---|---|---|---|
+   | 1 | yes | anything but the recorded entity | any | leave, keep the record (the user changed it) |
+   | 2 | yes, `previous` set | the recorded entity | off | consent withdrawn: put `previous` back, drop the record |
+   | 3 | yes | the recorded entity, not the wanted one | any | write the wanted entity, keep `previous` |
+   | 4 | yes | the wanted entity | any | keep |
+   | 5 | none | the wanted entity | any | record it, `previous` `null` |
+   | 6 | none | nothing | any | write, `previous` `null` |
+   | 7 | none | another sensor | on | write, `previous` = that sensor |
+   | 8 | none | another sensor | off | leave, no record (S4, S6 and S7 show it) |
+
+5. Clearing (I5). A recorded field that is no longer wanted (sync off, object deleted, entity gone, area changed) is
+   touched only if it still holds the recorded entity ID: it gets `previous` back, or is emptied when `previous` is
+   `null` or Home Assistant rejects it (the sensor was deleted; debug log). A field the user changed is left as it is.
+   `async_remove_entry` applies the same rule to all records. The record is dropped in every case.
+6. Foreign sensor. A field holds a foreign sensor when it is neither empty nor the wanted entity. The setup preview,
+   the consent step S4a and the switch in S6 and S7 read the areas live; at first setup no Climate Hub entity exists
+   yet, so every filled field is foreign.
+
+Tested: the decision table (logic table tests); written on setup; an empty field filled, a foreign sensor left
+without consent and replaced and put back with consent; consent withdrawn; put back on sync off, room delete and
+entry removal; a field the user changed is left alone and not put back; a deleted previous sensor empties the field;
+old records load.
 
 ## 12. Translations
 

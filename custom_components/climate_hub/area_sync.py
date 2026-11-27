@@ -18,6 +18,27 @@ def _field_name(field: str) -> str:
     return f"{field}_entity_id"
 
 
+def area_fields(hass: HomeAssistant, area_id: str) -> dict[str, str | None]:
+    """The sensors in the area's temperature and humidity fields; {} without it."""
+    area = ar.async_get(hass).async_get_area(area_id)
+    if area is None:
+        return {}
+    return {field: getattr(area, _field_name(field)) for field in FIELDS}
+
+
+def own_entities(hass: HomeAssistant, subject_id: str) -> dict[str, str]:
+    """The object's own sensors for the area fields, by unique ID."""
+    registry = er.async_get(hass)
+    found: dict[str, str] = {}
+    for field in FIELDS:
+        entity_id = registry.async_get_entity_id(
+            SENSOR_DOMAIN, DOMAIN, f"{subject_id}_{field}"
+        )
+        if entity_id is not None:
+            found[field] = entity_id
+    return found
+
+
 def _wanted(
     hass: HomeAssistant,
     entry: ClimateHubConfigEntry,

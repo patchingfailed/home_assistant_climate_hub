@@ -38,6 +38,7 @@ CONF_HUMIDITY = "humidity"
 CONF_PRESSURE = "pressure"
 CONF_CLIMATE_DEVICES = "climate_devices"
 CONF_SHOW_READINGS = "show_readings"
+CONF_REPLACE_AREA_SENSOR = "replace_area_sensor"
 CONF_TYPE = "type"
 CONF_NAME = "name"
 CONF_LEAF = "leaf"
@@ -86,6 +87,7 @@ class RoomModel:
     max_age: timedelta  # own override or the hub value
     window_ids: tuple[str, ...]
     show_readings: bool = True  # R16: spread entities with per-source readings
+    replace_area_sensor: bool = False  # R11: consent to replace an area sensor
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,6 +97,7 @@ class RegionModel:
     direction: Direction
     sources: Mapping[Metric, tuple[str, ...]]
     max_age: timedelta
+    replace_area_sensor: bool = False  # R11, as in RoomModel
 
 
 @dataclass(frozen=True, slots=True)
@@ -179,6 +182,7 @@ def parse_room(
         max_age=_max_age(data, settings),
         window_ids=(),
         show_readings=bool(data.get(CONF_SHOW_READINGS, True)),
+        replace_area_sensor=bool(data.get(CONF_REPLACE_AREA_SENSOR, False)),
     )
 
 
@@ -194,6 +198,7 @@ def parse_region(
         direction=Direction(data[CONF_DIRECTION]),
         sources=_sources(data, followed),
         max_age=_max_age(data, settings),
+        replace_area_sensor=bool(data.get(CONF_REPLACE_AREA_SENSOR, False)),
     )
 
 
