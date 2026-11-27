@@ -32,6 +32,7 @@ from .const import (
     REGISTRY_DEBOUNCE,
     TICK,
 )
+from .logic.area_sync import FieldRecord
 from .logic.engine import Comfort, EngineResult, EngineState, Forecast, evaluate
 from .logic.model import HouseModel
 from .registry import build_model
@@ -83,7 +84,7 @@ class ClimateHubCoordinator(DataUpdateCoordinator[EngineResult]):
         self.comfort: Comfort = stored.comfort
         self.forecast: Forecast | None = None
         self.seen: dict[str, SeenEntry] = stored.seen
-        self.area_sync: dict[str, dict[str, str]] = stored.area_sync
+        self.area_sync: dict[str, dict[str, FieldRecord]] = stored.area_sync
         self.device_areas: dict[str, str] = stored.device_areas
         self._started = False
         self._failures: Mapping[str, str] = {}

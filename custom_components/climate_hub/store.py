@@ -16,6 +16,7 @@ from .const import (
     STORE_VERSION,
     store_key,
 )
+from .logic.area_sync import FieldRecord
 from .logic.codec import dump_comfort, dump_state, load_comfort, load_state
 from .logic.engine import Comfort, EngineState
 from .logic.model import HouseModel
@@ -34,7 +35,7 @@ class StoreData:
     engine: EngineState
     comfort: Comfort
     seen: dict[str, SeenEntry] = field(default_factory=dict)
-    area_sync: dict[str, dict[str, str]] = field(default_factory=dict)
+    area_sync: dict[str, dict[str, FieldRecord]] = field(default_factory=dict)
     device_areas: dict[str, str] = field(default_factory=dict)
 
 
@@ -59,7 +60,13 @@ def _dump(data: StoreData) -> dict[str, Any]:
             }
             for subentry_id, entry in data.seen.items()
         },
-        "area_sync": data.area_sync,
+        "area_sync": {
+            area_id: {
+                field_name: {"entity_id": record.entity_id, "previous": record.previous}
+                for field_name, record in fields.items()
+            }
+            for area_id, fields in data.area_sync.items()
+        },
         "device_areas": data.device_areas,
     }
 
@@ -85,18 +92,36 @@ def _load_seen(raw: Any, known: set[str]) -> dict[str, SeenEntry]:
     return seen
 
 
-def _load_area_sync(raw: Any) -> dict[str, dict[str, str]]:
+def _load_record(raw: Any) -> FieldRecord | None:
+    """A new-form record, or an old bare entity ID; anything else is dropped."""
+    if isinstance(raw, str):
+        return FieldRecord(raw)
+    if not isinstance(raw, Mapping):
+        return None
+    entity_id = raw.get("entity_id")
+    previous = raw.get("previous")
+    if not isinstance(entity_id, str) or not (
+        previous is None or isinstance(previous, str)
+    ):
+        return None
+    return FieldRecord(entity_id, previous)
+
+
+def _load_area_sync(raw: Any) -> dict[str, dict[str, FieldRecord]]:
     if not isinstance(raw, Mapping):
         return {}
-    return {
-        str(area_id): {
-            str(field_name): entity_id
-            for field_name, entity_id in fields.items()
-            if isinstance(entity_id, str)
+    loaded: dict[str, dict[str, FieldRecord]] = {}
+    for area_id, fields in raw.items():
+        if not isinstance(fields, Mapping):
+            continue
+        records = {
+            str(field_name): record
+            for field_name, raw_record in fields.items()
+            if (record := _load_record(raw_record)) is not None
         }
-        for area_id, fields in raw.items()
-        if isinstance(fields, Mapping)
-    }
+        if records:
+            loaded[str(area_id)] = records
+    return loaded
 
 
 def _load_device_areas(raw: Any, known: set[str]) -> dict[str, str]:
@@ -134,7 +159,7 @@ class ClimateHubStore:
             device_areas=_load_device_areas(raw.get("device_areas"), known),
         )
 
-    async def async_load_area_sync(self) -> dict[str, dict[str, str]]:
+    async def async_load_area_sync(self) -> dict[str, dict[str, FieldRecord]]:
         """Only the area-sync records, for removal when no model exists."""
         raw = await self._store.async_load()
         return _load_area_sync(

@@ -5,6 +5,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigSubentryData
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.climate_hub.const import (
@@ -13,6 +14,7 @@ from custom_components.climate_hub.const import (
     SUBENTRY_ROOM,
 )
 from custom_components.climate_hub.logic import model as m
+from custom_components.climate_hub.logic.area_sync import FieldRecord
 from tests.house import House
 
 LIVING = "r_living"
@@ -30,7 +32,9 @@ def _sub(kind: str, sub_id: str, data: dict[str, Any]) -> ConfigSubentryData:
     )
 
 
-async def _setup(hass: HomeAssistant, house: House) -> MockConfigEntry:
+async def _setup(
+    hass: HomeAssistant, house: House, *, replace: bool = False
+) -> MockConfigEntry:
     entry = MockConfigEntry(
         domain=DOMAIN,
         options={m.CONF_WEATHER: house.weather},
@@ -42,6 +46,7 @@ async def _setup(hass: HomeAssistant, house: House) -> MockConfigEntry:
                     m.CONF_AREA: house.living_room,
                     m.CONF_TEMPERATURE: [house.living_temp],
                     m.CONF_HUMIDITY: [house.living_hum],
+                    m.CONF_REPLACE_AREA_SENSOR: replace,
                 },
             ),
             _sub(
@@ -93,11 +98,16 @@ async def test_written_after_setup(hass: HomeAssistant, house: House) -> None:
     assert humidity is not None
     assert entry.runtime_data.coordinator.area_sync == {
         house.living_room: {
-            "temperature": "sensor.wohnzimmer_klima_temperatur",
-            "humidity": "sensor.wohnzimmer_klima_luftfeuchtigkeit",
+            "temperature": FieldRecord("sensor.wohnzimmer_klima_temperatur"),
+            "humidity": FieldRecord("sensor.wohnzimmer_klima_luftfeuchtigkeit"),
         },
-        house.bedroom: {"temperature": "sensor.schlafzimmer_klima_temperatur"},
-        house.street: {"temperature": temperature, "humidity": humidity},
+        house.bedroom: {
+            "temperature": FieldRecord("sensor.schlafzimmer_klima_temperatur")
+        },
+        house.street: {
+            "temperature": FieldRecord(temperature),
+            "humidity": FieldRecord(humidity),
+        },
     }
 
 
@@ -160,3 +170,155 @@ async def test_removing_the_entry_clears_everything(
 
     for area_id in (house.living_room, house.bedroom, house.street):
         assert _fields(hass, area_id) == (None, None)
+
+
+LIVING_TEMP = "sensor.wohnzimmer_klima_temperatur"
+
+
+def _preset(hass: HomeAssistant, area_id: str, entity_id: str | None) -> None:
+    ar.async_get(hass).async_update(area_id, temperature_entity_id=entity_id)
+
+
+def _records(entry: MockConfigEntry, area_id: str) -> dict[str, FieldRecord]:
+    return entry.runtime_data.coordinator.area_sync.get(area_id, {})
+
+
+async def _set_consent(
+    hass: HomeAssistant, entry: MockConfigEntry, value: bool
+) -> None:
+    sub = entry.subentries[LIVING]
+    hass.config_entries.async_update_subentry(
+        entry, sub, data={**sub.data, m.CONF_REPLACE_AREA_SENSOR: value}
+    )
+    await hass.async_block_till_done()
+    await _reload(hass, entry)
+
+
+async def test_foreign_sensor_is_left_without_consent(
+    hass: HomeAssistant, house: House
+) -> None:
+    _preset(hass, house.living_room, house.bedroom_temp)
+
+    entry = await _setup(hass, house)
+
+    assert _fields(hass, house.living_room)[0] == house.bedroom_temp
+    assert "temperature" not in _records(entry, house.living_room)
+    assert _fields(hass, house.living_room)[1] == (
+        "sensor.wohnzimmer_klima_luftfeuchtigkeit"
+    )
+
+
+async def test_foreign_sensor_is_replaced_with_consent(
+    hass: HomeAssistant, house: House
+) -> None:
+    _preset(hass, house.living_room, house.bedroom_temp)
+
+    entry = await _setup(hass, house, replace=True)
+
+    assert _fields(hass, house.living_room)[0] == LIVING_TEMP
+    assert _records(entry, house.living_room)["temperature"] == FieldRecord(
+        LIVING_TEMP, house.bedroom_temp
+    )
+    assert _records(entry, house.living_room)["humidity"] == FieldRecord(
+        "sensor.wohnzimmer_klima_luftfeuchtigkeit"
+    )
+
+
+async def test_withdrawn_consent_puts_the_sensor_back(
+    hass: HomeAssistant, house: House
+) -> None:
+    _preset(hass, house.living_room, house.bedroom_temp)
+    entry = await _setup(hass, house, replace=True)
+
+    await _set_consent(hass, entry, False)
+
+    assert _fields(hass, house.living_room)[0] == house.bedroom_temp
+    assert "temperature" not in _records(entry, house.living_room)
+    assert "humidity" in _records(entry, house.living_room)
+
+
+async def test_granted_consent_replaces_a_left_sensor(
+    hass: HomeAssistant, house: House
+) -> None:
+    _preset(hass, house.living_room, house.bedroom_temp)
+    entry = await _setup(hass, house)
+
+    await _set_consent(hass, entry, True)
+
+    assert _fields(hass, house.living_room)[0] == LIVING_TEMP
+    assert _records(entry, house.living_room)["temperature"].previous == (
+        house.bedroom_temp
+    )
+
+
+async def test_option_off_puts_the_previous_sensor_back(
+    hass: HomeAssistant, house: House
+) -> None:
+    _preset(hass, house.living_room, house.bedroom_temp)
+    entry = await _setup(hass, house, replace=True)
+
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, m.CONF_AREA_SYNC: False}
+    )
+    await _reload(hass, entry)
+
+    assert _fields(hass, house.living_room) == (house.bedroom_temp, None)
+    assert entry.runtime_data.coordinator.area_sync == {}
+
+
+async def test_deleted_room_puts_the_previous_sensor_back(
+    hass: HomeAssistant, house: House
+) -> None:
+    _preset(hass, house.living_room, house.bedroom_temp)
+    entry = await _setup(hass, house, replace=True)
+
+    hass.config_entries.async_remove_subentry(entry, LIVING)
+    await hass.async_block_till_done()
+    await _reload(hass, entry)
+
+    assert _fields(hass, house.living_room) == (house.bedroom_temp, None)
+    assert house.living_room not in entry.runtime_data.coordinator.area_sync
+
+
+async def test_removing_the_entry_puts_the_previous_sensor_back(
+    hass: HomeAssistant, house: House
+) -> None:
+    _preset(hass, house.living_room, house.bedroom_temp)
+    entry = await _setup(hass, house, replace=True)
+
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert _fields(hass, house.living_room) == (house.bedroom_temp, None)
+
+
+async def test_user_change_is_kept_and_not_put_back_on_removal(
+    hass: HomeAssistant, house: House
+) -> None:
+    _preset(hass, house.living_room, house.bedroom_temp)
+    entry = await _setup(hass, house, replace=True)
+    _preset(hass, house.living_room, house.kitchen_temp)
+
+    await _reload(hass, entry)
+    assert _fields(hass, house.living_room)[0] == house.kitchen_temp
+    assert _records(entry, house.living_room)["temperature"] == FieldRecord(
+        LIVING_TEMP, house.bedroom_temp
+    )
+
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert _fields(hass, house.living_room)[0] == house.kitchen_temp
+
+
+async def test_deleted_previous_sensor_empties_the_field(
+    hass: HomeAssistant, house: House
+) -> None:
+    _preset(hass, house.living_room, house.bedroom_temp)
+    entry = await _setup(hass, house, replace=True)
+    er.async_get(hass).async_remove(house.bedroom_temp)
+    hass.states.async_remove(house.bedroom_temp)
+
+    await _set_consent(hass, entry, False)
+
+    assert _fields(hass, house.living_room)[0] is None
+    assert "temperature" not in _records(entry, house.living_room)

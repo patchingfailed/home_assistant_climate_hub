@@ -8,9 +8,9 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN, LOGGER
 from .coordinator import ClimateHubConfigEntry, ClimateHubCoordinator
+from .logic.area_sync import FIELDS, Action, Decision, FieldRecord, decide, release
 from .logic.model import CONF_AREA_SYNC
 
-FIELDS = ("temperature", "humidity")
 SENSOR_DOMAIN = "sensor"
 
 
@@ -43,20 +43,21 @@ def _wanted(
     hass: HomeAssistant,
     entry: ClimateHubConfigEntry,
     coordinator: ClimateHubCoordinator,
-) -> dict[str, dict[str, str]]:
-    """The area fields Climate Hub should hold, from the entity registry."""
+) -> dict[str, dict[str, tuple[str, bool]]]:
+    """Per area and field the wanted entity and its subject's consent to replace.
+
+    Rooms come first, so a region sharing an area with a room wins (§11 point 1).
+    """
     if not entry.options.get(CONF_AREA_SYNC, True):
         return {}
-    registry = er.async_get(hass)
     model = coordinator.model
-    wanted: dict[str, dict[str, str]] = {}
+    wanted: dict[str, dict[str, tuple[str, bool]]] = {}
     for subject in (*model.rooms.values(), *model.regions.values()):
-        for field in FIELDS:
-            entity_id = registry.async_get_entity_id(
-                SENSOR_DOMAIN, DOMAIN, f"{subject.id}_{field}"
+        for field, entity_id in own_entities(hass, subject.id).items():
+            wanted.setdefault(subject.area_id, {})[field] = (
+                entity_id,
+                subject.replace_area_sensor,
             )
-            if entity_id is not None:
-                wanted.setdefault(subject.area_id, {})[field] = entity_id
     return wanted
 
 
@@ -69,27 +70,58 @@ def _set(areas: ar.AreaRegistry, area_id: str, field: str, value: str | None) ->
     return True
 
 
-def _clear(
-    areas: ar.AreaRegistry,
-    records: dict[str, dict[str, str]],
-    keep: dict[str, dict[str, str]],
+def _restore(
+    areas: ar.AreaRegistry, area_id: str, field: str, value: str | None
 ) -> None:
-    """Clear recorded fields that are not in `keep`, only while they still hold ours."""
+    """Put the previous sensor back; empty the field when that is rejected."""
+    if not _set(areas, area_id, field, value) and value is not None:
+        _set(areas, area_id, field, None)
+
+
+def _release(
+    areas: ar.AreaRegistry,
+    records: dict[str, dict[str, FieldRecord]],
+    wanted: dict[str, dict[str, tuple[str, bool]]],
+) -> None:
+    """Release recorded fields that are not wanted any more; drop their records."""
     for area_id in list(records):
         fields = records[area_id]
-        for field, entity_id in list(fields.items()):
-            if keep.get(area_id, {}).get(field) == entity_id:
+        area = areas.async_get_area(area_id)
+        for field, record in list(fields.items()):
+            if field in wanted.get(area_id, {}):
                 continue
-            area = areas.async_get_area(area_id)
-            if (
-                area is not None
-                and getattr(area, _field_name(field)) == entity_id
-                and not _set(areas, area_id, field, None)
-            ):
-                continue
+            if area is not None:
+                decision = release(getattr(area, _field_name(field)), record)
+                if decision.action is Action.RESTORE:
+                    _restore(areas, area_id, field, decision.value)
             del fields[field]
         if not fields:
             del records[area_id]
+
+
+def _apply(
+    areas: ar.AreaRegistry,
+    records: dict[str, dict[str, FieldRecord]],
+    area_id: str,
+    field: str,
+    decision: Decision,
+) -> None:
+    fields = records.setdefault(area_id, {})
+    match decision.action:
+        case Action.WRITE:
+            if _set(areas, area_id, field, decision.value):
+                assert decision.record is not None
+                fields[field] = decision.record
+        case Action.RESTORE:
+            _restore(areas, area_id, field, decision.value)
+            fields.pop(field, None)
+        case _:  # KEEP, LEAVE
+            if decision.record is not None:
+                fields[field] = decision.record
+            else:
+                fields.pop(field, None)
+    if not fields:
+        del records[area_id]
 
 
 @callback
@@ -102,20 +134,19 @@ def async_sync_areas(
     areas = ar.async_get(hass)
     records = coordinator.area_sync
     wanted = _wanted(hass, entry, coordinator)
-    _clear(areas, records, wanted)
+    _release(areas, records, wanted)
     for area_id, fields in wanted.items():
         area = areas.async_get_area(area_id)
         if area is None:
             continue
-        for field, entity_id in fields.items():
-            current = getattr(area, _field_name(field))
-            recorded = records.get(area_id, {}).get(field)
-            if current == entity_id:
-                records.setdefault(area_id, {})[field] = entity_id
-            elif recorded is not None and current != recorded:
-                continue  # the user changed it after we wrote it
-            elif _set(areas, area_id, field, entity_id):
-                records.setdefault(area_id, {})[field] = entity_id
+        for field, (entity_id, replace) in fields.items():
+            decision = decide(
+                getattr(area, _field_name(field)),
+                entity_id,
+                records.get(area_id, {}).get(field),
+                replace,
+            )
+            _apply(areas, records, area_id, field, decision)
     coordinator.store.schedule_save(coordinator.store_data)
 
 
@@ -143,7 +174,7 @@ def async_sync_after_first_evaluation(
 
 
 async def async_clear_recorded(
-    hass: HomeAssistant, records: dict[str, dict[str, str]]
+    hass: HomeAssistant, records: dict[str, dict[str, FieldRecord]]
 ) -> None:
-    """Clear every recorded field that still holds our entity (entry removal)."""
-    _clear(ar.async_get(hass), records, {})
+    """Release every recorded field (entry removal)."""
+    _release(ar.async_get(hass), records, {})

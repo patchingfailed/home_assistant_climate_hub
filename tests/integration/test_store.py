@@ -9,6 +9,7 @@ from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import async_fire_time_changed
 
 from custom_components.climate_hub.const import STORE_SAVE_DELAY, store_key
+from custom_components.climate_hub.logic.area_sync import FieldRecord
 from custom_components.climate_hub.logic.engine import Comfort, EngineState
 from custom_components.climate_hub.store import (
     ClimateHubStore,
@@ -31,7 +32,12 @@ def _data() -> StoreData:
             "g1": SeenEntry("def", ()),
             "gone": SeenEntry("zzz", ("sensor.c",)),
         },
-        area_sync={"living_room": {"temperature": "sensor.a", "humidity": "sensor.b"}},
+        area_sync={
+            "living_room": {
+                "temperature": FieldRecord("sensor.a"),
+                "humidity": FieldRecord("sensor.b", "sensor.old"),
+            }
+        },
         device_areas={"r1": "living_room", "gone": "kitchen"},
     )
 
@@ -74,6 +80,44 @@ async def test_load_prunes_seen_and_device_areas_not_area_sync(
     assert loaded.device_areas == {}
     assert loaded.area_sync == _data().area_sync
     assert set(loaded.engine.rooms) == {"r2"}
+
+
+async def test_area_sync_round_trips(hass: HomeAssistant) -> None:
+    await ClimateHubStore(hass, ENTRY_ID).async_save(_data())
+
+    loaded = await ClimateHubStore(hass, ENTRY_ID).async_load_area_sync()
+
+    assert loaded == _data().area_sync
+
+
+async def test_old_area_sync_records_load_without_previous(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    hass_storage[KEY] = {
+        "version": 1,
+        "minor_version": 1,
+        "key": KEY,
+        "data": {
+            "area_sync": {
+                "living_room": {
+                    "temperature": "sensor.a",
+                    "humidity": {"entity_id": "sensor.b", "previous": None},
+                    "bad": 5,
+                    "worse": {"entity_id": 3},
+                },
+                "empty": {"temperature": None},
+            }
+        },
+    }
+
+    loaded = await ClimateHubStore(hass, ENTRY_ID).async_load_area_sync()
+
+    assert loaded == {
+        "living_room": {
+            "temperature": FieldRecord("sensor.a"),
+            "humidity": FieldRecord("sensor.b"),
+        }
+    }
 
 
 async def test_delayed_save_writes_after_the_delay(
