@@ -50,6 +50,7 @@ from ..logic.prefill import (
 from ..logic.sources import Metric
 from ..logic.window import Level
 from ..registry import entity_infos
+from .areas import replace_hint
 from .preview import (
     DOT_SEPARATOR,
     NotTaken,
@@ -321,6 +322,8 @@ def flatten(user_input: Mapping[str, Any], *, climate: bool) -> dict[str, Any]:
         max_age := user_input.get(SECTION_ADVANCED, {}).get(m.CONF_MAX_AGE)
     ) is not None:
         data[m.CONF_MAX_AGE] = int(max_age)
+    if user_input.get(SECTION_ADVANCED, {}).get(m.CONF_REPLACE_AREA_SENSOR):
+        data[m.CONF_REPLACE_AREA_SENSOR] = True  # absent counts as off (R11)
     return data
 
 
@@ -336,6 +339,7 @@ def nest(data: Mapping[str, Any], *, climate: bool) -> dict[str, Any]:
             m.CONF_CLIMATE_DEVICES,
             m.CONF_MAX_AGE,
             m.CONF_SHOW_READINGS,
+            m.CONF_REPLACE_AREA_SENSOR,
         )
     }
     values[SECTION_HUMIDITY_PRESSURE] = {
@@ -350,6 +354,8 @@ def nest(data: Mapping[str, Any], *, climate: bool) -> dict[str, Any]:
         advanced[m.CONF_SHOW_READINGS] = data.get(m.CONF_SHOW_READINGS, True)
     if m.CONF_MAX_AGE in data:
         advanced[m.CONF_MAX_AGE] = data[m.CONF_MAX_AGE]
+    if m.CONF_REPLACE_AREA_SENSOR in data:
+        advanced[m.CONF_REPLACE_AREA_SENSOR] = data[m.CONF_REPLACE_AREA_SENSOR]
     if advanced:
         values[SECTION_ADVANCED] = advanced
     return values
@@ -410,6 +416,7 @@ class SourceFlow(ConfigSubentryFlow):
         self._suggested_for = ""
         self._fresh = False  # sources were just suggested
         self._not_taken: tuple[NotTaken, ...] = ()
+        self._shows_replace = False  # the form on screen has the consent switch
 
     # Hooks
 
@@ -460,7 +467,9 @@ class SourceFlow(ConfigSubentryFlow):
         self._not_taken = ()
         self._fresh = False
 
-    def _schema(self, infos: Sequence[EntityInfo]) -> probatio.Schema:
+    def _schema(
+        self, infos: Sequence[EntityInfo], *, replace: bool = False
+    ) -> probatio.Schema:
         area_id, chosen = self._suggested_for, self._data
         fields: dict[Any, Any] = self._head_fields()
         fields[probatio.Required(m.CONF_TEMPERATURE)] = sources_selector(
@@ -507,6 +516,10 @@ class SourceFlow(ConfigSubentryFlow):
             advanced[probatio.Optional(m.CONF_SHOW_READINGS, default=True)] = (
                 BooleanSelector()
             )
+        if replace:
+            advanced[probatio.Optional(m.CONF_REPLACE_AREA_SENSOR, default=False)] = (
+                BooleanSelector()
+            )
         fields[probatio.Required(SECTION_ADVANCED)] = section(
             probatio.Schema(advanced), {"collapsed": True}
         )
@@ -520,10 +533,19 @@ class SourceFlow(ConfigSubentryFlow):
     ) -> SubentryFlowResult:
         texts = await async_texts(self.hass)
         entry = self._get_entry()
+        hint = replace_hint(
+            self.hass,
+            texts,
+            entry,
+            self._suggested_for,
+            self._own_id,
+            self._data,
+        )
+        self._shows_replace = hint is not None
         return self.async_show_form(
             step_id=step_id,
             data_schema=self.add_suggested_values_to_schema(
-                self._schema(entity_infos(self.hass)),
+                self._schema(entity_infos(self.hass), replace=hint is not None),
                 nest(self._data, climate=self._climate),
             ),
             errors=errors or {},
@@ -536,6 +558,7 @@ class SourceFlow(ConfigSubentryFlow):
                 + "\n\n"
                 if self._fresh
                 else "",
+                "replace": f"\n\n{hint}" if hint else "",
                 **(placeholders or {}),
             },
         )
@@ -546,6 +569,8 @@ class SourceFlow(ConfigSubentryFlow):
         if user_input is None:
             return await self._async_show_form(step_id)
         data = flatten(user_input, climate=self._climate)
+        if not self._shows_replace and self._data.get(m.CONF_REPLACE_AREA_SENSOR):
+            data[m.CONF_REPLACE_AREA_SENSOR] = True  # hidden: the stored value stays
         self._data = data
         texts = await async_texts(self.hass)
         if (problem := self._validate(data, texts)) is not None:
@@ -553,6 +578,7 @@ class SourceFlow(ConfigSubentryFlow):
                 step_id, {"base": problem[0]}, problem[1]
             )
         if (area_id := data[m.CONF_AREA]) != self._suggested_for:
+            data.pop(m.CONF_REPLACE_AREA_SENSOR, None)  # it was for the old area
             suggested = resuggest(entity_infos(self.hass), data, area_id, self.scope)
             self._data = {**data, **suggested.lists}
             self._not_taken = suggested.not_taken

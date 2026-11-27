@@ -97,9 +97,12 @@ sides, then from the opposite side, then from the weather entity.
    it found: areas with a climate sensor or thermostat, areas with a temperature sensor that could be outside, window
    and door contacts, and weather services.
    - **Weather service** is optional and pre-filled with the first weather entity that supports a forecast.
-   - **Keep areas up to date** is on by default. Climate Hub then enters the room and outdoor side values as the
-     temperature and humidity sensor of their areas, so area cards show the combined value. It clears such a field
-     only while the field still holds the entity Climate Hub wrote.
+   - **Keep areas up to date** is on by default. Climate Hub then enters the room and outdoor side values into the
+     empty temperature and humidity fields of their areas, so area cards show the combined value. A sensor you chose
+     in an area is replaced only with your consent, which the preview asks per area under **Replace area sensors**
+     and the room and outdoor side forms ask under **Advanced**. Climate Hub puts a replaced sensor back when you
+     withdraw the consent, turn the option off or remove the integration. It clears a field only while the field
+     still holds the entity Climate Hub wrote.
 
    Select **Submit**.
 

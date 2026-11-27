@@ -194,6 +194,7 @@ Room (frozen keys). Subentry `unique_id` `room_<area_id>`, updated with the area
 | `climate_devices` | list of entity IDs | heating and cooling devices (R15) |
 | `max_age` | int minutes, stored only when set | override of the hub value |
 | `show_readings` | bool | spread entities (R16); absent counts as `True` |
+| `replace_area_sensor` | bool, stored only when `True` | consent to replace a foreign sensor in the area's fields (R11, §11); absent counts as `False` |
 
 Region (frozen keys). Subentry `unique_id` `region_<direction>`. Title: the `common` string `region_title`
 (`{direction} · {area}`) with the direction name from `direction_n` to `direction_w`.
@@ -203,6 +204,7 @@ Region (frozen keys). Subentry `unique_id` `region_<direction>`. Title: the `com
 | `area` | area ID | O1 |
 | `direction` | `n` / `e` / `s` / `w` | O1, one region per direction |
 | `temperature`, `humidity`, `pressure`, `max_age` | as for rooms | O2 |
+| `replace_area_sensor` | as for rooms | R11 |
 
 Window (frozen keys). No subentry `unique_id` (several per room). Title: the `common` string `window_title`
 (`{area} {name}`).
@@ -752,6 +754,12 @@ Code: [`config_flow.py`](../custom_components/climate_hub/config_flow.py),
 - Suggestions: `prefill.suggest_sources`, `suggest_metric_list`, `suggest_climate_devices` and `propose_rooms`
   through `suggest` and `resuggest`; after an area change the suggestions are made anew and chosen sources without an
   area stay.
+- Area sync (`flows/areas.py`, R11): reads the areas live with `area_sync.area_fields` and `own_entities`, never writes.
+  `planned_areas` lists the areas of the planned rooms and sides with the fields Climate Hub would write (temperature;
+  humidity when the planned object has a humidity source), the sensors in them and the source rank of each sensor;
+  `areas_markdown` is the block "Areas" of S4; `replace_hint` is the text above the consent switch of S6 and S7.
+  A filled field counts as foreign when it is not the object's own sensor; at first setup none exists, so every
+  filled field is foreign (§11 point 6).
 - Form data: sections are UI only; `flatten` and `nest` convert between the form and the flat subentry data (§3.2).
 - Previews are one-shot engine runs (I1): the pending change is applied to the model (`build_model_from` on the
   edited data), a snapshot is read, and `engine.evaluate` runs with the coordinator's current state, comfort values and
@@ -763,30 +771,42 @@ Code: [`config_flow.py`](../custom_components/climate_hub/config_flow.py),
 
 | Step | Screen | Fields / options | Errors |
 |---|---|---|---|
-| `user` | S1 | `weather` (entity selector, domain weather, optional, suggested: first weather entity with a forecast), `area_sync` (default on); the scan counts as placeholders | - |
+| `user` | S1 | `weather` (entity selector, domain weather, optional, suggested: first weather entity with a forecast), `area_sync` (default on, help text names the consent, R11); the scan counts as placeholders | - |
 | `rooms` | S2 | `rooms`: select, multiple, list mode, labels `{floor} · {area}` (`no_floor` text without a floor), pre-checked by `propose_rooms` | `no_rooms` |
 | `plan` | S3 | sections `n`, `e`, `s`, `w`, each `outdoor` (select, optional) and `rooms` (select, multiple) | `room_two_sides`, `outdoor_twice` |
-| `preview` | S4 | menu `create`, `add_window`, `rooms`, `plan`; the preview ends with a weather status line (hourly forecast, daily forecast only, no forecast, unavailable, none chosen) | - |
+| `preview` | S4 | menu `create`, `replace_area_sensors` (only when a planned area has a foreign sensor and `area_sync` is on), `add_window`, `rooms`, `plan`; the preview has a weather status line (hourly forecast, daily forecast only, no forecast, unavailable, none chosen) and the block "Areas" (only while `area_sync` is on; else one line saying nothing is entered) | - |
+| `replace_area_sensors` | S4a | `areas`: select, multiple, list mode, one option per planned area with a foreign sensor, label `{area}: {sensor}[, {sensor}]`, suggested: the current choice (empty at first); submit returns to `preview` | - |
 
 `create` calls `async_create_entry(title="Climate Hub", data={}, options=..., subentries=[...], description="created")`
 with the rooms (suggested sources, side from the plan), the regions (suggested sources, scope region) and the windows
-added through `add_window` (window mixin, §9.5). The flow keeps its answers when the user goes back to `rooms` or
-`plan`; rooms that are no longer rooms leave the plan. A second flow aborts with `single_instance_allowed`.
+added through `add_window` (window mixin, §9.5). The areas chosen in `replace_area_sensors` give their room or region
+`replace_area_sensor: True`; other subentries get no such key. The flow keeps its answers when the user goes back to
+`rooms` or `plan`; rooms that are no longer rooms leave the plan, and areas that are no longer planned leave the
+consent. A second flow aborts with `single_instance_allowed`.
 
 ### 9.3 Room (`flows/room.py`, S6)
 
 `user` (area, add only; errors `already_room`, `is_region`) leads to `room_form` or `room_form_changed` (fields `area`,
 `side`, `temperature`; sections `humidity_pressure` (collapsed), `climate` (expanded on add, collapsed on edit) and
-`advanced` (collapsed) with `max_age` and the boolean `show_readings`, default on, R16; error `no_temperature`), then
+`advanced` (collapsed) with `max_age`, the boolean `show_readings`, default on, R16, and the boolean
+`replace_area_sensor`, default off, R11; error `no_temperature`), then
 to `room_preview` (menu `room_save`, `room_adjust`). `reconfigure` opens the form directly. Saving calls
 `async_create_entry(title, data, unique_id)` or `async_update_and_abort(entry, subentry, title=..., data=...,
 unique_id=...)`. When the sources were suggested in this flow, the preview lists what was not taken and why.
+
+The switch `replace_area_sensor` is in the form only while the hub option `area_sync` is on (absent counts as on) and
+the form's current area holds a sensor that is not the room's own (`own_entities` of the subentry; a new room has
+none), or the loaded entry's records show that Climate Hub replaced a sensor in that area (`previous` set). Its
+variant text goes into the step description through the placeholder `replace` (`replace_hint`): the frontend fills
+description placeholders into the step description, the same way as `sides` and `suggested`. The `data_description`
+of the field is a fixed sentence. While the switch is not in the form, a stored value is kept; an area change drops
+it, because the consent belonged to the old area, and the form judges the new area. Switching off stores no key.
 
 ### 9.4 Region (`flows/region.py`, S7)
 
 `user` (`direction` from the free directions, `area`) leads to `region_form` or `region_form_changed`, then to
 `region_preview`, which names the fallback chain (`outdoor.fallback_chain`). The form has no `climate` section and no
-`show_readings`. Errors `direction_taken`, `already_region`, `is_room`, `no_temperature`. When editing, the region's own
+`show_readings`, but the same `replace_area_sensor` switch. Errors `direction_taken`, `already_region`, `is_room`, `no_temperature`. When editing, the region's own
 direction stays offered.
 
 ### 9.5 Window (`flows/window.py`, S8)
@@ -822,7 +842,8 @@ also adds the room subentry with suggested sources (U4, `async_add_subentry`). E
   `plan_adjust`) shows the suggested sources of those sides first (I17). P1 needs the sources visible before saving,
   so S10 gets the regions part of the S4 preview. Applying updates the subentries and ends with
   `async_abort(reason="reconfigure_successful")`; the coalesced reload applies everything once (I2). An unchanged plan
-  saves without a reload.
+  saves without a reload. A region that gets a new area loses its `replace_area_sensor`, because the consent was for
+  the old area.
 
 ### 9.7 Tests (`tests/flows/`)
 

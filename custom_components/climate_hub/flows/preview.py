@@ -666,14 +666,17 @@ def plan_markdown(
     regions: Sequence[PlanItem],
     windows: Sequence[PlanItem],
     weather: WeatherStatus,
+    areas: str,
 ) -> str:
-    """Screen S4: rooms, outdoor sides, the weather line, windows."""
+    """Screen S4: rooms, outdoor sides, the weather line, windows, areas (`areas` is
+    the block of `flows/areas.py`)."""
     return _BLOCK.join(
         [
             rooms_markdown(hass, texts, run, rooms),
             regions_markdown(hass, texts, run, regions, missing_sides=True),
             weather_line(texts, weather),
             windows_markdown(hass, texts, run, windows),
+            areas,
             texts("plan_closing"),
         ]
     )

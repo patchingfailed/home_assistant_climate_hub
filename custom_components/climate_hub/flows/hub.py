@@ -425,7 +425,15 @@ def plan_changes(
                         sub.subentry_id,
                         SUBENTRY_REGION,
                         area_id,
-                        {**sub.data, m.CONF_AREA: area_id, **suggested.lists},
+                        {
+                            **{
+                                k: v
+                                for k, v in sub.data.items()
+                                if k != m.CONF_REPLACE_AREA_SENSOR
+                            },
+                            m.CONF_AREA: area_id,
+                            **suggested.lists,
+                        },
                         suggested.not_taken,
                     ),
                 )

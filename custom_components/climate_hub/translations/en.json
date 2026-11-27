@@ -641,7 +641,7 @@
         },
         "data_description": {
           "weather": "Provides the forecast for the daily strategy and the outside values when all outdoor sensors fail.",
-          "area_sync": "Enters the climate values of the rooms and outdoor sides as the temperature and humidity sensor of their areas. Area cards then show the reliable value."
+          "area_sync": "Enters the climate values of the rooms and outdoor sides into empty temperature and humidity fields of their areas. A sensor you chose there is replaced only with your consent."
         }
       },
       "rooms": {
@@ -709,9 +709,20 @@
         "description": "{preview}",
         "menu_options": {
           "create": "Create",
+          "replace_area_sensors": "Replace area sensors",
           "add_window": "Add window (optional)",
           "rooms": "Change rooms",
           "plan": "Change house plan"
+        }
+      },
+      "replace_area_sensors": {
+        "title": "Replace area sensors",
+        "description": "You have already chosen a sensor in these areas. Climate Hub can take their place, so area cards show the combined value. The previous sensor comes back when you deselect this again or remove Climate Hub.",
+        "data": {
+          "areas": "Replace in"
+        },
+        "data_description": {
+          "areas": "Leave empty and Climate Hub replaces nothing."
         }
       },
       "reconfigure": {
@@ -1042,15 +1053,17 @@
               "name": "Advanced",
               "data": {
                 "max_age": "Maximum age of a measurement",
-                "show_readings": "Show individual readings"
+                "show_readings": "Show individual readings",
+                "replace_area_sensor": "Replace area sensor"
               },
               "data_description": {
                 "max_age": "In minutes. Empty means the hub default.",
-                "show_readings": "Temperature spread and humidity spread with the value of every source. For rooms with several zones, e.g. bed and desk."
+                "show_readings": "Temperature spread and humidity spread with the value of every source. For rooms with several zones, e.g. bed and desk.",
+                "replace_area_sensor": "Enters Climate Hub in the area in place of the sensor chosen there. Switched off, the previous sensor comes back."
               }
             }
           },
-          "description": "{suggested}{sides}"
+          "description": "{suggested}{sides}{replace}"
         },
         "room_form_changed": {
           "title": "Room: {area}",
@@ -1091,15 +1104,17 @@
               "name": "Advanced",
               "data": {
                 "max_age": "Maximum age of a measurement",
-                "show_readings": "Show individual readings"
+                "show_readings": "Show individual readings",
+                "replace_area_sensor": "Replace area sensor"
               },
               "data_description": {
                 "max_age": "In minutes. Empty means the hub default.",
-                "show_readings": "Temperature spread and humidity spread with the value of every source. For rooms with several zones, e.g. bed and desk."
+                "show_readings": "Temperature spread and humidity spread with the value of every source. For rooms with several zones, e.g. bed and desk.",
+                "replace_area_sensor": "Enters Climate Hub in the area in place of the sensor chosen there. Switched off, the previous sensor comes back."
               }
             }
           },
-          "description": "Area changed: The sources are now suggested for {area}.\n\n{sides}"
+          "description": "Area changed: The sources are now suggested for {area}.\n\n{sides}{replace}"
         },
         "room_preview": {
           "title": "Preview",
@@ -1165,13 +1180,16 @@
             "advanced": {
               "name": "Advanced",
               "data": {
-                "max_age": "Maximum age of a measurement"
+                "max_age": "Maximum age of a measurement",
+                "replace_area_sensor": "Replace area sensor"
               },
               "data_description": {
-                "max_age": "In minutes. Empty means the hub default."
+                "max_age": "In minutes. Empty means the hub default.",
+                "replace_area_sensor": "Enters Climate Hub in the area in place of the sensor chosen there. Switched off, the previous sensor comes back."
               }
             }
-          }
+          },
+          "description": "{replace}"
         },
         "region_form_changed": {
           "title": "Outdoor side: {direction}",
@@ -1201,14 +1219,16 @@
             "advanced": {
               "name": "Advanced",
               "data": {
-                "max_age": "Maximum age of a measurement"
+                "max_age": "Maximum age of a measurement",
+                "replace_area_sensor": "Replace area sensor"
               },
               "data_description": {
-                "max_age": "In minutes. Empty means the hub default."
+                "max_age": "In minutes. Empty means the hub default.",
+                "replace_area_sensor": "Enters Climate Hub in the area in place of the sensor chosen there. Switched off, the previous sensor comes back."
               }
             }
           },
-          "description": "Area changed: The sources are now suggested for {area}."
+          "description": "Area changed: The sources are now suggested for {area}.{replace}"
         },
         "region_preview": {
           "title": "Preview",
@@ -1453,7 +1473,7 @@
         },
         "data_description": {
           "weather": "Provides the forecast for the daily strategy and the outside values when all outdoor sensors fail.",
-          "area_sync": "Enters the climate values of the rooms and outdoor sides as the temperature and humidity sensor of their areas. Area cards then show the reliable value."
+          "area_sync": "Enters the climate values of the rooms and outdoor sides into empty temperature and humidity fields of their areas. A sensor you chose there is replaced only with your consent."
         },
         "sections": {
           "timing": {
@@ -1652,6 +1672,22 @@
     "weather_none": "No weather service chosen. The daily strategy stays empty.",
     "issue_offset_temperature": "{value} °C",
     "issue_offset_humidity": "{value} %",
-    "issue_offset_pressure": "{value} hPa"
+    "issue_offset_pressure": "{value} hPa",
+    "plan_areas_head": "**Areas**",
+    "plan_areas_off": "Climate Hub enters nothing into the areas.",
+    "plan_areas_empty": "{areas}: Climate Hub becomes the temperature and humidity sensor.",
+    "plan_areas_empty_temperature": "{areas}: Climate Hub becomes the temperature sensor.",
+    "plan_areas_foreign": "{area} already shows {sensors}.",
+    "plan_areas_kept": "Nothing changes there unless you choose to replace it.",
+    "plan_areas_fill_humidity": "Climate Hub fills the empty humidity field.",
+    "plan_areas_fill_temperature": "Climate Hub fills the empty temperature field.",
+    "plan_areas_source_room": "{sensor} (source {rank} of this room)",
+    "plan_areas_source_side": "{sensor} (source {rank} of this outdoor side)",
+    "plan_areas_replace_one": "{area}: Climate Hub replaces {sensors}. It comes back when you deselect this or remove Climate Hub.",
+    "plan_areas_replace_many": "{area}: Climate Hub replaces {sensors}. They come back when you deselect this or remove Climate Hub.",
+    "area_replace_foreign": "{area} currently shows {sensors}. Switched on, Climate Hub takes its place; the previous sensor comes back when you switch it off or remove Climate Hub.",
+    "area_replace_foreign_many": "{area} currently shows {sensors}. Switched on, Climate Hub takes their place; the previous sensors come back when you switch it off or remove Climate Hub.",
+    "area_replace_done": "Climate Hub replaced {sensors} in {area}. Switched off, it comes back.",
+    "area_replace_done_many": "Climate Hub replaced {sensors} in {area}. Switched off, they come back."
   }
 }

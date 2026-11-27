@@ -6,6 +6,7 @@ house plan with the preview of new or changed outdoor sides (I17). The options f
 """
 
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import Any
 from uuid import uuid4
 
@@ -21,12 +22,14 @@ from homeassistant.helpers.selector import (
     BooleanSelector,
     EntitySelector,
     EntitySelectorConfig,
+    SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
 )
 
 from .const import DOMAIN, SUBENTRY_REGION, SUBENTRY_ROOM, SUBENTRY_WINDOW
+from .flows.areas import areas_markdown, consent_options, planned_areas
 from .flows.hub import (
     CONF_OUTDOOR,
     CONF_ROOMS,
@@ -70,6 +73,7 @@ from .logic import model as m
 from .registry import area_infos, entity_infos
 
 ENTRY_TITLE = "Climate Hub"
+CONF_REPLACE_AREAS = "areas"  # S4a field: the areas to replace the sensor in
 CREATED = "created"
 
 
@@ -86,6 +90,8 @@ class ClimateHubConfigFlow(WindowSteps, ConfigFlow, domain=DOMAIN):
         self._plan: Plan = empty_plan()
         self._change: PlanChange | None = None
         self._windows: list[PlanItem] = []  # added in this setup
+        self._replace: set[str] = set()  # areas where the user allows a replacement
+        self._consentable: list[SelectOptionDict] = []  # areas with a foreign sensor
 
     @classmethod
     @callback
@@ -243,7 +249,20 @@ class ClimateHubConfigFlow(WindowSteps, ConfigFlow, domain=DOMAIN):
         return default_options(self._weather, self._area_sync)
 
     def _setup_items(self) -> tuple[list[PlanItem], list[PlanItem]]:
-        return build_items(entity_infos(self.hass), self._rooms or [], self._plan)
+        """The planned rooms and sides; those in a chosen area carry the consent."""
+        rooms, regions = build_items(
+            entity_infos(self.hass), self._rooms or [], self._plan
+        )
+        self._replace &= {i.area_id for i in (*rooms, *regions)}
+        if not self._area_sync:
+            return rooms, regions
+
+        def consent(item: PlanItem) -> PlanItem:
+            if item.area_id not in self._replace:
+                return item
+            return replace(item, data={**item.data, m.CONF_REPLACE_AREA_SENSOR: True})
+
+        return [consent(i) for i in rooms], [consent(i) for i in regions]
 
     async def async_step_preview(
         self, user_input: dict[str, Any] | None = None
@@ -258,14 +277,64 @@ class ClimateHubConfigFlow(WindowSteps, ConfigFlow, domain=DOMAIN):
             weather,
         )
         texts = await async_texts(self.hass)
+        areas = planned_areas(self.hass, run, (*rooms, *regions))
+        self._consentable = consent_options(self.hass, areas) if self._area_sync else []
         return self.async_show_menu(
             step_id="preview",
-            menu_options=["create", "add_window", "rooms", "plan"],
+            menu_options=[
+                "create",
+                *(["replace_area_sensors"] if self._consentable else []),
+                "add_window",
+                "rooms",
+                "plan",
+            ],
             description_placeholders={
                 "preview": plan_markdown(
-                    self.hass, texts, run, rooms, regions, self._windows, weather
+                    self.hass,
+                    texts,
+                    run,
+                    rooms,
+                    regions,
+                    self._windows,
+                    weather,
+                    areas_markdown(
+                        self.hass, texts, areas, self._replace, sync=self._area_sync
+                    ),
                 )
             },
+        )
+
+    # S4a
+
+    async def async_step_replace_area_sensors(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """The consent: which areas get Climate Hub instead of their own sensor."""
+        if user_input is not None:
+            self._replace = set(user_input.get(CONF_REPLACE_AREAS) or ())
+            return await self.async_step_preview()
+        return self.async_show_form(
+            step_id="replace_area_sensors",
+            data_schema=self.add_suggested_values_to_schema(
+                probatio.Schema(
+                    {
+                        probatio.Optional(CONF_REPLACE_AREAS): SelectSelector(
+                            SelectSelectorConfig(
+                                options=self._consentable,
+                                multiple=True,
+                                mode=SelectSelectorMode.LIST,
+                            )
+                        )
+                    }
+                ),
+                {
+                    CONF_REPLACE_AREAS: [
+                        o["value"]
+                        for o in self._consentable
+                        if o["value"] in self._replace
+                    ]
+                },
+            ),
         )
 
     async def async_step_create(

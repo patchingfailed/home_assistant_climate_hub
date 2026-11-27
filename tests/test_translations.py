@@ -94,6 +94,7 @@ SIDE_SECTIONS = {side: {"outdoor", "rooms"} for side in ("n", "e", "s", "w")}
 CONFIG_FORMS = {
     "user": {"weather", "area_sync"},
     "rooms": {"rooms"},
+    "replace_area_sensors": {"areas"},
     "plan": set(),
     "reconfigure": set(),
 }
@@ -140,6 +141,7 @@ def test_config_flow_strings(language: str) -> None:
         assert all(v["name"] for v in sections.values())
     assert set(steps["preview"]["menu_options"]) == {
         "create",
+        "replace_area_sensors",
         "add_window",
         "rooms",
         "plan",

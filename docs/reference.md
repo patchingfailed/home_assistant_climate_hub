@@ -373,7 +373,7 @@ menu. The same two first fields are asked during setup.
 | Label | Key | Type | Default | Range | What it does |
 |---|---|---|---|---|---|
 | Weather service | `weather` | weather entity, optional | the first weather entity with a forecast, at setup | | Provides the forecast for the daily strategy and the outside values when all outdoor sensors fail. Without it, the daily strategy is not created. |
-| Keep areas up to date | `area_sync` | switch | on | | Enters the room and outdoor side `temperature` and `humidity` sensors as the temperature and humidity sensor of their areas. An area value that you changed afterwards is left alone; entries are cleared again when the sync is turned off or the integration is removed. |
+| Keep areas up to date | `area_sync` | switch | on | | Enters the room and outdoor side `temperature` and `humidity` sensors into the temperature and humidity fields of their areas. An empty field is filled. A field that holds another sensor is replaced only when you allow it for that room or outdoor side (`replace_area_sensor`); Climate Hub then keeps the replaced sensor and puts it back when you withdraw the consent, turn the sync off, delete the room or outdoor side or remove the integration. A field you changed after Climate Hub wrote it is left alone and not put back. |
 | Maximum age of a measurement | `max_age` | number, minutes | 40 | 1 to 1440, step 1 | A reading older than this counts as failed (`stale`) and the next source takes over. Rooms and outdoor sides can override it. |
 | Duration of burst ventilation | `burst_duration` | number, minutes | 10 | 1 to 60, step 1 | How long a burst of fresh air lasts. The warnings `cooling_down`, `heating_up` and `open_while_conditioning` start only after a window has ventilated this long. |
 | Ventilate for humidity from | `humidity_threshold` | number, % | 60 | 30 to 90, step 1 | From this room humidity the recommendation asks for ventilation if the outside air is drier. Also the limit for the humidity guard (`outside_humid`). |
@@ -410,6 +410,7 @@ that is not already a room and not an outdoor side.
 | Heating and cooling devices | `climate_devices` | climate entities, optional | suggested from the area | Section "Heating and cooling". Only read, never controlled. Their setpoint is compared with the room temperature (`setpoint_deviation`; the first device in a regulating mode counts); used for `open_while_conditioning`. |
 | Maximum age of a measurement | `max_age` | number, minutes | empty (hub value) | Section "Advanced". 1 to 1440. Overrides the hub option for this room. |
 | Show individual readings | `show_readings` | switch | on | Section "Advanced". Creates `temperature_spread` and `humidity_spread` with the value of every source, for rooms with several zones such as bed and desk. Off removes both; `setpoint_deviation` stays. |
+| Replace area sensor | `replace_area_sensor` | switch | off | Section "Advanced". Shown only while **Keep areas up to date** is on and the room's area holds a sensor that is not Climate Hub's, or Climate Hub replaced one there. On: Climate Hub enters its sensor in that area instead of the one you chose; the form names the sensor and the area. Off: the replaced sensor comes back. An area with empty fields needs no consent. Setup asks the same question per area in the preview, under "Replace area sensors". |
 
 ### Outdoor side form
 
@@ -423,6 +424,7 @@ Add with "Add outdoor side" (first direction and area, then this form); change w
 | Humidity sources | `humidity` | entity list, ordered, optional | empty | Section "Humidity and pressure". Empty means the same devices as the temperature sources. |
 | Pressure sources | `pressure` | entity list, ordered, optional | empty | Same section and rule. |
 | Maximum age of a measurement | `max_age` | number, minutes | empty (hub value) | Section "Advanced". 1 to 1440. |
+| Replace area sensor | `replace_area_sensor` | switch | off | Section "Advanced". Same switch, condition and effect as for a room, judged on the outdoor area. |
 
 ### Window form
 
