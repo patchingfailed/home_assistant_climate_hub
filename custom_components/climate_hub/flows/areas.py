@@ -178,7 +178,6 @@ def areas_markdown(
 
 def replace_sensors(
     hass: HomeAssistant,
-    texts: Texts,
     entry: ConfigEntry,
     area_id: str,
     subject_id: str | None,
@@ -214,4 +213,5 @@ def replace_sensors(
     sensors = list(dict.fromkeys(replaced or others))
     if not sensors:
         return None
-    return texts.join_and(entity_name(hass, s) for s in sensors)
+    # A comma, not "and": the help text is in the user's language, the word list is not.
+    return COMMA_SEPARATOR.join(entity_name(hass, s) for s in sensors)

@@ -537,7 +537,6 @@ class SourceFlow(ConfigSubentryFlow):
         entry = self._get_entry()
         sensors = replace_sensors(
             self.hass,
-            texts,
             entry,
             self._suggested_for,
             self._own_id,
