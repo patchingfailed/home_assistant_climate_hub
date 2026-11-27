@@ -1,6 +1,6 @@
 # Status
 
-Updated 2026-11-26. The only place for project status.
+Updated 2026-11-27. The only place for project status.
 
 ## Now
 
@@ -16,7 +16,14 @@ yet. 0.4.0 (released 2026-11-26) moves to Home Assistant 2026.11: tests on
 not exist no longer places its device (the device registry rejects an unknown area from 2026.12.0b on, which failed
 the whole setup; before, the device got a dangling area ID). 839 tests green on 2026.11.3 and on 2026.12.0b2 without
 a deprecation warning from `climate_hub`. Verified on DEV (2026.11.3, 2026-11-26): yes, entry loaded, no warning in
-the log. Build history: git log; the system as built: `docs/logic.md`, `docs/integration.md`.
+the log. 0.5.0 (branch `feat/area-sync-consent`, 2026-11-27, not merged yet) answers the catalog review of
+`hacs/default` PR 15018 (Frenck, 2026-11-27): the area sync filled a field the user had set and did not put it back.
+Now it fills empty fields only and replaces a sensor only with consent per room or outdoor side
+(`replace_area_sensor`: S4 block, consent step S4a, switch in S6/S7; mockups approved 2026-11-27), stores the replaced
+sensor and puts it back (R11, integration §11). Old records load as `previous` `null`. 890 tests green. Verified on
+DEV (2026-11-27): yes for S6 through the flow API (user change kept, consent replaces and stores `previous`,
+withdrawing puts it back, old records migrated); S4/S4a only in tests, because DEV's single hub entry would have to
+be removed. Build history: git log; the system as built: `docs/logic.md`, `docs/integration.md`.
 
 Branches (CLAUDE.md rule 14): `main` is the current line and pushed; `docs/documentation`, `fix/doc-findings` (both
 2026-10-19) and `docs/technical` (2026-10-20, merged as three rebuilt commits) were merged into it and deleted.
@@ -24,8 +31,11 @@ Branches (CLAUDE.md rule 14): `main` is the current line and pushed; `docs/docum
 
 ## Next
 
-1. **PROD to the Marketplace** (Felix, on PROD): PROD needs Home Assistant 2026.11 first (`hacs.json` minimum),
-   then HA backup; **Settings → Marketplace → Add from link** → this repository; install 0.4.0; restart. Same
+1. **Release 0.5.0 and re-review** (Felix): look at `feat/area-sync-consent` (on DEV: set another sensor as the
+   temperature sensor of the area Kitchen, then Kitchen → Rekonfigurieren → Erweitert), merge, tag `v0.5.0`, then
+   re-request review on `hacs/default` PR 15018.
+   Then **PROD to the Marketplace** (Felix, on PROD): PROD needs Home Assistant 2026.11 first (`hacs.json` minimum),
+   then HA backup; **Settings → Marketplace → Add from link** → this repository; install 0.5.0; restart. Same
    folder, so entry, unique IDs and history stay. From then on PROD only gets releases; `deploy.ps1 -Instance Prod`
    stays as an emergency path (Felix, 2026-10-16).
    Catalog: a PR to `hacs/default` from Felix's own account (the repository added to the `integration` file in
