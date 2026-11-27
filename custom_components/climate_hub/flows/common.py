@@ -14,6 +14,7 @@ import probatio
 from homeassistant.config_entries import (
     SOURCE_RECONFIGURE,
     ConfigEntry,
+    ConfigEntryState,
     ConfigSubentry,
     ConfigSubentryFlow,
     SubentryFlowResult,
@@ -34,6 +35,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
+from ..area_sync import async_consent_given
 from ..const import DOMAIN, SUBENTRY_REGION
 from ..logic import model as m
 from ..logic.outdoor import Direction
@@ -610,6 +612,13 @@ class SourceFlow(ConfigSubentryFlow):
     async def _async_save(self) -> SubentryFlowResult:
         title = self._title(self.hass, await async_texts(self.hass))
         unique_id = self._unique_id()
+        entry = self._get_entry()
+        if (
+            self._shows_replace
+            and self._data.get(m.CONF_REPLACE_AREA_SENSOR)
+            and entry.state is ConfigEntryState.LOADED
+        ):
+            async_consent_given(self.hass, entry, self._data[m.CONF_AREA])
         if self.source == SOURCE_RECONFIGURE:
             return self.async_update_and_abort(
                 self._get_entry(),

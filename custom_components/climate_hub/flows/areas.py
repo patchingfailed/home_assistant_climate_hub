@@ -203,7 +203,11 @@ def replace_hint(
     replaced: list[str] = []
     if entry.state is ConfigEntryState.LOADED:
         records = entry.runtime_data.coordinator.area_sync.get(area_id, {})
-        replaced = [r.previous for r in records.values() if r.previous is not None]
+        replaced = [  # only while the field still holds what Climate Hub wrote
+            r.previous
+            for f, r in records.items()
+            if r.previous is not None and current.get(f) == r.entity_id
+        ]
     if replaced:
         sensors = list(dict.fromkeys(replaced))
         key = "area_replace_done" if len(sensors) == 1 else "area_replace_done_many"

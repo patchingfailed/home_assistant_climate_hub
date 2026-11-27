@@ -339,3 +339,35 @@ async def test_new_outdoor_side_form_judges_its_area(
     assert result["type"] is FlowResultType.CREATE_ENTRY
     sub = next(s for s in hub.subentries.values() if s.unique_id == "region_w")
     assert sub.data["replace_area_sensor"] is True
+
+
+async def test_saving_the_switch_on_takes_over_a_field_the_user_changed(
+    hass: HomeAssistant, house: House, hub: MockConfigEntry
+) -> None:
+    """integration.md §11 point 7: saving the switch on consents to the field."""
+    ours = "sensor.wohnzimmer_klima_temperatur"
+    records = hub.runtime_data.coordinator.area_sync
+    records[house.living_room] = {"temperature": FieldRecord(ours)}
+    _set_area(hass, house.living_room, temperature_entity_id=house.bedroom_temp)
+
+    result = await _reconfigure_living(hass, hub)
+    assert _in_form(result)
+    assert "zeigt gerade" in result["description_placeholders"]["replace"]
+    await _save_living(hass, hub, result, {"replace_area_sensor": True})
+    assert house.living_room not in records
+
+
+async def test_the_replaced_hint_needs_our_sensor_in_the_field(
+    hass: HomeAssistant, house: House, hub: MockConfigEntry
+) -> None:
+    hub.runtime_data.coordinator.area_sync[house.living_room] = {
+        "temperature": FieldRecord(
+            "sensor.wohnzimmer_klima_temperatur", previous=house.bedroom_temp
+        )
+    }
+    _set_area(hass, house.living_room, temperature_entity_id=house.kitchen_temp)
+    result = await _reconfigure_living(hass, hub)
+    assert (
+        f"zeigt gerade {entity_name(hass, house.kitchen_temp)}"
+        in result["description_placeholders"]["replace"]
+    )

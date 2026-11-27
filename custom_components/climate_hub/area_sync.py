@@ -173,6 +173,28 @@ def async_sync_after_first_evaluation(
     entry.async_on_unload(lambda: remove() if remove is not None else None)
 
 
+@callback
+def async_consent_given(
+    hass: HomeAssistant, entry: ClimateHubConfigEntry, area_id: str
+) -> None:
+    """The form saved the switch on: the area's sensors may be replaced (§11 point 7).
+
+    Drops the records of fields the user changed after Climate Hub wrote them, so the
+    next sync treats those sensors as foreign and replaces them with a way back.
+    """
+    coordinator = entry.runtime_data.coordinator
+    records = coordinator.area_sync.get(area_id)
+    if not records:
+        return
+    current = area_fields(hass, area_id)
+    for field, record in list(records.items()):
+        if current.get(field) != record.entity_id:
+            del records[field]
+    if not records:
+        del coordinator.area_sync[area_id]
+    coordinator.store.schedule_save(coordinator.store_data)
+
+
 async def async_clear_recorded(
     hass: HomeAssistant, records: dict[str, dict[str, FieldRecord]]
 ) -> None:

@@ -962,6 +962,10 @@ Code: [`area_sync.py`](../custom_components/climate_hub/area_sync.py). Tests:
 6. Foreign sensor. A field holds a foreign sensor when it is neither empty nor the wanted entity. The setup preview,
    the consent step S4a and the switch in S6 and S7 read the areas live; at first setup no Climate Hub entity exists
    yet, so every filled field is foreign.
+7. Consent in the form. Saving S6 or S7 with the switch shown and on consents to what the area holds now
+   (`async_consent_given`): records of fields the user changed after Climate Hub wrote them (row 1) are dropped, so the
+   sync after the reload replaces those sensors under row 7 and keeps them as `previous`. The form names a replaced
+   sensor only while the field still holds the recorded entity; otherwise it names the sensor in the field.
 
 Tested: the decision table (logic table tests); written on setup; an empty field filled, a foreign sensor left
 without consent and replaced and put back with consent; consent withdrawn; put back on sync off, room delete and
