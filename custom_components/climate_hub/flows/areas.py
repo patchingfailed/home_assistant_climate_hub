@@ -176,7 +176,7 @@ def areas_markdown(
 # The switch of the room and region forms (S6, S7)
 
 
-def replace_hint(
+def replace_sensors(
     hass: HomeAssistant,
     texts: Texts,
     entry: ConfigEntry,
@@ -184,11 +184,14 @@ def replace_hint(
     subject_id: str | None,
     data: dict[str, Any],
 ) -> str | None:
-    """The text above the switch "replace area sensor", None while it is not shown.
+    """The sensor names for the help text of the switch "replace area sensor", None
+    while the switch is not shown.
 
     Shown while the hub option `area_sync` is on (absent counts as on) and the area
     holds a sensor that is not this object's own (a new object has none), or Climate
-    Hub replaced a sensor there (a record with `previous`).
+    Hub replaced a sensor there (a record with `previous` whose field still holds the
+    recorded entity). The help text itself is a translation string, so the frontend
+    renders it in the user's language; only the names come from here.
     """
     if not entry.options.get(m.CONF_AREA_SYNC, True):
         return None
@@ -208,18 +211,7 @@ def replace_hint(
             for f, r in records.items()
             if r.previous is not None and current.get(f) == r.entity_id
         ]
-    if replaced:
-        sensors = list(dict.fromkeys(replaced))
-        key = "area_replace_done" if len(sensors) == 1 else "area_replace_done_many"
-    elif others:
-        sensors = list(dict.fromkeys(others))
-        key = (
-            "area_replace_foreign" if len(sensors) == 1 else "area_replace_foreign_many"
-        )
-    else:
+    sensors = list(dict.fromkeys(replaced or others))
+    if not sensors:
         return None
-    return texts(
-        key,
-        area=area_name(hass, area_id),
-        sensors=texts.join_and(entity_name(hass, s) for s in sensors),
-    )
+    return texts.join_and(entity_name(hass, s) for s in sensors)

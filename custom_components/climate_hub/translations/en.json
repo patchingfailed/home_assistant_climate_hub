@@ -1059,11 +1059,11 @@
               "data_description": {
                 "max_age": "In minutes. Empty means the hub default.",
                 "show_readings": "Temperature spread and humidity spread with the value of every source. For rooms with several zones, e.g. bed and desk.",
-                "replace_area_sensor": "Enters Climate Hub in the area in place of the sensor chosen there. Switched off, the previous sensor comes back."
+                "replace_area_sensor": "Replaces {area_sensors} in {area}. Switched off, or when Climate Hub is removed, the previous setting comes back."
               }
             }
           },
-          "description": "{suggested}{sides}{replace}"
+          "description": "{suggested}{sides}"
         },
         "room_form_changed": {
           "title": "Room: {area}",
@@ -1110,11 +1110,11 @@
               "data_description": {
                 "max_age": "In minutes. Empty means the hub default.",
                 "show_readings": "Temperature spread and humidity spread with the value of every source. For rooms with several zones, e.g. bed and desk.",
-                "replace_area_sensor": "Enters Climate Hub in the area in place of the sensor chosen there. Switched off, the previous sensor comes back."
+                "replace_area_sensor": "Replaces {area_sensors} in {area}. Switched off, or when Climate Hub is removed, the previous setting comes back."
               }
             }
           },
-          "description": "Area changed: The sources are now suggested for {area}.\n\n{sides}{replace}"
+          "description": "Area changed: The sources are now suggested for {area}.\n\n{sides}"
         },
         "room_preview": {
           "title": "Preview",
@@ -1185,11 +1185,10 @@
               },
               "data_description": {
                 "max_age": "In minutes. Empty means the hub default.",
-                "replace_area_sensor": "Enters Climate Hub in the area in place of the sensor chosen there. Switched off, the previous sensor comes back."
+                "replace_area_sensor": "Replaces {area_sensors} in {area}. Switched off, or when Climate Hub is removed, the previous setting comes back."
               }
             }
-          },
-          "description": "{replace}"
+          }
         },
         "region_form_changed": {
           "title": "Outdoor side: {direction}",
@@ -1224,11 +1223,11 @@
               },
               "data_description": {
                 "max_age": "In minutes. Empty means the hub default.",
-                "replace_area_sensor": "Enters Climate Hub in the area in place of the sensor chosen there. Switched off, the previous sensor comes back."
+                "replace_area_sensor": "Replaces {area_sensors} in {area}. Switched off, or when Climate Hub is removed, the previous setting comes back."
               }
             }
           },
-          "description": "Area changed: The sources are now suggested for {area}.{replace}"
+          "description": "Area changed: The sources are now suggested for {area}."
         },
         "region_preview": {
           "title": "Preview",
@@ -1684,10 +1683,6 @@
     "plan_areas_source_room": "{sensor} (source {rank} of this room)",
     "plan_areas_source_side": "{sensor} (source {rank} of this outdoor side)",
     "plan_areas_replace_one": "{area}: Climate Hub replaces {sensors}. It comes back when you deselect this or remove Climate Hub.",
-    "plan_areas_replace_many": "{area}: Climate Hub replaces {sensors}. They come back when you deselect this or remove Climate Hub.",
-    "area_replace_foreign": "{area} currently shows {sensors}. Switched on, Climate Hub takes its place; the previous sensor comes back when you switch it off or remove Climate Hub.",
-    "area_replace_foreign_many": "{area} currently shows {sensors}. Switched on, Climate Hub takes their place; the previous sensors come back when you switch it off or remove Climate Hub.",
-    "area_replace_done": "Climate Hub replaced {sensors} in {area}. Switched off, it comes back.",
-    "area_replace_done_many": "Climate Hub replaced {sensors} in {area}. Switched off, they come back."
+    "plan_areas_replace_many": "{area}: Climate Hub replaces {sensors}. They come back when you deselect this or remove Climate Hub."
   }
 }

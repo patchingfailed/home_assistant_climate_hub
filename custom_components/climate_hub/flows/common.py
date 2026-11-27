@@ -52,7 +52,7 @@ from ..logic.prefill import (
 from ..logic.sources import Metric
 from ..logic.window import Level
 from ..registry import entity_infos
-from .areas import replace_hint
+from .areas import replace_sensors
 from .preview import (
     DOT_SEPARATOR,
     NotTaken,
@@ -535,7 +535,7 @@ class SourceFlow(ConfigSubentryFlow):
     ) -> SubentryFlowResult:
         texts = await async_texts(self.hass)
         entry = self._get_entry()
-        hint = replace_hint(
+        sensors = replace_sensors(
             self.hass,
             texts,
             entry,
@@ -543,11 +543,11 @@ class SourceFlow(ConfigSubentryFlow):
             self._own_id,
             self._data,
         )
-        self._shows_replace = hint is not None
+        self._shows_replace = sensors is not None
         return self.async_show_form(
             step_id=step_id,
             data_schema=self.add_suggested_values_to_schema(
-                self._schema(entity_infos(self.hass), replace=hint is not None),
+                self._schema(entity_infos(self.hass), replace=sensors is not None),
                 nest(self._data, climate=self._climate),
             ),
             errors=errors or {},
@@ -560,7 +560,7 @@ class SourceFlow(ConfigSubentryFlow):
                 + "\n\n"
                 if self._fresh
                 else "",
-                "replace": f"\n\n{hint}" if hint else "",
+                "area_sensors": sensors or "",
                 **(placeholders or {}),
             },
         )

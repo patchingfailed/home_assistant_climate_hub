@@ -227,7 +227,7 @@ async def test_switch_is_hidden_while_the_area_holds_only_our_sensor(
 ) -> None:
     result = await _reconfigure_living(hass, hub)
     assert not _in_form(result)
-    assert result["description_placeholders"]["replace"] == ""
+    assert result["description_placeholders"]["area_sensors"] == ""
 
 
 async def test_switch_shows_for_a_foreign_sensor_and_is_stored(
@@ -237,11 +237,9 @@ async def test_switch_shows_for_a_foreign_sensor_and_is_stored(
     result = await _reconfigure_living(hass, hub)
     assert _in_form(result)
     assert field(result, SWITCH)[0].default() is False
-    assert result["description_placeholders"]["replace"] == (
-        f"\n\nWohnzimmer zeigt gerade {entity_name(hass, house.bedroom_temp)}. "
-        "Eingeschaltet trägt sich Climate Hub dort ein; der bisherige Sensor kommt "
-        "zurück, wenn du ausschaltest oder Climate Hub entfernst."
-    )
+    placeholders = result["description_placeholders"]
+    assert placeholders["area_sensors"] == entity_name(hass, house.bedroom_temp)
+    assert placeholders["area"] == "Wohnzimmer"
     result = await _save_living(hass, hub, result, {"replace_area_sensor": True})
     assert result["type"] is FlowResultType.ABORT
     assert hub.subentries["room_living"].data["replace_area_sensor"] is True
@@ -269,9 +267,8 @@ async def test_switch_shows_after_a_replacement_with_the_replaced_sensor(
     }
     result = await _reconfigure_living(hass, hub)
     assert _in_form(result)
-    assert result["description_placeholders"]["replace"] == (
-        f"\n\nClimate Hub hat {entity_name(hass, house.bedroom_temp)} in Wohnzimmer "
-        "ersetzt. Ausgeschaltet kommt er zurück."
+    assert result["description_placeholders"]["area_sensors"] == entity_name(
+        hass, house.bedroom_temp
     )
 
 
@@ -319,9 +316,8 @@ async def test_new_outdoor_side_form_judges_its_area(
     )
     assert result["step_id"] == "region_form"
     assert _in_form(result)
-    assert (
-        f"Hof zeigt gerade {entity_name(hass, house.garden_temp)}."
-        in result["description_placeholders"]["replace"]
+    assert result["description_placeholders"]["area_sensors"] == entity_name(
+        hass, house.garden_temp
     )
     result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
@@ -352,7 +348,9 @@ async def test_saving_the_switch_on_takes_over_a_field_the_user_changed(
 
     result = await _reconfigure_living(hass, hub)
     assert _in_form(result)
-    assert "zeigt gerade" in result["description_placeholders"]["replace"]
+    assert result["description_placeholders"]["area_sensors"] == entity_name(
+        hass, house.bedroom_temp
+    )
     await _save_living(hass, hub, result, {"replace_area_sensor": True})
     assert house.living_room not in records
 
@@ -367,7 +365,6 @@ async def test_the_replaced_hint_needs_our_sensor_in_the_field(
     }
     _set_area(hass, house.living_room, temperature_entity_id=house.kitchen_temp)
     result = await _reconfigure_living(hass, hub)
-    assert (
-        f"zeigt gerade {entity_name(hass, house.kitchen_temp)}"
-        in result["description_placeholders"]["replace"]
+    assert result["description_placeholders"]["area_sensors"] == entity_name(
+        hass, house.kitchen_temp
     )

@@ -757,7 +757,8 @@ Code: [`config_flow.py`](../custom_components/climate_hub/config_flow.py),
 - Area sync (`flows/areas.py`, R11): reads the areas live with `area_sync.area_fields` and `own_entities`, never writes.
   `planned_areas` lists the areas of the planned rooms and sides with the fields Climate Hub would write (temperature;
   humidity when the planned object has a humidity source), the sensors in them and the source rank of each sensor;
-  `areas_markdown` is the block "Areas" of S4; `replace_hint` is the text above the consent switch of S6 and S7.
+  `areas_markdown` is the block "Areas" of S4; `replace_sensors` names the sensors for the help text of the
+  consent switch of S6 and S7.
   A filled field counts as foreign when it is not the object's own sensor; at first setup none exists, so every
   filled field is foreign (§11 point 6).
 - Form data: sections are UI only; `flatten` and `nest` convert between the form and the flat subentry data (§3.2).
@@ -796,10 +797,11 @@ unique_id=...)`. When the sources were suggested in this flow, the preview lists
 
 The switch `replace_area_sensor` is in the form only while the hub option `area_sync` is on (absent counts as on) and
 the form's current area holds a sensor that is not the room's own (`own_entities` of the subentry; a new room has
-none), or the loaded entry's records show that Climate Hub replaced a sensor in that area (`previous` set). Its
-variant text goes into the step description through the placeholder `replace` (`replace_hint`): the frontend fills
-description placeholders into the step description, the same way as `sides` and `suggested`. The `data_description`
-of the field is a fixed sentence. While the switch is not in the form, a stored value is kept; an area change drops
+none), or the loaded entry's records show that Climate Hub replaced a sensor in that area (`previous` set) and the
+field still holds the recorded entity. Its help text is the field's `data_description`, "Replaces {area_sensors} in
+{area}. ...": the frontend fills description placeholders into field help texts too (`renderShowFormStepFieldHelper`),
+so the sentence appears below the switch in the user's language; `replace_sensors` supplies only the sensor names.
+Without the switch `area_sensors` is empty. While the switch is not in the form, a stored value is kept; an area change drops
 it, because the consent belonged to the old area, and the form judges the new area. Switching off stores no key.
 
 ### 9.4 Region (`flows/region.py`, S7)

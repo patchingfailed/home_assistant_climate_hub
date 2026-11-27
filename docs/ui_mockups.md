@@ -402,12 +402,13 @@ Not planned.
   default on; added 2026-10-19, R16). Help text: „Temperaturspanne und Feuchtespanne mit dem Wert jeder Quelle.
   Für Räume mit mehreren Zonen, etwa Bett und Schreibtisch." Off removes both entities. A room saved before the
   switch existed counts as on.
-- ▸ Erweitert, „Bereichssensor ersetzen" (switch, default off; proposed 2026-11-27, R11). Shown only while
+- ▸ Erweitert, „Bereichssensor ersetzen" (switch, default off; R11, built 2026-11-27). Shown only while
   „Bereiche aktuell halten" is on and the area holds a sensor that is not Climate Hub's, or Climate Hub replaced one
-  there with consent. Help text, area with a foreign sensor: „{Bereich} zeigt gerade {Sensor}. Eingeschaltet trägt
-  sich Climate Hub dort ein; der bisherige Sensor kommt zurück, wenn du ausschaltest oder Climate Hub entfernst."
-  After a replacement: „Climate Hub hat {Sensor} in {Bereich} ersetzt. Ausgeschaltet kommt er zurück." An area with
-  empty fields needs no consent; the switch is not shown. After an area change the form judges the new area.
+  there with consent. Help text below the switch, one sentence for both cases: „Ersetzt {Sensor} in {Bereich}.
+  Ausgeschaltet oder wenn du Climate Hub entfernst, kommt der bisherige Stand zurück." It is a translation string,
+  so it follows the user's language; changed 2026-11-27 from a hint in the step description, which came in the
+  server language and sat away from the switch. An area with empty fields needs no consent; the switch is not shown.
+  After an area change the form judges the new area.
 - Errors: area already a room or an outdoor side (as in step 1), no temperature source („Wähle mindestens eine
   Temperaturquelle.").
 - When the sources were just suggested, the preview also lists what was not taken and why (as in S4).

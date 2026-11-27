@@ -1059,11 +1059,11 @@
               "data_description": {
                 "max_age": "In Minuten. Leer heißt: Standardwert des Hubs.",
                 "show_readings": "Temperaturspanne und Feuchtespanne mit dem Wert jeder Quelle. Für Räume mit mehreren Zonen, z. B. Bett und Schreibtisch.",
-                "replace_area_sensor": "Trägt Climate Hub in den Bereich ein und ersetzt den dort gewählten Sensor. Ausgeschaltet kommt der bisherige Sensor zurück."
+                "replace_area_sensor": "Ersetzt {area_sensors} in {area}. Ausgeschaltet oder wenn du Climate Hub entfernst, kommt der bisherige Stand zurück."
               }
             }
           },
-          "description": "{suggested}{sides}{replace}"
+          "description": "{suggested}{sides}"
         },
         "room_form_changed": {
           "title": "Raum: {area}",
@@ -1110,11 +1110,11 @@
               "data_description": {
                 "max_age": "In Minuten. Leer heißt: Standardwert des Hubs.",
                 "show_readings": "Temperaturspanne und Feuchtespanne mit dem Wert jeder Quelle. Für Räume mit mehreren Zonen, z. B. Bett und Schreibtisch.",
-                "replace_area_sensor": "Trägt Climate Hub in den Bereich ein und ersetzt den dort gewählten Sensor. Ausgeschaltet kommt der bisherige Sensor zurück."
+                "replace_area_sensor": "Ersetzt {area_sensors} in {area}. Ausgeschaltet oder wenn du Climate Hub entfernst, kommt der bisherige Stand zurück."
               }
             }
           },
-          "description": "Bereich geändert: Die Quellen sind jetzt für {area} vorgeschlagen.\n\n{sides}{replace}"
+          "description": "Bereich geändert: Die Quellen sind jetzt für {area} vorgeschlagen.\n\n{sides}"
         },
         "room_preview": {
           "title": "Vorschau",
@@ -1185,11 +1185,10 @@
               },
               "data_description": {
                 "max_age": "In Minuten. Leer heißt: Standardwert des Hubs.",
-                "replace_area_sensor": "Trägt Climate Hub in den Bereich ein und ersetzt den dort gewählten Sensor. Ausgeschaltet kommt der bisherige Sensor zurück."
+                "replace_area_sensor": "Ersetzt {area_sensors} in {area}. Ausgeschaltet oder wenn du Climate Hub entfernst, kommt der bisherige Stand zurück."
               }
             }
-          },
-          "description": "{replace}"
+          }
         },
         "region_form_changed": {
           "title": "Außenseite: {direction}",
@@ -1224,11 +1223,11 @@
               },
               "data_description": {
                 "max_age": "In Minuten. Leer heißt: Standardwert des Hubs.",
-                "replace_area_sensor": "Trägt Climate Hub in den Bereich ein und ersetzt den dort gewählten Sensor. Ausgeschaltet kommt der bisherige Sensor zurück."
+                "replace_area_sensor": "Ersetzt {area_sensors} in {area}. Ausgeschaltet oder wenn du Climate Hub entfernst, kommt der bisherige Stand zurück."
               }
             }
           },
-          "description": "Bereich geändert: Die Quellen sind jetzt für {area} vorgeschlagen.{replace}"
+          "description": "Bereich geändert: Die Quellen sind jetzt für {area} vorgeschlagen."
         },
         "region_preview": {
           "title": "Vorschau",
@@ -1684,10 +1683,6 @@
     "plan_areas_source_room": "{sensor} (Quelle {rank} dieses Raums)",
     "plan_areas_source_side": "{sensor} (Quelle {rank} dieser Außenseite)",
     "plan_areas_replace_one": "{area}: Climate Hub ersetzt {sensors}. Er kommt zurück, wenn du das abwählst oder Climate Hub entfernst.",
-    "plan_areas_replace_many": "{area}: Climate Hub ersetzt {sensors}. Sie kommen zurück, wenn du das abwählst oder Climate Hub entfernst.",
-    "area_replace_foreign": "{area} zeigt gerade {sensors}. Eingeschaltet trägt sich Climate Hub dort ein; der bisherige Sensor kommt zurück, wenn du ausschaltest oder Climate Hub entfernst.",
-    "area_replace_foreign_many": "{area} zeigt gerade {sensors}. Eingeschaltet trägt sich Climate Hub dort ein; die bisherigen Sensoren kommen zurück, wenn du ausschaltest oder Climate Hub entfernst.",
-    "area_replace_done": "Climate Hub hat {sensors} in {area} ersetzt. Ausgeschaltet kommt er zurück.",
-    "area_replace_done_many": "Climate Hub hat {sensors} in {area} ersetzt. Ausgeschaltet kommen sie zurück."
+    "plan_areas_replace_many": "{area}: Climate Hub ersetzt {sensors}. Sie kommen zurück, wenn du das abwählst oder Climate Hub entfernst."
   }
 }
