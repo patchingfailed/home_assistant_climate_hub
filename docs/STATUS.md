@@ -1,6 +1,6 @@
 # Status
 
-Updated 2026-11-27. The only place for project status.
+Updated 2026-11-28. The only place for project status.
 
 ## Now
 
@@ -23,7 +23,9 @@ Now it fills empty fields only and replaces a sensor only with consent per room 
 sensor and puts it back (R11, integration §11). Old records load as `previous` `null`. 890 tests green. Verified on
 DEV (2026-11-27): yes for S6 through the flow API (user change kept, consent replaces and stores `previous`,
 withdrawing puts it back, old records migrated); S4/S4a only in tests, because DEV's single hub entry would have to
-be removed. Build history: git log; the system as built: `docs/logic.md`, `docs/integration.md`.
+be removed. The catalog PR `hacs/default` 15018 was merged on 2026-11-27, so Climate Hub is in the Marketplace
+catalog; the README installs from the catalog search since 2026-11-28. Build history: git log; the system as built:
+`docs/logic.md`, `docs/integration.md`.
 
 Branches (CLAUDE.md rule 14): `main` is the current line and pushed; `docs/documentation`, `fix/doc-findings` (both
 2026-10-19) and `docs/technical` (2026-10-20, merged as three rebuilt commits) were merged into it and deleted.
@@ -31,14 +33,10 @@ Branches (CLAUDE.md rule 14): `main` is the current line and pushed; `docs/docum
 
 ## Next
 
-1. **Re-review** (Felix): re-request review on `hacs/default` PR 15018 with the 0.5.0 release link.
-   Then **PROD to the Marketplace** (Felix, on PROD): PROD needs Home Assistant 2026.11 first (`hacs.json` minimum),
-   then HA backup; **Settings → Marketplace → Add from link** → this repository; install 0.5.0; restart. Same
-   folder, so entry, unique IDs and history stay. From then on PROD only gets releases; `deploy.ps1 -Instance Prod`
-   stays as an emergency path (Felix, 2026-10-16).
-   Catalog: a PR to `hacs/default` from Felix's own account (the repository added to the `integration` file in
-   alphabetical order; template with links to the release and to green HACS and hassfest runs without `ignore`).
-   Felix submits it; Claude prepares the text (2026-11-26). Review takes months.
+1. **PROD to the Marketplace** (Felix, on PROD): PROD needs Home Assistant 2026.11 first (`hacs.json` minimum),
+   then HA backup; **Settings → Marketplace** → search `Climate Hub`; install 0.5.0; restart. Same folder, so entry,
+   unique IDs and history stay. From then on PROD only gets releases; `deploy.ps1 -Instance Prod` stays as an
+   emergency path (Felix, 2026-10-16).
 2. **Mermaid labels** (optional): GitHub renders all 10 diagrams, but clips the longer transition labels of the
    goal state diagram in logic §9; shorter labels would read better.
 3. **Small check on DEV**: the repair menus `new_source` and `windows_without_room` carry `{area}` in their titles

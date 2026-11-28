@@ -56,14 +56,13 @@ The integration comes with English and German translations.
 
 ### Marketplace
 
-Climate Hub is not in the Marketplace catalog yet, so it is added from its link. The Marketplace is open to
-administrators, and adding a link needs a GitHub connection (device sign-in, reads public data only).
+Climate Hub is in the Marketplace catalog. The Marketplace is open to administrators; installing from the catalog
+needs no GitHub connection.
 
 1. Go to **Settings → Marketplace**.
-2. In the upper-right corner, select **Add from link**.
-3. Under **GitHub link**, enter `patchingfailed/home_assistant_climate_hub` and select **Add**.
-4. Open **Climate Hub**, select **Install**, check the version and select **Install** again.
-5. The setup dialog opens. If it does not, go to **Settings → Devices & services → Add integration → Climate Hub**.
+2. Search for `Climate Hub` and open it.
+3. Select **Install**, check the version and select **Install** again.
+4. The setup dialog opens. If it does not, go to **Settings → Devices & services → Add integration → Climate Hub**.
 
 Updates show up under **Settings → Updates**. After an update, Home Assistant needs a restart; a repair says so and
 can restart it.
